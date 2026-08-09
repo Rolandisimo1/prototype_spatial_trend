@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # =============================================================================
-# integration_helper_v2.R  --  Fix 1: iNat effort/count column-order bug
+# integration_helper_fix1.R  --  Fix 1: iNat effort/count column-order bug
 # -----------------------------------------------------------------------------
 # Forked from Arielle's `integration_helper.R` (never touches her original).
 # Only TWO functions are changed here -- `make_inat_cell_year_matrix()` and
@@ -22,6 +22,18 @@
 # (`inat_effort_matrix_fix.diff`) and Arielle's original, not copied off
 # the cluster.
 #
+# NAMING WARNING (why this file is called `_fix1` and NOT `_v2`): Hazel
+# already has 26 files literally named `integration_helper_v2.R` (2 distinct
+# versions), each ~600 lines -- full forks that ALSO define
+# calcIntensity_SVC/calcIntensity_noSVC, the nimbleFunctions the model body
+# calls every chunk. Every running chain job re-sources its own directory's
+# copy at the start of every chunk. This file only has 2 functions (122
+# lines) -- if it were ever copied over one of those 26 files under the
+# matching name, the nimbleFunctions would stop being defined and the next
+# chunk of every live chain would fail at model build. Do not rename this
+# file back to `integration_helper_v2.R`, and do not copy it into any
+# directory under $PROJ/HPC/* that holds a running chain.
+#
 # ROOT CAUSE (full detail in inat_effort_matrix_fix.diff):
 #   make_inat_cell_year_matrix() (builds inat_y) and make_inat_effort_matrix()
 #   (builds inat_effort) both pivot the same underlying data with
@@ -41,7 +53,7 @@
 #
 # USAGE:
 #   source("integration_helper.R")     # defines everything else, UNCHANGED
-#   source("integration_helper_v2.R")  # OVERWRITES make_inat_cell_year_matrix
+#   source("integration_helper_fix1.R")  # OVERWRITES make_inat_cell_year_matrix
 #                                       # and make_inat_effort_matrix with the
 #                                       # patched versions below (source this
 #                                       # SECOND, after the original, so the

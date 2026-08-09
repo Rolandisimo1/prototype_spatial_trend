@@ -17,7 +17,7 @@
 # WHAT THIS DOES, IN ORDER:
 #   1. Sources Arielle's integration_helper.R UNCHANGED (defines everything
 #      except the two functions patched below).
-#   2. Sources integration_helper_v2.R, which OVERWRITES
+#   2. Sources integration_helper_fix1.R, which OVERWRITES
 #      make_inat_cell_year_matrix() and make_inat_effort_matrix() with the
 #      names_sort = TRUE fix (Fix 1). Also defines
 #      assert_inat_matrices_aligned(), called after both matrices are built.
@@ -38,13 +38,32 @@ taxon_key_path <- args[2]
 
 # --- source in the documented order ---
 source("integration_helper.R")       # Arielle's original, unchanged
-source("integration_helper_v2.R")    # Fix 1: overwrites the two matrix builders
+source("integration_helper_fix1.R")    # Fix 1: overwrites the two matrix builders
 source("prep_inat_data_grid_v2.R")   # Fix 2: new function, prep_inat_data_grid_v2()
 
 cat("Loaded: integration_helper.R + Fix 1 (effort/count sort) + Fix 2 (range mask replacement)\n")
 cat("Species:", species, "\n")
 
-taxon_key <- read_csv(taxon_key_path)
+# FIX (found by Claude Code on Hazel, 2026-08-09): a bare read_csv() here
+# does not produce a usable taxon_key. prep_inat_data_grid_v2() (and
+# Arielle's original prep_inat_data_grid(), which has the identical
+# dependency) indexes on `common_name_clean`, a DERIVED column that does
+# not exist in the raw target_species.csv -- it only ever existed because
+# every prior caller ran this after prep_data_for_spoccupancy.R had already
+# built it as a global. Replicating that derivation here so this entrypoint
+# is self-contained and doesn't depend on load order from another script.
+taxon_key <- read_csv(taxon_key_path) %>%
+  mutate(species = tolower(common_name)) %>%
+  dplyr::select(-common_name) %>%
+  mutate(sci_name_clean = paste0(taxon_genus, "_", taxon_spec),
+         common_name_clean = gsub("[ -']", "_", species))
+
+stopifnot(
+  "taxon_key is missing common_name_clean -- prep_inat_data_grid_v2() will fail or silently misindex" =
+    "common_name_clean" %in% names(taxon_key),
+  "taxon_key is missing sci_name -- required by prep_inat_data_grid_v2()" =
+    "sci_name" %in% names(taxon_key)
+)
 
 # Fix 2: range-mask-free iNat grid (captive + spatial-isolation filtering instead)
 inat_cell_summary <- prep_inat_data_grid_v2(taxon_key, species, redo = TRUE)
