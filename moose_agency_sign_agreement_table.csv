@@ -1,0 +1,9 @@
+region_name,n_camera_sites,n_inat_cells,abs_trend_mean,abs_p_negative,model_direction,agency_direction,agency_dominant_dir_raw,covered_area_frac,sign_agreement
+Eastern Temperate Forests,78,42,-0.344992178560953,0.992693333333333,decreasing,stable,stable,0.75,disagree
+Great Plains,0,19,-0.21557536158778,0.87918,uncertain/stable,stable,stable,0.78,agree
+Marine West Coast Forest,0,0,-0.286300236253576,0.93378,no data (prior only),stable,stable,1.0,no model data (prior-only region)
+Mediterranean California,0,0,-0.287084751594955,0.933006666666667,no data (prior only),,,,no agency data
+North American Deserts,43,38,-0.23868088479884,0.91906,decreasing,increasing,increasing,1.0,disagree
+Northern Forests,925,118,-0.326344246625171,0.999126666666667,decreasing,stable,stable,0.87,disagree
+Northwestern Forested Mountains,602,141,-0.297334046869257,0.99806,decreasing,stable,stable,0.99,disagree
+Water,6,24,-0.294551087581986,0.96492,decreasing,mixed,mixed,0.91,agency mixed (not comparable)

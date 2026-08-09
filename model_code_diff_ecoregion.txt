@@ -1,0 +1,156 @@
+--- model_code_spatial_trend.R	2026-07-12 18:09:53
++++ model_code_ecoregion_trend.R	2026-07-13 20:20:37
+@@ -1,42 +1,54 @@
+ #!/usr/bin/env Rscript
+ # =============================================================================
+-# model_code_spatial_trend.R
+-# FORKED from Arielle's $PROJ/HPC/bobcat/HPC_run_model_chunks_chain1.R
+-# (nimbleCode block only; sha256 of the original recorded in DIFF_NOTES.md in
+-# this directory). This is the ONLY file that changes the model structure --
+-# both the sim-validation script and the (later, conditional) real bobcat
+-# refit source this shared definition, so they are guaranteed to fit the
+-# identical model.
++# model_code_ecoregion_trend.R
++# Defines model_code_ecoregion. FORKED from model_code_spatial_trend.R (the
++# CAR-field spatial-trend prototype), which is itself forked from Arielle's
++# $PROJ/HPC/bobcat/HPC_run_model_chunks_chain1.R. Diff vs both recorded in
++# model_code_diff_ecoregion.txt in this directory.
+ #
+-# CHANGE: add a spatially-varying trend deviation, mirroring the existing
+-# MWMT_effect / MCMT_effect temperature CAR fields:
+-#   year_effect[1:ncell100] ~ dcar_normal(adj[], num[], tau_year, zero_mean=1)
+-#   tau_year ~ dgamma(0.1, 0.1)
+-# year_beta remains the GLOBAL mean trend (unchanged prior, unchanged use in
+-# the camera occupancy submodel). year_effect is a zero-mean spatial
+-# deviation added ONLY into the iNat intensity pathway (mu[g,t], via the
+-# total_var_beta argument passed to calcIntensity_SVC): the linear predictor
+-# term that was `total_var_beta * year_dat[t]` (where
+-# total_var_beta = year_beta + year_var) becomes
+-# `(total_var_beta + year_effect[cell100[g]]) * year_dat[t]`
+-# i.e. year_beta + year_var + year_effect[cell100[g]], all still added
+-# identically to Arielle's existing intensity linear predictor.
++# WHY THIS FORK: the CAR-field prototype was simulation-validated and found
++# that at the ~900-cell CAR grid's grain, the fine-scale field shrinks
++# under-informed cells toward zero (NE bias ~-0.3 at low data density,
++# roughly halving when informed-cell density doubled) -- the fine grain is
++# too data-hungry to resolve reliably. This pivots to a COARSER, structured
++# estimand: an EPA Level I ecoregion partial-pooled random effect (K=8
++# regions over the bobcat range, see 00b_prep_ecoregion.R), trading spatial
++# resolution for identifiability.
+ #
+-# SCOPE DECISIONS FOR THIS PROTOTYPE (both explicit in the task spec):
+-#   * year_var (the existing iNat-vs-camera global deviation) is left GLOBAL.
+-#     A second, separately-spatial iNat deviation field is a later extension,
+-#     not attempted here -- adding two competing spatial fields to the same
+-#     pathway in one step would be an identifiability nightmare to debug.
+-#   * The camera occupancy term `year_beta * year_occ[i]` in cloglog(psi[i])
+-#     is UNCHANGED -- the spatial trend deviation enters only the iNat
+-#     pathway in this prototype. calcIntensity_noSVC (the !hasSVC branch) is
+-#     likewise unchanged, since year_effect is only defined/meaningful when
+-#     hasSVC (bobcat, the validation species, has hasSVC = TRUE).
+-#   * iNat dnbinom likelihood, camera detection submodel, and the
+-#     link_occ_intercept CAR field are byte-for-byte unchanged.
++# CHANGE vs model_code_spatial_trend.R: replace the year_effect CAR field
++# with a partial-pooled ecoregion deviation. year_region[r] ~ dnorm(0,
++# sigma_region) is the actual ESTIMATED/monitored node (one deviation per
++# ecoregion, partial pooling toward the shared national mean -- year_beta --
++# rather than toward each other via spatial adjacency like the CAR version).
++# year_effect[c] is now a DETERMINISTIC pass-through,
++# year_effect[c] <- year_region[ecoregion_of_cell100[c]], so the
++# calcIntensity_SVC call site is BYTE-IDENTICAL to the CAR model
++# (`total_var_beta + year_effect[inat_cell100[g]]`) -- only the definition
++# of year_effect changed (CAR-distributed vs. deterministically inherited
++# from a coarser regional random effect), not how it's used downstream. This
++# also means true_param_list_ecoregion() (sim_helpers.R) only ever needs to
++# set year_region as an init (year_effect can't take one directly -- it's
++# deterministic, nimble computes it from its parents via calculate()).
++#
++# UNCHANGED, byte-for-byte (all inherited from model_code_spatial_trend.R):
++#   * year_beta stays the global mean trend; year_var stays the global
++#     iNat-only deviation; the camera occupancy trend term
++#     (`year_beta * year_occ[i]` in cloglog(psi[i])) is untouched.
++#   * iNat dnbinom likelihood, camera detection submodel,
++#     link_occ_intercept CAR field.
++#   * The climate SVCs (MWMT_effect, MCMT_effect) are UNCHANGED and remain
++#     in the model -- this is deliberate: the simulation must test whether
++#     the ecoregion trend is identifiable ALONGSIDE the temperature
++#     response, not in isolation (they could in principle be confounded if
++#     ecoregions correlate with temperature gradients, which they plausibly
++#     do -- that's exactly the kind of confound this simulation checks for).
++#
++# Requires (in constants): ecoregion_of_cell100 (length ncell100, integer
++# 1:nregion lookup) and nregion -- see build_reduced_constants(...,
++# ecoregion_of_cell100_full=, nregion=) in sim_helpers.R.
+ # =============================================================================
+ 
+-model_code_spatial_trend <- nimbleCode({
++model_code_ecoregion <- nimbleCode({
+ 
+   for (g in 1:ncell50) {
+     for (t in 1:nyear) {
+@@ -53,16 +65,16 @@
+           MWMT_dat = MWMT_inat[inat_cell50_start[g]:inat_cell50_end[g], t],
+           MCMT_dat = MCMT_inat[inat_cell50_start[g]:inat_cell50_end[g], t],
+           year_dat = year_vals[t],
+-          # SPATIAL TREND FIX: was `total_var_beta` (global year_beta+year_var
+-          # only); now adds the zero-mean spatial deviation for this grid
+-          # cell's CAR cell, i.e. year_beta + year_var + year_effect[cell100[g]]
++          # UNCHANGED vs the CAR model's call site -- year_effect is now
++          # deterministically inherited from year_region (see below) instead
++          # of CAR-distributed, but this line itself doesn't change.
+           total_var_beta = total_var_beta + year_effect[inat_cell100[g]]
+         )
+ 
+       } else {
+ 
+-        # unchanged: no SVC infrastructure (incl. no year_effect) for
+-        # non-SVC species in this prototype -- out of scope, see header note
++        # unchanged: no SVC infrastructure (incl. no year_region/year_effect)
++        # for non-SVC species in this prototype -- out of scope, see header note
+         mu[g,t] <- calcIntensity_noSVC(
+           intensity_intercept = link_occ_intercept[inat_cell100[g]],
+           theta0 = theta0,
+@@ -99,8 +111,8 @@
+     }
+ 
+     # Year trend added to the occupancy submodel -- UNCHANGED (global year_beta
+-    # only; the spatial trend deviation is scoped to the iNat pathway only in
+-    # this prototype, see header note)
++    # only; the ecoregion trend deviation is scoped to the iNat pathway only
++    # in this prototype, same scope decision as the CAR-field version)
+     if (has_SVC) {
+       cloglog(psi[i]) <- link_occ_intercept[cell[i]] +
+         MWMT[i] * MWMT_effect[cell[i]] +
+@@ -159,17 +171,22 @@
+     MWMT_tau ~ dgamma(0.1, 0.1)
+     MCMT_tau ~ dgamma(0.1, 0.1)
+ 
+-    # ---- NEW: spatially-varying trend deviation, same CAR template as above.
+-    # zero_mean = 1 is required for identifiability: without it, year_effect
+-    # would be confounded with the global year_beta intercept-like term.
+-    year_effect[1:ncell100] ~ dcar_normal(
+-      adj = adj[1:nadj],
+-      num = num[1:nnum],
+-      tau = tau_year,
+-      zero_mean = 1
+-    )
++    # ---- NEW: ecoregion-level trend deviation, replacing the CAR
++    # year_effect field. year_region[r] is the actual estimated/monitored
++    # partial-pooled deviation, one per ecoregion, shrunk toward 0 (not
++    # toward each other via spatial adjacency, unlike the CAR version) with
++    # strength governed by sigma_region. year_effect[c] is a deterministic
++    # pass-through so every grid cell in the same ecoregion shares exactly
++    # the same trend deviation, and the calcIntensity_SVC call site above
++    # doesn't need to know anything changed.
++    for (r in 1:nregion) {
++      year_region[r] ~ dnorm(0, sd = sigma_region)
++    }
++    sigma_region ~ dexp(1)
+ 
+-    tau_year ~ dgamma(0.1, 0.1)
++    for (c in 1:ncell100) {
++      year_effect[c] <- year_region[ecoregion_of_cell100[c]]
++    }
+ 
+   }
+ 

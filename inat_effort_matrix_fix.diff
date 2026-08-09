@@ -1,0 +1,140 @@
+Proposed fix for the inat_effort / inat_y column-misalignment bug
+==================================================================
+
+STATUS: review only -- NOT applied to any deployed copy of integration_helper.R.
+No bundle, chain, or cache file has been touched. This is a diagnosis artifact
+for the pipeline owner (Arielle / PI) to review and apply deliberately.
+
+Affected file (identical code in every deployed copy found on Hazel):
+  /home/rwkays/isdm/deer_prep/integration_helper.R          (lines 59-94)
+  /home/rwkays/isdm/moose_prep/... (sourced from deer_prep/ copy at prep time)
+  /rsstu/.../Temporal_trend_final/HPC/<species>/integration_helper.R (all species dirs)
+  /Users/rwkays/claude_code/data_integration_arielle/integration_helper.R (local mirror)
+
+Root cause (established by direct replication on Hazel, read-only, no bundle
+touched -- see conversation diagnosis for full trace):
+  make_inat_cell_year_matrix() (builds inat_y) and make_inat_effort_matrix()
+  (builds inat_effort) both pivot the SAME source dataframe with
+  pivot_wider(names_from = Year, ...), but neither sets names_sort = TRUE.
+  Without it, pivot_wider orders the output columns by order-of-first-
+  appearance of each Year value, not chronologically.
+
+  make_inat_cell_year_matrix pivots directly off the incoming (already
+  Year-grouped, Year-ascending) dataframe, so its columns come out sorted
+  BY ACCIDENT of row order, not by design.
+
+  make_inat_effort_matrix does its own group_by(cell50, Year) BEFORE
+  pivoting. Grouping by cell50 first reorders the underlying rows to
+  cell50-major, so pivot_wider's column order is determined by whichever
+  Year values the FIRST (smallest-ID) cell50 happens to have data for. Any
+  species whose smallest in-range cell50 is missing one or more early years
+  gets those years' columns pushed to the END of the matrix instead of their
+  correct chronological position -- confirmed for moose (2008, 2010, 2011
+  displaced to the end) and white-tailed_deer (2010 displaced to the end).
+  Bobcat is unaffected only because its smallest in-range cell50 happens to
+  have full 18-year coverage -- not because the code is correct.
+
+  Consequence: inat_effort's columns can silently misalign against inat_y,
+  year_vals, n_cells_year, and inat_cells_by_year -- all of which are
+  indexed purely positionally downstream, with no column-name check anywhere
+  in the pipeline.
+
+------------------------------------------------------------------------------
+DIFF (unified format, context = full function bodies for clarity)
+------------------------------------------------------------------------------
+
+--- a/integration_helper.R
++++ b/integration_helper.R
+@@ -59,7 +59,10 @@ make_inat_cell_year_matrix <- function(df, species) {
+
+   mat_df <- df %>%
+     select(cell50, Year, all_of(species)) %>%
+     pivot_wider(
+       names_from = Year,
+       values_from = all_of(species),
+-      values_fill = NA
++      values_fill = NA,
++      names_sort = TRUE   # FIX: enforce chronological column order explicitly
++                          # rather than relying on row order being Year-major
++                          # by construction (true today, but not guaranteed by
++                          # anything the type system or a future refactor
++                          # would catch).
+     ) %>%
+     arrange(cell50)
+
+   mat <- as.matrix(mat_df[,-1])
+   rownames(mat) <- mat_df$cell50
+
+   return(mat)
+ }
+
+ make_inat_effort_matrix <- function(df) {
+   # df must have columns: cell50, Year, effort
+
+   effort_df <- df %>%
+     group_by(cell50, Year) %>%
+     summarise(effort_sum = sum(effort, na.rm = TRUE), .groups = "drop") %>%
+     pivot_wider(
+       names_from = Year,
+       values_from = effort_sum,
+-      values_fill = 0  # fill zeros where no effort
++      values_fill = 0,  # fill zeros where no effort
++      names_sort = TRUE  # FIX: this is the actual bug fix. Without this,
++                         # column order follows first-appearance-by-cell50,
++                         # which silently displaces any Year missing from
++                         # the lowest-ID cell50 to the end of the matrix --
++                         # confirmed to corrupt moose (2008/2010/2011 shifted
++                         # to the tail, read as if they were 2023/2024/2025
++                         # by every downstream positional index) and WTD
++                         # (2010 shifted to the tail, read as 2025).
+     ) %>%
+     arrange(cell50)
+
+   # convert to matrix
+   mat <- as.matrix(effort_df[,-1])
+   rownames(mat) <- effort_df$cell50
+
+   return(mat)
+ }
+
+------------------------------------------------------------------------------
+RECOMMENDED ADDITIONAL GUARDRAIL (not strictly required if the fix above is
+applied everywhere, but cheap insurance against this class of bug recurring
+under a future refactor of either function)
+------------------------------------------------------------------------------
+
+In data_prep() (run_moose_prep.R / run_deer_prep.R / equivalent), immediately
+after both matrices are built:
+
+--- a/run_<species>_prep.R
++++ b/run_<species>_prep.R
+@@
+   inat_y <- make_inat_cell_year_matrix(inat_df, species)
+   inat_effort <- make_inat_effort_matrix(inat_df)
++
++  # GUARDRAIL: inat_y and inat_effort must be indexed identically -- every
++  # downstream use (year_vals[t], n_cells_year[t], inat_cells_by_year[,t])
++  # treats column position as calendar year with no name-based check. A
++  # silent divergence here previously baked a multi-year column misalignment
++  # into two converged bundles (moose, WTD) without any error or warning.
++  stopifnot(
++    "inat_y and inat_effort column (year) order diverged" =
++      identical(colnames(inat_y), colnames(inat_effort)),
++    "inat_y and inat_effort row (cell50) order diverged" =
++      identical(rownames(inat_y), rownames(inat_effort))
++  )
+
+------------------------------------------------------------------------------
+WHAT THIS FIX DOES NOT COVER
+------------------------------------------------------------------------------
+- Does not retroactively repair input_data_moose_ecoregion.RDS,
+  input_data_moose_national_scalar.RDS, input_data_wtd_ecoregion.RDS, or
+  input_data_wtd_national_scalar.RDS -- all four bundles were built from the
+  buggy code path and their inat_effort matrices are misaligned as described.
+  Repairing them requires re-running data_prep() for moose and WTD with the
+  fix applied, then re-forking the ecoregion/national_scalar bundles
+  (00b2_join_ecoregion_real.R) and refitting -- a separate, larger decision
+  not made here.
+- Does not address the moose range-mask question (separate, still-open
+  investigation) or the fresh-species spatial-extraction hang currently
+  under investigation for the fleet-35 masked pull.
