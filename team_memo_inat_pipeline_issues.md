@@ -299,3 +299,23 @@ identically to bobcat and WTD's currently-running/converged v1fix fits —
 this is not moose-specific. The 12 additional windowed-refit bundles (5yr/
 10yr x 3 species x 2 models, built 2026-08-09, not yet launched) are forked
 from the same 18-year source data and inherit the same gap.
+
+## Addendum 2 (2026-08-09): both fixes now committed as real code
+
+`inat_effort_matrix_fix.diff` (Issue 1) was a diagnosis-only artifact -- its
+`names_sort = TRUE` patch was applied by hand directly on Hazel for the six
+v1fix launches, but never existed as a versioned file until now.
+[integration_helper_v2.R](integration_helper_v2.R) forks the two affected
+functions from Arielle's original with the fix applied and adds the
+recommended `assert_inat_matrices_aligned()` guardrail. [Verify this file's
+functions match whatever is live on Hazel before assuming they're
+interchangeable -- it was re-derived from the diff and the original, not
+pulled from the cluster.]
+
+[prep_inat_data_grid_v2.R](prep_inat_data_grid_v2.R) (Issue 2's fix, drafted
+earlier this session) and `integration_helper_v2.R` are wired together in
+[run_data_prep_v2.R](run_data_prep_v2.R), the single entrypoint to run on
+Hazel for a real re-prep. **Neither fix has been run against real data as
+of this commit** -- both are logic-tested (synthetic data only) but not yet
+exercised on Hazel's actual iNat pull, and no bundle has been re-forked or
+re-fit with either.

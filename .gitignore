@@ -1,0 +1,16 @@
+# OS / editor cruft
+.DS_Store
+.Rhistory
+.Rproj.user/
+*.swp
+
+# Large regenerable intermediates -- re-derivable from the pipeline, not
+# source. Keep OUT of version control; re-run the relevant script instead
+# of committing a fresh copy each time it changes.
+*.RDS
+*.rds
+
+# Credentials / local machine config -- should never live in this repo
+.Renviron
+.env
+*.pem
