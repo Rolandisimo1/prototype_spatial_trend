@@ -31,6 +31,25 @@
 #      aligned before writing anything out.
 # =============================================================================
 
+# FIX (found by Claude Code on Hazel, 2026-08-09): this script has no
+# library() calls, so running it as a standalone Rscript fails in ~8
+# seconds with `could not find function "nimbleFunction"` -- Arielle's
+# integration_helper.R defines calcIntensity_SVC/_noSVC as nimbleFunctions
+# at source time (needs `nimble`), and its data-prep functions use dplyr/
+# tidyr/readr/lubridate unqualified plus terra/sf. Every prior caller of
+# these functions ran from an interactive session where these were already
+# attached; this entrypoint needs to attach them itself to be runnable
+# standalone.
+suppressPackageStartupMessages({
+  library(nimble)
+  library(dplyr)
+  library(tidyr)
+  library(readr)
+  library(lubridate)
+  library(terra)
+  library(sf)
+})
+
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) < 2) stop("Usage: Rscript run_data_prep_v2.R <species> <taxon_key_path>")
 species <- args[1]

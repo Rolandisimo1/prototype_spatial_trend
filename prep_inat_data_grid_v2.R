@@ -60,9 +60,39 @@
 ISOLATION_RADIUS_KM <- 100   # NOT YET REVIEWED -- team memo starting proposal
 ISOLATION_YEARS      <- 3    # NOT YET REVIEWED -- team memo starting proposal
 
+# --- FIX 2b (2026-08-09): data-driven presence mask, replacing the "drop
+# the mask entirely" version of Fix 2 above ---
+# Dropping the IUCN mask outright (steps 1-3 below) surfaced a real, separate
+# problem on Hazel: converting ~2,900 out-of-range cells nationwide from NA
+# (dropped from the likelihood) to real zeros (a live mu[g,t] node per cell
+# per year) overloads nimbleModel()'s graph-build for all three species --
+# moose went from ncell50=382 to 3,322, but only 422 of those cells actually
+# have any moose records (confirmed on Hazel, 2026-08-09). The other ~2,900
+# are genuine zeros, not excluded data -- but NIMBLE still has to build a
+# node for each of them at every one of 18 years, which is what the build
+# was choking on.
+#
+# FIX 2b replaces the IUCN range polygon with a mask built directly from
+# the species' OWN iNat presence records, post-isolation-filtering: a cell50
+# counts as "in range" only if it has >= PRESENCE_MIN_RECORDS total records
+# of that species, summed across all years, after the spatial-isolation
+# filter above has already removed likely vagrants/mis-IDs. Cells below
+# that threshold are NA'd (excluded from the likelihood), exactly as the
+# IUCN mask did -- but the boundary is drawn from real observations instead
+# of a static historical range polygon, so a real, under-threshold-record
+# but genuine population (Colorado moose) is retained, while the ~2,900
+# nationwide cells with zero-to-two records of the species get excluded
+# again, keeping ncell50 near the species' own footprint instead of the
+# full national grid.
+PRESENCE_MIN_RECORDS <- 3   # user-set threshold, 2026-08-09 -- a cell needs
+                            # at least this many total (post-isolation-filter)
+                            # records of the species, across all 18 years
+                            # combined, to count as "in range"
+
 prep_inat_data_grid_v2 <- function(taxon_key, species, redo = FALSE,
                                     isolation_radius_km = ISOLATION_RADIUS_KM,
-                                    isolation_years = ISOLATION_YEARS) {
+                                    isolation_years = ISOLATION_YEARS,
+                                    presence_min_records = PRESENCE_MIN_RECORDS) {
 
   if (!exists("INAT_GRID_DIR")) INAT_GRID_DIR <- paste0(PROJ_DIR, "/output/inat_grids_v2")
   dir.create(INAT_GRID_DIR, showWarnings = FALSE, recursive = TRUE)
@@ -180,6 +210,7 @@ prep_inat_data_grid_v2 <- function(taxon_key, species, redo = FALSE,
     # record (not the cell-aggregated one), then drop only THOSE raw points
     # before re-aggregating to cell x year
     spec_pts <- inat_cells %>% filter(sciname == taxon_key$sci_name[i])
+    presence_cells <- character(0)  # cell50 IDs that pass the presence mask
     if (nrow(spec_pts) > 0) {
       iso_flag <- spatial_isolation_flag(spec_pts, spec_pts$Year,
                                           isolation_radius_km, isolation_years)
@@ -190,14 +221,36 @@ prep_inat_data_grid_v2 <- function(taxon_key, species, redo = FALSE,
         group_by(Year) %>%
         count(cell50, cell100)
       colnames(this_spec_dat)[4] <- spec_name
+
+      # --- FIX 2b: data-driven presence mask ---
+      # total (post-isolation-filter) records per cell50, summed across all
+      # years -- a cell passes if that total meets presence_min_records.
+      cell_totals <- spec_pts_kept %>%
+        filter(!is.na(cell50)) %>%
+        count(cell50, name = "total_records")
+      presence_cells <- as.character(
+        cell_totals$cell50[cell_totals$total_records >= presence_min_records]
+      )
+      cat("  ", spec_name, ": presence mask (>=", presence_min_records,
+          "total records) keeps", length(presence_cells), "of",
+          length(unique(spec_pts_kept$cell50[!is.na(spec_pts_kept$cell50)])),
+          "cells with any record\n")
     }
 
     inat_cell_summary <- left_join(inat_cell_summary, this_spec_dat,
                                     by = c("Year", "cell50", "cell100"))
-    inat_cell_summary[[spec_name]][is.na(inat_cell_summary[[spec_name]])] <- 0
 
-    # NOTE: NO range-polygon NA-ing step here. Every grid cell keeps a real
-    # 0 or positive count -- the model gets to see the full survey area.
+    # Cells passing the presence mask get a real 0 where the species-year
+    # combination truly had none (same as before). Cells that NEVER pass
+    # the mask -- i.e. never accumulated presence_min_records for this
+    # species anywhere in the 18-year record -- are set back to NA, exactly
+    # as the old IUCN mask did, but with the boundary drawn from the
+    # species' own data rather than a static range polygon. This is what
+    # keeps ncell50 near the species' real footprint instead of the full
+    # national grid (see FIX 2b note above prep_inat_data_grid_v2()).
+    in_presence_mask <- as.character(inat_cell_summary$cell50) %in% presence_cells
+    inat_cell_summary[[spec_name]][is.na(inat_cell_summary[[spec_name]]) & in_presence_mask] <- 0
+    inat_cell_summary[[spec_name]][!in_presence_mask] <- NA
   }
 
   write_csv(inat_cell_summary, outfile)

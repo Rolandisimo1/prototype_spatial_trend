@@ -315,7 +315,45 @@ pulled from the cluster.]
 [prep_inat_data_grid_v2.R](prep_inat_data_grid_v2.R) (Issue 2's fix, drafted
 earlier this session) and `integration_helper_fix1.R` are wired together in
 [run_data_prep_v2.R](run_data_prep_v2.R), the single entrypoint to run on
-Hazel for a real re-prep. **Neither fix has been run against real data as
-of this commit** -- both are logic-tested (synthetic data only) but not yet
-exercised on Hazel's actual iNat pull, and no bundle has been re-forked or
-re-fit with either.
+Hazel for a real re-prep.
+
+## Addendum 3 (2026-08-09): dropping the mask entirely was untractable --
+## replaced with a data-driven presence mask (Fix 2b)
+
+The first version of Fix 2 (drop the IUCN mask, keep every cell as a real
+0/positive count, rely only on the captive + isolation filters) WAS run
+against real data on Hazel this session, isolated from the live fleet. It
+reproduced July's numbers exactly: ncell50 goes 382 -> 3,322 for moose (the
+full national grid), Colorado goes from 0 moose records (100% masked) to
+3,145 recovered records across 43 cells, guardrail passed, chronological
+columns confirmed. But only 422 of those 3,322 cells actually have ANY
+moose records -- the other ~2,900 are genuine, real zeros (cells with no
+moose activity nationwide, not excluded data). Converting those cells from
+NA (dropped from the likelihood entirely, as under the old mask) to real
+zeros means NIMBLE has to build a live `mu[g,t]` node for each of them at
+every one of 18 years, which is what caused `nimbleModel()`'s graph-build
+to hang for all six species/model combinations back in July -- confirmed
+species-independent, since moose (tiny camera dataset) hung just as hard as
+bobcat and WTD.
+
+**Fix 2b, replacing the "drop the mask entirely" approach:** instead of
+choosing between the static IUCN polygon and the full 3,322-cell national
+grid, build the mask from the species' OWN iNat presence records. A cell50
+counts as "in range" only if it accumulates >= `PRESENCE_MIN_RECORDS` (set
+to **3**, 2026-08-09 decision) total records of that species across all 18
+years, counted AFTER the spatial-isolation filter has already removed
+likely vagrants/mis-IDs. Cells below that threshold go back to NA -- same
+behavior as the old mask, but the boundary is drawn from real observations
+instead of a stale range polygon. This keeps Colorado (real, moderately-
+documented population) and Utah while dropping the ~2,900 truly-empty
+cells nationwide that were driving the node-count blowup, landing ncell50
+near the species' own footprint (~422-ish for moose, not 3,322).
+
+**Not yet run against real data.** Logic-tested only (synthetic data:
+confirmed a dense population passes, a sparse-but-real population at
+exactly the threshold passes, a single-record vagrant is excluded, a
+never-observed cell is excluded). The `PRESENCE_MIN_RECORDS = 3` threshold
+is a user decision (2026-08-09), not derived or reviewed against the
+isolation-filter's own 100km/3yr thresholds -- worth checking the two don't
+double-penalize genuinely sparse edge populations before treating this as
+final.
