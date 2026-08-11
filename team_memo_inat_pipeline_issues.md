@@ -339,21 +339,50 @@ bobcat and WTD.
 **Fix 2b, replacing the "drop the mask entirely" approach:** instead of
 choosing between the static IUCN polygon and the full 3,322-cell national
 grid, build the mask from the species' OWN iNat presence records. A cell50
-counts as "in range" only if it accumulates >= `PRESENCE_MIN_RECORDS` (set
-to **3**, 2026-08-09 decision) total records of that species across all 18
-years, counted AFTER the spatial-isolation filter has already removed
-likely vagrants/mis-IDs. Cells below that threshold go back to NA -- same
-behavior as the old mask, but the boundary is drawn from real observations
-instead of a stale range polygon. This keeps Colorado (real, moderately-
-documented population) and Utah while dropping the ~2,900 truly-empty
-cells nationwide that were driving the node-count blowup, landing ncell50
-near the species' own footprint (~422-ish for moose, not 3,322).
+counts as "in range" only if it accumulates >= `PRESENCE_MIN_RECORDS` total
+records of that species across all 18 years, counted AFTER the
+spatial-isolation filter has already removed likely vagrants/mis-IDs.
+Cells below that threshold go back to NA -- same behavior as the old mask,
+but the boundary is drawn from real observations instead of a stale range
+polygon.
 
-**Not yet run against real data.** Logic-tested only (synthetic data:
-confirmed a dense population passes, a sparse-but-real population at
-exactly the threshold passes, a single-record vagrant is excluded, a
-never-observed cell is excluded). The `PRESENCE_MIN_RECORDS = 3` threshold
-is a user decision (2026-08-09), not derived or reviewed against the
-isolation-filter's own 100km/3yr thresholds -- worth checking the two don't
-double-penalize genuinely sparse edge populations before treating this as
-final.
+**At the time this addendum was first written (2026-08-09), the threshold
+was set to 3 and only logic-tested on synthetic data.** See Addendum 4
+below for the real-data numbers and the resulting threshold revision.
+
+## Addendum 4 (2026-08-10): PRESENCE_MIN_RECORDS lowered from 3 to 1 --
+## real Hazel numbers showed the stricter cut wasn't buying tractability
+
+Fix 2b was run against real moose data on Hazel (still isolated from the
+live fleet). Measured `ncell50` at both candidate thresholds:
+
+| Threshold | ncell50 | vs. the 3,322-cell wall that broke `nimbleModel()` |
+|---|---|---|
+| >= 3 records | ~290 | far below |
+| >= 1 record (post-isolation-filter) | ~422 | far below |
+
+Both are enormously smaller than 3,322 -- the gap between 290 and 422 is
+unlikely to be the difference between "the model build succeeds" and
+"it doesn't." That means the >=3 cut's *stated* purpose (tractability) was
+not actually being served by the stricter threshold; what it WAS doing was
+re-excluding real, thin edge-presence cells -- concretely, Utah's tail of
+1-2-record cells, the same *kind* of signal (a real, sparsely-documented
+population near a range edge) that motivated dropping the IUCN mask for
+Colorado in the first place.
+
+**Decision (2026-08-10): `PRESENCE_MIN_RECORDS` lowered to 1.** The spatial-
+isolation filter (100km/3yr, applied BEFORE this threshold) remains the
+layer responsible for screening out true vagrants/mis-IDs. `>=1` here means
+"at least one record survived that screening," not "no additional
+screening at all" -- it is not equivalent to dropping the mask entirely
+(that was the ncell50=3,322 version, already ruled out above). The
+nimbleModel() build test at ~422 cells (queued as of this addendum) is the
+concrete next check on whether this actually resolves tractability for
+moose, and by extension bobcat/WTD.
+
+**Also confirmed on Hazel, real data, both thresholds:** the captive-record
+filter is a no-op across the ~3M-row master file (`captive_cultivated` is
+all-FALSE) -- consistent with the raw pull already being restricted to
+iNat's "Research Grade" quality tier, which requires community consensus
+the organism is wild. The isolation filter itself flags 0.3-10% of records
+depending on species (0.41% for moose specifically).
