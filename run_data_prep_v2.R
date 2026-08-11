@@ -84,16 +84,37 @@ stopifnot(
     "sci_name" %in% names(taxon_key)
 )
 
-# Fix 2: range-mask-free iNat grid (captive + spatial-isolation filtering instead)
+# Fix 2/2b: presence-mask iNat grid (captive + spatial-isolation filtering,
+# plus the PRESENCE_MIN_RECORDS threshold from prep_inat_data_grid_v2.R)
 inat_cell_summary <- prep_inat_data_grid_v2(taxon_key, species, redo = TRUE)
-cat("prep_inat_data_grid_v2() complete --", nrow(inat_cell_summary), "cell x year rows\n")
+cat("prep_inat_data_grid_v2() complete --", nrow(inat_cell_summary), "cell x year rows",
+    "(includes NA rows for cells the presence mask excluded -- see filter below)\n")
+
+# FIX (found by Claude Code on Hazel, 2026-08-10): prep_inat_data_grid_v2()
+# NA's out the species column for cells that fail the presence mask, but it
+# does NOT drop those rows -- inat_cell_summary still has one row per
+# (cell50, cell100, Year) combination across the FULL national grid
+# (ncell50 = 3,322 rows), most of them NA for this species. Passing that
+# straight into make_inat_cell_year_matrix()/make_inat_effort_matrix()
+# builds an inat_y/inat_effort matrix with ncell50 = 3,322 rows regardless
+# of how strict the presence mask is -- i.e. it silently reproduces the
+# exact 3,322-cell wall this fix exists to avoid, and the alignment
+# guardrail below would pass on that oversized matrix without ever
+# revealing the mask had no effect. The existing v1fix prep driver already
+# does this filter (`inat_df <- inat_df[!is.na(inat_df[[species]]), ]`)
+# before building matrices; replicating it here so this entrypoint's
+# ncell50 actually reflects the presence mask.
+inat_cell_summary_masked <- inat_cell_summary[!is.na(inat_cell_summary[[species]]), ]
+cat("NA-filtered to the presence mask's in-range cells --",
+    nrow(inat_cell_summary_masked), "of", nrow(inat_cell_summary), "rows kept,",
+    length(unique(inat_cell_summary_masked$cell50)), "distinct in-range cell50s\n")
 
 # Fix 1: chronologically-correct matrices, with the guardrail assertion
-inat_y      <- make_inat_cell_year_matrix(inat_cell_summary, species)
-inat_effort <- make_inat_effort_matrix(inat_cell_summary)
+inat_y      <- make_inat_cell_year_matrix(inat_cell_summary_masked, species)
+inat_effort <- make_inat_effort_matrix(inat_cell_summary_masked)
 assert_inat_matrices_aligned(inat_y, inat_effort)
 cat("make_inat_cell_year_matrix() / make_inat_effort_matrix() aligned and verified --",
-    ncol(inat_y), "years x", nrow(inat_y), "cells\n")
+    ncol(inat_y), "years x", nrow(inat_y), "cells (post-presence-mask)\n")
 
 cat("\nDONE. inat_y / inat_effort / inat_cell_summary are in memory --",
     "wire these into the existing bundle-forking step",
