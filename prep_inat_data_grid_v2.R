@@ -84,10 +84,29 @@ ISOLATION_YEARS      <- 3    # NOT YET REVIEWED -- team memo starting proposal
 # nationwide cells with zero-to-two records of the species get excluded
 # again, keeping ncell50 near the species' own footprint instead of the
 # full national grid.
-PRESENCE_MIN_RECORDS <- 3   # user-set threshold, 2026-08-09 -- a cell needs
-                            # at least this many total (post-isolation-filter)
-                            # records of the species, across all 18 years
-                            # combined, to count as "in range"
+PRESENCE_MIN_RECORDS <- 1   # user-set threshold, revised 2026-08-10 (was 3 as
+                            # of 2026-08-09). A cell needs at least this many
+                            # total (post-isolation-filter) records of the
+                            # species, across all 18 years combined, to count
+                            # as "in range".
+                            #
+                            # WHY LOWERED FROM 3 TO 1: the >=3 cut's stated
+                            # purpose was tractability (getting ncell50 down
+                            # from the 3,322-cell wall that broke
+                            # nimbleModel()'s build). Measured on Hazel
+                            # (2026-08-10): >=3 gives ncell50~290; >=1 gives
+                            # ncell50~422. BOTH are far below 3,322 -- the
+                            # stricter cut was not buying meaningfully better
+                            # tractability, while it WAS re-excluding exactly
+                            # the kind of thin, real edge-expansion signal
+                            # (Utah's tail of 1-2-record cells) that dropping
+                            # the IUCN mask was meant to recover in the first
+                            # place. The isolation filter (100km/3yr, applied
+                            # BEFORE this threshold) is the layer actually
+                            # responsible for screening out vagrants/mis-IDs;
+                            # >=1 here just means "at least one record
+                            # survived that screening," not "no additional
+                            # screening at all."
 
 prep_inat_data_grid_v2 <- function(taxon_key, species, redo = FALSE,
                                     isolation_radius_km = ISOLATION_RADIUS_KM,
