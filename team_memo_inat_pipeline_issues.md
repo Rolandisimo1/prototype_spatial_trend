@@ -386,3 +386,80 @@ all-FALSE) -- consistent with the raw pull already being restricted to
 iNat's "Research Grade" quality tier, which requires community consensus
 the organism is wild. The isolation filter itself flags 0.3-10% of records
 depending on species (0.41% for moose specifically).
+
+---
+
+## Issue 3 (found 2026-08-14): soil_clay/soil_silt/soil_sand are compositional
+## -- including all three in occ_beta builds an unidentified ridge into the
+## design matrix
+
+**This is a separate class of problem from Issues 1-2 above** -- not an
+iNat data-pipeline bug, but a latent flaw in the occupancy-covariate design
+matrix itself, present in the ORIGINAL 10-covariate KEEP list
+(`make_reduced_input.R`, "final" decision) since before any of the fixes
+above existed.
+
+### What it does
+
+Soil clay, silt, and sand fractions are compositional data: by construction
+they sum to ~100% of a soil sample, so any two of the three fully determine
+the third. `make_reduced_input.R`'s KEEP list retains all three
+(`soil_clay`, `soil_silt`, `soil_sand`) as separate linear terms in
+`occ_beta`. Because the model code indexes `occ_beta` purely by position
+(`occ_beta[1:numOccCovars]` in `HPC_<species>_<model>_chain1.R`, no
+name-based lookup anywhere), nothing catches that two of these three
+coefficients can trade weight against each other along the "sum" direction
+with zero change in the model's fit -- an exactly-unidentified ridge.
+
+### How it was found
+
+`moose_v2b_national_scalar` and `moose_v2b_ecoregion` (both built on the
+Fix-2b presence-mask data) plateaued at the 50k-iteration cap with
+`occ_beta[8]` and `occ_beta[10]` -- confirmed against the bundle's own
+column names to be `soil_clay` and `soil_sand` -- stuck at R-hats matching
+to four decimal places. Matching R-hats across two parameters is the
+classic ridge signature: the chains are drifting along a shared direction,
+not failing to mix independently.
+
+Direct correlation check, read off each species' actual camera-site
+covariate data:
+
+| Species | n camera sites | cor(soil_clay, soil_sand) |
+|---|---|---|
+| Moose  | 1,654  | -0.9966 |
+| Bobcat | 20,531 | -0.5662 |
+| WTD    | 21,559 | -0.5664 |
+
+The ridge is present in **all three species' bundles** at essentially the
+same correlation (it depends only on camera-site soil composition, which
+the presence-mask fix never touches -- Fix 2b changes iNat cell membership,
+not camera sites). It was not *binding* for bobcat/WTD because their camera
+sites span enough geography for clay/sand to vary semi-independently;
+moose's narrow northern camera-site band pushed the correlation to -0.997
+and made the ridge the actual constraint on convergence. **This means the
+same ridge is latent in every v1fix bobcat/WTD fit too** (unconfirmed
+whether it was ever binding there, since v1fix ecoregion/national_scalar
+non-convergence has other causes -- see the WTD ecoregion funnel discussion
+elsewhere -- but the redundancy in the design matrix is there regardless of
+whether it happens to be the tightest constraint in a given fit).
+
+### Fix
+
+Drop `soil_silt` from the covariate list -- keep `soil_clay` and
+`soil_sand` as the two explicit texture-axis effects; silt becomes the
+implicit reference level. This is a real, permanent correction to the
+covariate design, applicable to any species/model, not a moose-specific
+patch. Implemented in
+[make_reduced_input_v2.R](make_reduced_input_v2.R), forked from
+`make_reduced_input.R`, taking an already-10-covariate bundle down to 9.
+
+### Status
+
+Not yet applied to any running or completed fit as of this addendum.
+`moose_v2b_national_scalar`'s `CONVERGED.flag` (written 2026-08-12 off a
+20k/20k/20k read that squeaked under threshold) is a false positive --
+the very next equal-window check came back 1.1394 with `occ_beta[8]`,
+`occ_beta[10]`, `theta0`, and `theta1` all over 1.1. Both moose v2b fits
+are being refit from scratch on the corrected 9-covariate design rather
+than continued. bobcat/WTD v2b builds should apply this fix before their
+first launch, not after a plateau.
