@@ -463,3 +463,112 @@ the very next equal-window check came back 1.1394 with `occ_beta[8]`,
 are being refit from scratch on the corrected 9-covariate design rather
 than continued. bobcat/WTD v2b builds should apply this fix before their
 first launch, not after a plateau.
+
+## Addendum to Issue 3 (2026-08-14, same day): both the mechanism and the
+## drop choice above were wrong -- corrected via a direct VIF check
+
+The "Fix" and framing above were written from the "compositional data, sums
+to ~100%" argument alone, without checking the actual retained-pair
+correlation or running this against bobcat/WTD data first. A direct
+VIF/correlation check on all three species' real bundles caught two errors
+before either mattered in practice (no fit was launched on the wrong
+version):
+
+**1. Not a universal compositional identity.** R² of `sand ~ clay + silt`
+is 0.9995 for moose (nsite=1,654, narrow northern camera-site footprint --
+a genuine near-collinearity specific to that footprint) but only 0.606
+(bobcat, nsite=20,531) and 0.617 (WTD, nsite=21,559). Max VIF across all 10
+original covariates: moose 2,267 (severe), bobcat 3.0, WTD 3.1 (both
+completely benign). So this is **not** "exactly unidentified for every
+species by construction" -- it's a moose-specific near-collinearity that
+happens to be severe enough to bind. The claim above that "the ridge is
+latent in every v1fix bobcat/WTD fit too" is not supported by their data.
+
+**2. Dropping `soil_silt` was the wrong fraction.** It leaves `soil_clay` +
+`soil_sand` retained together -- exactly the -0.9966-correlated pair that
+was `occ_beta[8]`/`occ_beta[10]`, the two parameters that actually
+plateaued both moose fits. Max VIF over the retained pair, moose, by drop
+choice:
+
+| Drop | max VIF (moose) | retained pair correlation |
+|---|---|---|
+| none (original 10-cov) | 2,267 | -- |
+| soil_silt (this addendum's original fix) | 152 | cor(clay,sand) = -0.997 |
+| soil_sand | 4.5 | cor(clay,silt) = -0.297 |
+| soil_clay | 4.5 | cor(silt,sand) = +0.220 |
+
+Dropping silt takes moose's max VIF from 2,267 to 152 -- it removes the
+exact singularity but leaves a severe ridge that would very likely plateau
+again after another multi-day fit.
+
+**Corrected fix: drop `soil_sand`, keep `soil_clay` + `soil_silt`.** Best
+conditioning across all three species (moose max VIF 4.5; bobcat/WTD both
+1.9). `make_reduced_input_v2.R` has been updated to drop `soil_sand`
+accordingly -- the file now matches this corrected fix, not the original
+text above.
+
+One conclusion from the original write-up still holds: applying one
+uniform 9-covariate design across all five v2b builds remains the right
+call for report comparability, and costs bobcat/WTD nothing, since their
+soil covariates were never problematically collinear to begin with.
+
+## Addendum, part 2 (2026-08-14, same day): fleet-wide validation --
+## mechanism confirmed, one uniform design works for all 8 species
+
+Two follow-up checks, run against all 8 fleet species (moose, bobcat, WTD,
+grey wolf, fisher, elk, pronghorn, kit fox) rather than just the three with
+launched v2b builds:
+
+**1. Why moose's clay+silt+sand sums to ~100% but bobcat/WTD's doesn't.**
+Not an algebraic identity (a hard identity would give an exact, constant
+sum for every species). Recovering the raw 0-1 fractions from each
+species' cached input confirms the sum is bimodal: a spike at exactly 1.0
+plus a tail running down toward 0. Moose and grey wolf sit at 1.0 in ~98%
+of camera sites; bobcat/WTD only ~46-51%, with ~30% of sites below 0.90.
+This is the compositional identity holding almost exactly wherever ground
+cover is genuinely just mineral soil (moose/wolf's narrow, forested,
+northern ranges), and breaking down wherever a meaningful fraction of the
+ground is something else -- rock, wetland/organic soil, urban fill --
+which shows up more as a species' site set gets geographically larger and
+more diverse (bobcat, WTD).
+
+**2. The ridge is not moose-specific -- it's a narrow-range-species
+problem, and it would have hit at least two more fleet species before
+their v2b builds even started.** Max VIF on the original 10-covariate
+design, by species:
+
+| Species | n sites | max VIF (10-cov) |
+|---|---|---|
+| Moose | 1,654 | 2,267.4 |
+| Grey wolf | 1,391 | 1,732.7 |
+| Fisher | 3,142 | 242.9 |
+| Elk | 2,296 | 23.3 |
+| Kit fox | 964 | 4.5 |
+| Bobcat | 20,531 | 3.0 |
+| WTD | 21,559 | 3.1 |
+| Pronghorn | 1,244 | 2.7 |
+
+Grey wolf and fisher are in the same severe-collinearity class as moose;
+elk is over the conventional VIF>10 danger threshold. All three would have
+plateaued in the same way moose did, had their v2b builds gone out on the
+original 10-covariate design -- caught here before that cost any cluster
+time.
+
+**3. One uniform 9-covariate design (drop `soil_sand`) works fleet-wide --
+no need for a species-specific or narrow-range-specific reduced covariate
+set.** Max VIF after dropping `soil_sand`, across all 8 species: 4.5
+(moose, worst case), all others <=3.2. Dropping `soil_sand` ties dropping
+`soil_clay` on conditioning everywhere, and was chosen because sand is the
+largest mean fraction (most natural implicit reference level).
+`make_reduced_input_v2.R` already implements this (drop `soil_sand`, keep
+`soil_clay` + `soil_silt`) -- confirmed sufficient for the whole fleet, not
+just the three species with builds already in flight.
+
+**Caveat on the "implicit reference level" framing:** this is only
+strictly literal for the narrow-range species (moose, wolf, fisher, elk),
+where clay+silt+sand really do sum to ~1 and dropping sand means "clay and
+silt are deviations from a fixed whole." For bobcat/WTD/pronghorn/kit_fox,
+where the sum isn't constant, the retained `soil_clay`/`soil_silt`
+coefficients are just two texture-axis effects, not deviations from a
+literal 100% reference -- a minor interpretive nuance worth keeping in mind
+when discussing coefficients across species, not a statistical problem.
