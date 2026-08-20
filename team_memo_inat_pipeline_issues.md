@@ -572,3 +572,79 @@ where the sum isn't constant, the retained `soil_clay`/`soil_silt`
 coefficients are just two texture-axis effects, not deviations from a
 literal 100% reference -- a minor interpretive nuance worth keeping in mind
 when discussing coefficients across species, not a statistical problem.
+
+---
+
+## Issue 4 (found 2026-08-20): resumed chain chunks skip re-adaptation
+## burn-in, contaminating ~7% of every round's draws with a sampler-restart
+## transient
+
+**Fleet-wide, all species/models, every round boundary** -- distinct from
+Issues 1-3, this is a bug in the MCMC chunk-and-resume mechanism itself
+(`run_chain_chunk()` / `save_chain_state()` / `restore_chain_state()` in
+`HPC_<species>_<model>_chain*.R`), not the data pipeline or the covariate
+design.
+
+### What it does
+
+`save_chain_state()` persists only `Cmcmc$mvSaved` (current node values) --
+never the adaptive samplers' internal proposal-scale/covariance state.
+Every resumed chunk rebuilds `nimbleModel -> configureMCMC -> buildMCMC ->
+compileNimble` from scratch, so the new `Cmcmc`'s samplers always restart
+at their default proposal scale, regardless of what was learned in prior
+rounds. The burn-in call (`Cmcmc$run(burnin_once)`) exists only in the
+fresh-start branch; the restore branch jumps straight to
+`Cmcmc$run(chunk_iter)` with zero re-adaptation burn-in, so roughly the
+first 1,000 draws after every resume are the samplers quietly re-learning
+their proposal scale, recorded as if they were converged posterior draws.
+
+### How it was found and confirmed
+
+Investigating an apparent mode-split in `bobcat_v2b_national_scalar`'s
+first R-hat read (chain 1 alone permanently displaced) led to a block-mean
+trace of `theta0` across all three chains: a shared disturbance at block 11
+(the first 1,000 draws after the round-1->round-2 resume) in EVERY chain,
+not just chain 1 -- chains 2/3 recovered, chain 1 did not. The same
+signature (spike at every resume-point block, all chains) was confirmed on
+`bobcat_v2b_ecoregion` and `moose_v2b_national_scalar` via `overdisp_inat`
+block means -- moose shows it at both of its round boundaries, in all
+three chains, perfectly reproducibly.
+
+### Impact
+
+Point estimates are essentially unaffected -- confirmed on both moose v2b
+models, the headline trend numbers barely move once the transient draws
+are dropped. Credible intervals were inflated on one tail by roughly 30%
+(e.g. moose_v2b_national_scalar theta0: as-reported [-5.865, -3.646] ->
+cleaned [-4.497, -3.640]). R-hat is distorted in a DIRECTION-DEPENDENT way:
+a transient shared by all chains that all chains recover from deflates
+R-hat (makes convergence look BETTER than it is); a transient that
+permanently displaces one chain (bobcat_v2b_national_scalar chain 1)
+inflates it (makes convergence look WORSE than it is, and can look like a
+mode-split when it's actually a stuck sampler).
+
+### Fix (two parts)
+
+1. **Immediate, no refit needed:** regenerate the posterior CSVs dropping
+   the first ~1,000 draws of every resumed chunk. Pure re-summarization of
+   already-collected chain files -- fixes every already-run model's
+   intervals without spending any cluster time.
+2. **Going forward:** give resumed chunks their own discarded
+   re-adaptation burn-in, drafted in
+   [run_chain_chunk_fix_resume_burnin.R](run_chain_chunk_fix_resume_burnin.R).
+   **Not yet validated** -- the exact NIMBLE `reset`/`resetMV` semantics in
+   the fix need confirming against whatever NIMBLE version is loaded on
+   Hazel before fleet rollout (see the file's own validation-plan comment):
+   apply to one isolated/throwaway resumed chunk first, re-run the same
+   block-mean diagnostic that found this bug, and confirm both that the
+   transient is gone AND that the restored `mvSaved` state is genuinely
+   still being used (not silently reset to initial values). Sent to
+   Arielle for review in parallel; not blocking the isolated-chain
+   validation test.
+
+### Status
+
+Not yet applied to any file as of this addendum. `bobcat_v2b_national_scalar`
+chain 1 -- the one chain that was permanently displaced rather than
+recovering -- should be restarted once the fix is validated (still free:
+its remaining chain jobs are unstarted in the queue as of 8/20).
