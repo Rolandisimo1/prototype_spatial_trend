@@ -1,0 +1,7 @@
+"model","family","n_params","n_finite_rhat","max_rhat","mean_rhat","n_over_1.1","worst_param","params_over_1.1"
+"ecoregion","CAR_fields",2724,2724,1.03636715105565,1.00320299818326,0,"link_occ_intercept[50]",""
+"ecoregion","other",14,14,1.0274103864885,1.00609648912894,0,"intercept_tau",""
+"ecoregion","iNat",3,3,1.00863193830477,1.00478824587735,0,"theta0",""
+"ecoregion","ecoregion",9,9,1.00281866839588,1.00109575219648,0,"year_region[6]",""
+"ecoregion","trend",4,4,1.00236476572258,1.00133801738539,0,"total_var_beta",""
+"ecoregion","detection",5,5,1.00092884511689,1.00057186013819,0,"det_intercept",""

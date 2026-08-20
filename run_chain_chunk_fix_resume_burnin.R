@@ -27,23 +27,39 @@
 # which deflates R-hat and makes convergence look BETTER than it is, or
 # permanently displaced one chain, which inflates it).
 #
-# FIX: give every resumed chunk its own re-adaptation burn-in, run under
-# the SAME reset semantics used for a fresh chain's `Cmcmc$run(burnin_once)`
-# call (full re-adaptation of the samplers), but WITHOUT wiping the
-# restored mvSaved state or double-counting these draws in the recorded
-# samples matrix. NIMBLE's exact reset/resetMV default behavior differs by
-# version -- confirm the two calls below against `?runMCMC` and
-# `?buildMCMC`'s "Reset" section for whatever NIMBLE version is loaded on
-# Hazel BEFORE trusting this in the fleet-wide rollout. The intent is:
+# NIMBLE SEMANTICS -- VERIFIED EMPIRICALLY, NOT ASSUMED.
+# Probed on the Hazel build (NIMBLE 1.4.2, R 4.5.3) in jobs 603848/603879.
+# run()'s formals are:
+#   niter, reset, resetMV, time, progressBar, nburnin, thin, thin2,
+#   resetWAIC, initializeModel, chain
+# Findings that determine the correct calls:
+#   * reset = TRUE WIPES every adaptive sampler's proposal scale back to its
+#     default (measured: scale 1 -> 0.156961 after run(3000) -> back to 1
+#     after a subsequent run(reset = TRUE)). reset = FALSE preserves it.
+#   * reset = TRUE does NOT re-initialize model values; it resets sampler
+#     adaptation and clears the sample buffer only.
+#   * reset = TRUE clears mvSamples regardless of resetMV. resetMV is only
+#     honoured when reset = FALSE.
+#   * Assigning Cmcmc$mvSaved from a checkpoint DOES carry the chain over --
+#     a fresh build inited at mu = 0 resumed at the donor's mu = 50. The
+#     checkpoint/restore mechanism itself is sound.
+#   * nburnin CANNOT be combined with reset = FALSE -- NIMBLE raises
+#     "cannot specify nburnin when using reset = FALSE", so the tempting
+#     single-call form run(b + n, reset = FALSE, nburnin = b) is illegal.
 #
+# CORRECTION TO THE FIRST DRAFT OF THIS FILE: it left `reset` at its TRUE
+# default on the chunk call. Given the first finding above, that call would
+# have thrown away exactly the adaptation the new resume burn-in buys, and
+# reproduced the transient unchanged -- the fix would have silently done
+# nothing. `reset = FALSE` on BOTH calls is the load-bearing part.
+#
+# FIX: give every resumed chunk its own re-adaptation burn-in, then run the
+# recorded chunk WITHOUT resetting adaptation:
 #   1. After restore_chain_state() sets Cmcmc$mvSaved from the checkpoint,
-#      run burnin_once iterations that DO adapt the samplers but are
-#      DISCARDED (never appended to the samples matrix returned to the
-#      caller) -- do NOT reset the model to its initial values (must keep
-#      the restored state), and do NOT clear the mvSamples history if that
-#      history is being relied on elsewhere.
-#   2. Only THEN run chunk_iter iterations and record those as the "real"
-#      chunk, exactly as the fresh-start branch already does.
+#      run resume_burnin iterations with reset = FALSE (keep the restored
+#      state, let the samplers adapt) and resetMV = TRUE (discard the draws).
+#   2. Then run chunk_iter with reset = FALSE (PRESERVE that adaptation) and
+#      resetMV = TRUE (so exactly chunk_iter draws are recorded).
 #
 # VALIDATION PLAN (per 2026-08-20 decision -- do this before fleet rollout):
 #   Apply this fix to ONE resumed chunk on an isolated/throwaway chain file
@@ -120,16 +136,14 @@ run_chain_chunk <- function(chain_id,
     cat("Re-adaptation burn-in for resumed chunk (", resume_burnin,
         "iterations, discarded)...\n")
     Cmcmc$run(resume_burnin, reset = FALSE, resetMV = TRUE)
-    # reset = FALSE  -> do NOT reinitialize model to initial values; keep
-    #                   the restored mvSaved state as the starting point.
-    # resetMV = TRUE -> DO clear mvSamples before this call, so these
-    #                   resume_burnin draws are never mixed into
-    #                   Cmcmc$mvSamples and never reach `new_samples` below.
-    # CONFIRM: does reset=FALSE on THIS nimble version still allow the
-    # adaptive samplers to re-adapt (i.e. adaptation is a property of the
-    # sampler objects added fresh at buildMCMC() time this call, not of
-    # `reset`), or does reset=FALSE also freeze adaptation? If the latter,
-    # this call does nothing useful and needs a different argument.
+    # reset = FALSE  -> keep the restored mvSaved state as the starting point,
+    #                   and let the samplers adapt (adaptation is NOT frozen by
+    #                   reset = FALSE -- verified: scale kept its adapted value
+    #                   0.156961 across a reset = FALSE call, and was reset to
+    #                   the default 1 by a reset = TRUE one).
+    # resetMV = TRUE -> clear mvSamples, so these resume_burnin draws never
+    #                   reach `new_samples` below. Honoured because reset is
+    #                   FALSE; with reset = TRUE it would be ignored.
 
   } else {
 
@@ -144,15 +158,20 @@ run_chain_chunk <- function(chain_id,
     iter_total     <- 0
   }
 
-  # Run next chunk -- resetMV = FALSE so this appends to (rather than wipes)
-  # whatever mvSamples state exists after the branch above.
+  # Run the recorded chunk. Applies to BOTH branches: the fresh-start branch
+  # has the same defect in the original code -- its Cmcmc$run(chunk_iter) with
+  # reset = TRUE discards the adaptation that Cmcmc$run(burnin_once) just
+  # bought, so round 1 also begins at the default proposal scale.
   cat("Running", chunk_iter, "iterations...\n")
 
-  Cmcmc$run(chunk_iter, resetMV = (file.exists(chain_file)))
-  # For a resumed chunk, mvSamples was just cleared by the burn-in call
-  # above (resetMV = TRUE there), so this call should NOT also clear it --
-  # CONFIRM this combination actually yields "only chunk_iter draws in
-  # mvSamples after this call" empirically, per the validation plan above.
+  Cmcmc$run(chunk_iter, reset = FALSE, resetMV = TRUE)
+  # reset = FALSE is the whole point: it PRESERVES the proposal scales adapted
+  # by the branch above (resume_burnin on a resume, burnin_once on a fresh
+  # start). Leaving reset at its TRUE default -- as the first draft did -- would
+  # wipe them back to the build-time defaults and reproduce the transient.
+  # resetMV = TRUE clears the buffer so exactly chunk_iter draws are recorded;
+  # verified row counts: run(100); run(50, reset=FALSE) -> 150 (appends), then
+  # run(30, reset=FALSE, resetMV=TRUE) -> 30 (clears, then records).
 
   new_samples <- as.matrix(Cmcmc$mvSamples)
 
