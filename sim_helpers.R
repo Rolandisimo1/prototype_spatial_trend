@@ -394,9 +394,35 @@ fit_replicate <- function(model_code, constants, inat_effort, sim_data, base_ini
   fit_inits <- base_inits
   fit_inits[names(trend_inits)] <- trend_inits
 
+  # Data list is built from whatever camera-observation field sim_data
+  # actually carries, not hardcoded to 'y'. The camera-level models (baseline,
+  # national scalar) supply sim_data$y; the array-level arms (array_occ,
+  # array_rn) supply sim_data$w instead (see aggregate_to_array() /
+  # build_array_constants() in sim_helpers_array.R) and have NO 'y' node at
+  # all. Hardcoding data=list(y=sim_data$y, ...) here silently dropped 'w' --
+  # nimbleModel() does not error on an unused data-list entry ('y' is
+  # provided in data but is not a variable in the model and is being
+  # ignored"), so the array models would have sampled w from its OWN PRIOR
+  # instead of conditioning on the simulated detections. Caught via local
+  # compile testing before any array_occ/array_rn fit was attempted.
+  cam_data <- list()
+  if (!is.null(sim_data$y)) cam_data$y <- sim_data$y
+  if (!is.null(sim_data$w)) cam_data$w <- sim_data$w
+  if (length(cam_data) == 0) {
+    stop("fit_replicate(): sim_data has neither $y nor $w -- no camera ",
+         "observation data to condition on.")
+  }
+
+  # N_a is array_rn's latent discrete abundance node. It has no default
+  # nimble auto-init that respects the observed detections, so an explicit
+  # starting value (>= observed detecting-camera count per array, per the
+  # N_a_init the 01i driver already computes) is required for the RN arm to
+  # initialize in a non-zero-probability region.
+  if (!is.null(sim_data$N_a_init)) fit_inits$N_a <- sim_data$N_a_init
+
   fit_model <- nimbleModel(
     model_code, constants = constants,
-    data = list(y = sim_data$y, y_inat = sim_data$y_inat, inat_effort = inat_effort),
+    data = c(cam_data, list(y_inat = sim_data$y_inat, inat_effort = inat_effort)),
     inits = fit_inits,
     calculate = FALSE)
 
