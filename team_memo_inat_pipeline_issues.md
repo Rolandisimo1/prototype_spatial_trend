@@ -585,6 +585,43 @@ Issues 1-3, this is a bug in the MCMC chunk-and-resume mechanism itself
 `HPC_<species>_<model>_chain*.R`), not the data pipeline or the covariate
 design.
 
+> ### CORRECTION (2026-08-21): this issue is materially worse than described below
+>
+> As originally written, Issue 4 says the resume mechanism carries the chain's
+> node VALUES across a boundary and loses only the samplers' ADAPTATION. **That
+> is wrong. Neither is carried across.** At every resume boundary the chain
+> restarts from the model's initial values.
+>
+> The claim that the restore worked came from a probe that read its verdict off
+> a **conjugate-sampled node** (`mu` in a toy model). A conjugate sampler draws
+> from its full conditional and lands at the posterior in one step *from any
+> starting value*, so the probe could not distinguish "state restored" from
+> "state reset to init, then immediately jumped" -- the two hypotheses predict
+> identical output. It was never evidence for restoration.
+>
+> Measured on the real production chains instead: `theta0` snaps to exactly
+> -5, `theta1` to 1, `overdisp_inat` to 0.1, `year_var` to 0 at each boundary
+> and holds while samplers reject. Audited across 164 `chain_*.RDS` in 58 fit
+> dirs (`resume_boundary_audit.csv`): **1,132 of 1,234 boundaries automatically
+> confirmed restarting from inits**; the other 102 are indeterminate only
+> because no inits file could be loaded for them, and their post-boundary
+> values sit exactly on those same init constants. **Zero boundaries were
+> confirmed clean.**
+>
+> Likely mechanism (leading hypothesis, not proven): `Cmcmc$mvSaved` is a
+> compiled `CmodelValues` behind an external pointer; `saveRDS` writes only the
+> R-level shell, the pointer is dead on read-back, and the assignment silently
+> no-ops.
+>
+> **What this invalidates:** Fix part 2 below (the resume burn-in, drafted in
+> `run_chain_chunk_fix_resume_burnin.R`) addresses only the lost adaptation. It
+> cannot recover the lost position, and by suppressing the visible transient it
+> would *hide* the defect while every round still restarts from inits. It is
+> not a fix. Fix part 1 (dropping transient draws at extraction) remains valid
+> as far as it goes, but it is mitigation of a symptom, not a repair.
+>
+> Read the rest of this section with that correction applied.
+
 ### What it does
 
 `save_chain_state()` persists only `Cmcmc$mvSaved` (current node values) --

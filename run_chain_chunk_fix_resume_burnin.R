@@ -40,9 +40,44 @@
 #     adaptation and clears the sample buffer only.
 #   * reset = TRUE clears mvSamples regardless of resetMV. resetMV is only
 #     honoured when reset = FALSE.
-#   * Assigning Cmcmc$mvSaved from a checkpoint DOES carry the chain over --
-#     a fresh build inited at mu = 0 resumed at the donor's mu = 50. The
-#     checkpoint/restore mechanism itself is sound.
+#   * RETRACTED 2026-08-21 -- this bullet previously read "Assigning
+#     Cmcmc$mvSaved from a checkpoint DOES carry the chain over -- a fresh
+#     build inited at mu = 0 resumed at the donor's mu = 50. The
+#     checkpoint/restore mechanism itself is sound." THAT CLAIM IS FALSE and
+#     it was load-bearing for this entire file.
+#
+#     Why the probe was invalid: it read its verdict off `mu`, which in that
+#     toy model has a CONJUGATE sampler. A conjugate sampler draws from its
+#     full conditional and lands at ~50 in ONE step FROM ANY STARTING VALUE.
+#     The test therefore could not distinguish "state was restored" from
+#     "state was reset to the init and the sampler immediately jumped to the
+#     posterior" -- the two hypotheses predict identical output. It was never
+#     evidence for restoration. Re-running the probe on an RW-sampled node
+#     (sigma) was inconclusive, and reading the deserialized object directly
+#     throws "Sextptr is not a valid external pointer".
+#
+#     What is actually true, measured on the REAL production chains: at every
+#     resume boundary the chain snaps back EXACTLY to the model's initial
+#     values (theta0 -> -5, theta1 -> 1, overdisp_inat -> 0.1, year_var -> 0)
+#     and holds there for several draws while samplers reject. Audited across
+#     164 chain_*.RDS in 58 fit dirs (see resume_boundary_audit.csv):
+#     1,132 of 1,234 resume boundaries are AUTOMATICALLY CONFIRMED to restart
+#     from inits; the remaining 102 are indeterminate only because the audit
+#     could not load an inits file for them (note = no_inits_available), and
+#     their post-boundary values sit exactly on those same hardcoded init
+#     constants. ZERO boundaries were confirmed to be clean resumes.
+#
+#     Likely mechanism (leading hypothesis, NOT proven): Cmcmc$mvSaved is a
+#     compiled CmodelValues whose data lives behind an external pointer;
+#     saveRDS writes only the R-level shell, the pointer is dead on read-back,
+#     and the assignment silently no-ops.
+#
+#     CONSEQUENCE FOR THIS FILE: the fix drafted below addresses only the lost
+#     sampler ADAPTATION. It does not address, and cannot address, the lost
+#     chain POSITION. A discarded re-adaptation burn-in suppresses the visible
+#     transient while the chain is still restarting from the inits every
+#     round, which is arguably worse than the untreated symptom because it
+#     hides the defect. Do not treat this file as a fix for chunked resume.
 #   * nburnin CANNOT be combined with reset = FALSE -- NIMBLE raises
 #     "cannot specify nburnin when using reset = FALSE", so the tempting
 #     single-call form run(b + n, reset = FALSE, nburnin = b) is illegal.
