@@ -1,0 +1,5 @@
+radius_km,units,singleton_units,informative_units,cams_retained,pct_cams_retained,trapnights_retained,pct_tn_retained,units_le13wk,cams_le13wk,pct_cams_le13wk
+2.5,6076,1739,4337,25009,93.5,902154,93.6,3788,21140,79.0
+5.0,4002,813,3189,25935,97.0,937283,97.3,2633,20901,78.1
+10.0,2775,389,2386,26359,98.5,951456,98.8,1848,20286,75.8
+25.0,1978,155,1823,26593,99.4,957722,99.4,1356,19675,73.6

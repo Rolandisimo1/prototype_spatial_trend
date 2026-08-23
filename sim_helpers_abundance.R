@@ -73,6 +73,51 @@ abundance_levels_default <- function() {
   )
 }
 
+#' @name abundance_levels_measured
+#' @description Abundance ladder anchored on MEASURED per-window independent
+#'   detection counts from the raw camera data, replacing the placeholder
+#'   multipliers in abundance_levels_default(). Prefer this for the estimator
+#'   sweep: the estimators are expected to diverge along the abundance axis, so
+#'   the axis should be real rather than notional.
+#' @return data.frame(level, occ_shift, count_log_mult, target_mean_count).
+#' @details Measured from combined_sequences_all.csv after (a) collapsing
+#'   age/sex class rows to one row per (deployment, sequence, species),
+#'   (b) a 30-minute independence filter, (c) effort bounds (0, 365] nights.
+#'   Mean independent detections per occupied 10-day window:
+#'
+#'     bobcat              1.555   (n = 6,079 occupied windows, 28.3% > 1)
+#'     moose               1.757   (n =   609 occupied windows, 34.3% > 1)
+#'     white-tailed deer   6.405   (n = 60,125 occupied windows, 78.6% > 1)
+#'
+#'   Note bobcat and moose are nearly identical on this axis (1.56 vs 1.76) --
+#'   moose is data-POOR, not low-abundance-per-window, which is why moose
+#'   cannot stand in for the low rung and bobcat anchors it.
+#'
+#'   The intermediate rung is the GEOMETRIC mean of the two anchors (3.156),
+#'   i.e. equal log-spacing, which is the right spacing because the count
+#'   enters the linear predictor on the log scale.
+#'
+#'   Multipliers relative to the bobcat baseline: 1.00x / 2.03x / 4.12x.
+#'   These are smaller than the placeholder 1x/3x/8x because they are measured
+#'   rather than assumed -- the real abundance range between a widespread-rare
+#'   carnivore and the most abundant ungulate is ~4x in per-window detection
+#'   rate, not ~8x. Using the placeholder would have overstated the gradient
+#'   the estimators are being compared across.
+#'
+#'   Source: rn_count_calibration.csv, and the derivation in
+#'   raw_data_verification.md.
+abundance_levels_measured <- function() {
+  lo <- 1.555; hi <- 6.405
+  mid <- sqrt(lo * hi)          # 3.156, equal log-spacing
+  data.frame(
+    level             = c("bobcat_like", "intermediate", "deer_like"),
+    occ_shift         = c(0.0, 0.75, 1.5),
+    count_log_mult    = c(0.0, log(mid / lo), log(hi / lo)),
+    target_mean_count = c(lo, mid, hi),
+    stringsAsFactors  = FALSE
+  )
+}
+
 #' @name summarize_simulated_information
 #' @description Diagnostic: given a simulated replicate's data, report the raw
 #'   information content actually generated -- so we can VERIFY the abundance
