@@ -171,6 +171,31 @@ run_estimator_replicate <- function(cfg) {
   # must be used everywhere a full-size inputs$inat_effort was previously
   # passed -- the two have different row counts and passing the wrong one
   # would be a dimension mismatch against the reduced design.
+  # Site reduction: sample WHOLE array-year units, not independent sites.
+  # Independent-site sampling (build_reduced_constants()'s own default)
+  # scatters cameras across array-year units and leaves almost none of them
+  # intact -- confirmed on the real bobcat structure: n_site_keep=700 turns
+  # 3,327 real array-years (median 4 cameras, mean 6.17) into 107 surviving
+  # array-years at a degenerate median 2 / mean 2.36, using only 253 of the
+  # 700 sampled sites. That would validate the array arms against arrays
+  # that don't look like real arrays. sample_sites_by_array() (in
+  # sim_helpers_array.R) instead selects complete array-year units up to
+  # the same ~700-camera budget, so build_reduced_constants() is called
+  # with a fixed site_keep_override rather than its own random sampling.
+  # This changes camera_occ's retained-site SET (compared to the previous
+  # buggy behavior) but not its estimator logic -- camera_occ fits whatever
+  # sites are retained either way, so the comparison across arms stays
+  # apples-to-apples for THIS driver's own design.
+  array_sample <- sample_sites_by_array(
+    array_field = inputs$site_array,
+    site_year   = inputs$constants_list$year_occ,
+    region_vec  = inputs$cell100_geo$region[match(inputs$constants_list$cell,
+                                                  inputs$cell100_geo$cell100)],
+    n_site_target = 700, drop_singletons = TRUE, seed = DESIGN_SEED
+  )
+  cat(sprintf("[site sampling] %d arrays kept, %d cameras kept\n",
+              array_sample$n_arrays_kept, array_sample$n_sites_kept))
+
   reduced      <- build_reduced_constants(
     # FIELD NAMES -- prepped_sim_inputs.RDS carries constants_list /
     # inat_effort_real / real_y_template. inputs$cl, inputs$inat_effort and
@@ -179,7 +204,8 @@ run_estimator_replicate <- function(cfg) {
     # against 01e_run_abundance_sweep.R:93-94, which uses the same three.
     cl = inputs$constants_list, inat_effort_real = inputs$inat_effort_real,
     real_y_template = inputs$real_y_template, cell100_geo = inputs$cell100_geo,
-    seed = DESIGN_SEED
+    seed = DESIGN_SEED,
+    site_keep_override = array_sample$site_keep
   )
   constants    <- reduced$constants
   inat_effort  <- reduced$inat_effort
@@ -194,9 +220,16 @@ run_estimator_replicate <- function(cfg) {
   truth <- true_param_list(inputs$real_post_means, year_effect_true)
   truth <- scale_truth_abundance(truth, label = cfg$abundance)
 
+  # inputs$y_template does not exist (see the field-name fix above -- the
+  # real field is inputs$real_y_template); build_reduced_constants() already
+  # computes y_ncol correctly from it (reduced$y_ncol = ncol(real_y_template))
+  # and returns it in the wrapper, so use that directly rather than
+  # re-deriving it from a nonexistent field (which would silently produce
+  # ncol(NULL) = NULL and fail deep inside simulate_replicate_data()'s
+  # dimensions= argument).
   sim <- simulate_replicate_data(model_code_national_scalar, constants,
                                  inat_effort,
-                                 y_ncol = ncol(inputs$y_template), truth)
+                                 y_ncol = reduced$y_ncol, truth)
 
   if (cfg$estimator == "camera_occ") {
     fit_constants <- constants

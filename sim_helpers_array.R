@@ -117,13 +117,123 @@ assign_arrays_spatial <- function(x, y, site_year, radius_km = 15,
 assign_arrays_from_field <- function(array_field, site_year,
                                      drop_singletons = FALSE) {
   stopifnot(length(array_field) == length(site_year))
+  # Sites with array_field == NA have no real array membership -- as.character(NA)
+  # paste()s to the literal string "NA", so every NA-array-field site sharing a
+  # year would otherwise be pooled into one FAKE shared array together (e.g. two
+  # sites that simply weren't assigned an array label, in the same year, are
+  # unrelated -- pooling them invents replication that isn't real). Confirmed
+  # this affects a small but real fraction of real sites (~0.12%, ~29 rows).
+  # Excluded here (returned as NA, same convention the caller already uses for
+  # dropped singletons) rather than silently fabricating an array for them.
+  na_mask <- is.na(array_field)
   key <- paste(as.character(array_field), site_year, sep = "__")
   ids <- as.integer(factor(key))
+  ids[na_mask] <- NA_integer_
   if (drop_singletons) {
     tab <- table(ids)
     ids[ids %in% as.integer(names(tab)[tab == 1])] <- NA_integer_
   }
   ids
+}
+
+#' @name sample_sites_by_array
+#' @description Site-reduction alternative to build_reduced_constants()'s
+#'   independent per-site sampling, for use when the pilot needs to test the
+#'   array arms against a REALISTIC array-size distribution rather than a
+#'   sampling-artifact one.
+#'
+#'   PROBLEM THIS SOLVES. build_reduced_constants() samples n_site_keep SITES
+#'   independently at random, then array construction happens downstream on
+#'   whatever sites survive. Independent site sampling scatters cameras
+#'   across array-year units near-uniformly, so (a) very few real arrays
+#'   survive with more than 1-2 of their cameras retained, and (b)
+#'   drop_singletons then discards most of what independent sampling did
+#'   keep. Confirmed on the real bobcat structure (Hazel diagnostic, this
+#'   session): n_site_keep=700 turns 3,327 real array-years (median 4
+#'   cameras/array, mean 6.17) into just 107 surviving array-years at a
+#'   degenerate median 2 / mean 2.36 cameras/array, using only 253 of the
+#'   700 sampled sites (the other 447 became now-dropped singletons). The
+#'   array arms would be validated against arrays that don't look like real
+#'   arrays -- not a fair test of what array aggregation does to power.
+#'
+#'   FIX. Sample whole ARRAYS (stratified by region, same convention as
+#'   build_reduced_constants()), not sites, then keep every camera in each
+#'   selected array. This preserves the real per-array camera-count
+#'   distribution among the sites that ARE retained, at the cost of turning
+#'   n_site_keep into a target rather than an exact count (final camera
+#'   count is whatever the selected arrays happen to sum to).
+#'
+#'   SCOPE. This is a NEW, additive sampling path -- it does not alter
+#'   build_reduced_constants()'s own random-site behavior (still used
+#'   as-is by 01_run_sim_validation.R, the abundance/grain sweeps, etc.).
+#'   Call this FIRST to get site_keep, then pass that site_keep into
+#'   build_reduced_constants() by way of whatever mechanism the caller
+#'   uses for a fixed (non-random) site selection -- see
+#'   01i_run_estimator_sweep.R for the integration.
+#' @param array_field Character/factor array-membership label per site
+#'   (inputs$site_array, real subproject_name-derived field), length nsite,
+#'   in real-site order (BEFORE any reduction).
+#' @param site_year Numeric year index per site, same order/length.
+#' @param region_vec Region/stratify_by label per site, same order/length.
+#' @param n_site_target Approximate total camera count desired; array
+#'   selection stops once the cumulative camera count reaches this target
+#'   (may overshoot by up to one array's size).
+#' @param region_levels Character vector of region levels to stratify over,
+#'   in a FIXED order (matching build_reduced_constants()'s own
+#'   reproducibility requirement -- do not pass unique(region_vec), whose
+#'   order is data-dependent).
+#' @param drop_singletons Logical; passed through to
+#'   assign_arrays_from_field() -- singleton array-years are never eligible
+#'   for selection regardless, since they carry no within-array replication.
+#' @param seed RNG seed.
+#' @return List: site_keep (integer index into the ORIGINAL site vectors,
+#'   sorted), array_id_kept (array-year id per retained site, aligned to
+#'   site_keep), n_arrays_kept, n_sites_kept.
+sample_sites_by_array <- function(array_field, site_year, region_vec,
+                                  n_site_target = 700,
+                                  region_levels = c("NE", "West", "other"),
+                                  drop_singletons = TRUE, seed = 20260712) {
+  set.seed(seed)
+  stopifnot(length(array_field) == length(site_year),
+            length(array_field) == length(region_vec))
+
+  array_id_full <- assign_arrays_from_field(array_field, site_year,
+                                            drop_singletons = drop_singletons)
+  eligible <- !is.na(array_id_full)
+  if (!any(eligible)) {
+    stop("sample_sites_by_array(): no eligible (non-singleton, non-NA) ",
+         "array-years to sample from.")
+  }
+
+  # one row per array-year: its region (majority vote among member sites,
+  # ties broken by first-occurrence -- arrays are constructed to be small
+  # and spatially compact so a region split within one array is rare) and
+  # its camera count.
+  arr_ids <- unique(array_id_full[eligible])
+  arr_region <- vapply(arr_ids, function(a) {
+    r <- region_vec[eligible][array_id_full[eligible] == a]
+    names(sort(table(r), decreasing = TRUE))[1]
+  }, character(1))
+  arr_size <- vapply(arr_ids, function(a) sum(array_id_full == a, na.rm = TRUE),
+                     integer(1))
+
+  n_per_region <- ceiling(n_site_target / length(region_levels))
+  selected_arrays <- integer(0)
+  for (r in region_levels) {
+    pool <- arr_ids[arr_region == r]
+    pool <- sample(pool)  # random order within region
+    pool_size <- arr_size[match(pool, arr_ids)]
+    cum <- cumsum(pool_size)
+    n_take <- if (any(cum >= n_per_region)) which(cum >= n_per_region)[1]
+              else length(pool)
+    selected_arrays <- c(selected_arrays, pool[seq_len(n_take)])
+  }
+
+  site_keep <- sort(which(array_id_full %in% selected_arrays))
+  list(site_keep = site_keep,
+       array_id_kept = array_id_full[site_keep],
+       n_arrays_kept = length(selected_arrays),
+       n_sites_kept = length(site_keep))
 }
 
 #' @name aggregate_to_array

@@ -107,6 +107,17 @@ make_true_year_effect <- function(cell100_geo, adj, num, amplitude = 0.3) {
 #'   duplication. Purely cosmetic/optional (see file header note in
 #'   01g_run_effort_sweep.R) -- avoids literal duplicate covariate rows in
 #'   the design without changing anything about model validity.
+#' @param site_keep_override Optional pre-computed site index (integer,
+#'   into 1:cl$nsite) to use INSTEAD of this function's own independent
+#'   stratified random sampling -- e.g. from sample_sites_by_array() in
+#'   sim_helpers_array.R, which selects whole array-year units so retained
+#'   arrays keep a realistic camera-count distribution (see that function's
+#'   docstring for why independent per-site sampling defeats the purpose of
+#'   the array-estimator sweep). NULL (default) preserves exact prior
+#'   behavior -- n_site_keep/site_replace/seed still control sampling as
+#'   before. When supplied, n_site_keep and site_replace are ignored for
+#'   site selection (seed still applies to cell50 sampling and any
+#'   downstream jitter).
 #' @return List with `constants` (nimble constants_list for the reduced
 #'   design) and `inat_effort` (reduced-rows effort matrix, passed as data).
 build_reduced_constants <- function(cl, inat_effort_real, real_y_template, cell100_geo,
@@ -114,7 +125,8 @@ build_reduced_constants <- function(cl, inat_effort_real, real_y_template, cell1
                                     n_site_keep = 700, seed = 20260712,
                                     stratify_by = "region",
                                     ecoregion_of_cell100_full = NULL, nregion = NULL,
-                                    site_replace = FALSE, site_jitter_sd = 0) {
+                                    site_replace = FALSE, site_jitter_sd = 0,
+                                    site_keep_override = NULL) {
   set.seed(seed)
 
   region_vec <- cell100_geo[[stratify_by]]
@@ -144,8 +156,17 @@ build_reduced_constants <- function(cl, inat_effort_real, real_y_template, cell1
   }
 
   cell50_keep <- stratified_sample(seq_len(cl$ncell50), cell50_region, n_cell50_keep)
-  site_keep   <- stratified_sample(seq_len(cl$nsite),   site_region,   n_site_keep,
-                                   replace = site_replace)
+  # site_keep_override lets a caller supply a PRE-COMPUTED site index (e.g.
+  # from sample_sites_by_array() in sim_helpers_array.R, which selects whole
+  # array-year units rather than independent sites) instead of this
+  # function's own independent-per-site random sampling. NULL (default)
+  # preserves exact prior behavior for every existing caller.
+  site_keep <- if (!is.null(site_keep_override)) {
+    sort(unique(site_keep_override))
+  } else {
+    stratified_sample(seq_len(cl$nsite), site_region, n_site_keep,
+                      replace = site_replace)
+  }
   n_new_cell50 <- length(cell50_keep)
   n_new_site   <- length(site_keep)
 
