@@ -81,6 +81,15 @@ args   <- commandArgs(trailingOnly = TRUE)
 row_id <- if (length(args) >= 1) as.integer(args[1]) else 1L
 
 BASE <- Sys.getenv("SIM_BASE", ".")
+# calcIntensity_SVC() / calcIntensity_noSVC() are nimbleFunctions defined in
+# integration_helper.R, NOT in any sim_helpers file. Every model_code here --
+# all three arms share the byte-identical iNat intensity block -- calls
+# calcIntensity_SVC, so without this source() nimbleModel() fails at "Defining
+# model" with "R function 'calcIntensity_SVC' ... does not exist" for ALL
+# THREE arms. 01e_run_abundance_sweep.R:50 sources the same file from the same
+# per-species location; this driver simply omitted it.
+PROJ_ROOT <- normalizePath(file.path(BASE, ".."), mustWork = FALSE)
+source(file.path(PROJ_ROOT, "HPC", "bobcat", "integration_helper.R"))
 source(file.path(BASE, "sim_helpers.R"))
 source(file.path(BASE, "sim_helpers_abundance.R"))
 source(file.path(BASE, "sim_helpers_array.R"))
@@ -142,7 +151,12 @@ if (file.exists(outfile)) {
 #' @param cfg One row of design_df.
 #' @return A one-row data.frame of metrics, or an "Errored" row.
 run_estimator_replicate <- function(cfg) {
-  inputs <- readRDS(file.path(BASE, "sim_inputs.RDS"))
+  # FILE NAME -- the prep step writes "prepped_sim_inputs.RDS" (00_prep_sim_inputs.R:105)
+  # and every working driver in this project reads that name (01e_run_abundance_sweep.R:56,
+  # 01_run_sim_validation.R:71). "sim_inputs.RDS" does not exist on Hazel, so every
+  # task died here before running. The _with_array variant is that same object plus
+  # inputs$site_array (the 5 km array-year label per camera).
+  inputs <- readRDS(file.path(BASE, "prepped_sim_inputs_with_array.RDS"))
 
   # build_reduced_constants() returns a WRAPPER list --
   # list(constants=, inat_effort=, y_ncol=, cell50_keep=, site_keep=) -- not
@@ -158,8 +172,13 @@ run_estimator_replicate <- function(cfg) {
   # passed -- the two have different row counts and passing the wrong one
   # would be a dimension mismatch against the reduced design.
   reduced      <- build_reduced_constants(
-    cl = inputs$cl, inat_effort_real = inputs$inat_effort,
-    real_y_template = inputs$y_template, cell100_geo = inputs$cell100_geo,
+    # FIELD NAMES -- prepped_sim_inputs.RDS carries constants_list /
+    # inat_effort_real / real_y_template. inputs$cl, inputs$inat_effort and
+    # inputs$y_template are all NULL, which build_reduced_constants() would
+    # have received silently. Names verified against the RDS itself and
+    # against 01e_run_abundance_sweep.R:93-94, which uses the same three.
+    cl = inputs$constants_list, inat_effort_real = inputs$inat_effort_real,
+    real_y_template = inputs$real_y_template, cell100_geo = inputs$cell100_geo,
     seed = DESIGN_SEED
   )
   constants    <- reduced$constants
