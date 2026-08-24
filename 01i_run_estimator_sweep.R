@@ -278,12 +278,30 @@ run_estimator_replicate <- function(cfg) {
   # trend_inits/extra_monitors are for the CAR ecoregion model and reference
   # nodes these three models do not have; passing them unmodified makes
   # configureMCMC()$addMonitors() error with "These variables are not in
-  # model: year_effect,tau_year" for every arm. Override to match what
-  # sim_helpers.R's own docstring recommends for the national-scalar model.
+  # model: year_effect,tau_year" for every arm.
+  #
+  # sigma_year_beta / sigma_year_var ARE stochastic nodes in all three model
+  # files (~ dunif(0,2)) but were MISSING from this trend_inits entirely --
+  # inputs$base_inits (14 entries from the real fit) has no such fields, so
+  # year_beta ~ dnorm(0, sd = sigma_year_beta) had an undefined (NA) scale at
+  # construction, giving every trend node an NA logProb at init (confirmed
+  # via Hazel diagnostic, job 637999). For camera_occ and array_rn, NIMBLE's
+  # default init-from-prior at run() apparently resolved this on its own --
+  # but for array_occ it did not, and year_beta was frozen at its literal
+  # init value (0) for the ENTIRE chain: every RW proposal compared against
+  # a non-finite logProb somewhere in array_occ's likelihood and was
+  # rejected, which is indistinguishable from "no sampler" by the trace
+  # alone. This is a real initialization gap regardless of which arms it
+  # happened to mask -- 01e_run_abundance_sweep.R's working ecoregion sweep
+  # already sets its own analogous hyperparameter explicitly
+  # (`sigma_region = 1`) rather than relying on prior-simulation; do the
+  # same here rather than leave an NA-at-construction gap for two arms that
+  # happened not to visibly break.
   samples <- fit_replicate(model_code, fit_constants, inat_effort,
                            fit_data, base_inits = inputs$base_inits,
                            n_burnin = N_BURNIN, n_iter = N_ITER,
-                           trend_inits = list(year_beta = 0, year_var = 0),
+                           trend_inits = list(year_beta = 0, year_var = 0,
+                                             sigma_year_beta = 1, sigma_year_var = 1),
                            extra_monitors = character(0))
   elapsed <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
 
