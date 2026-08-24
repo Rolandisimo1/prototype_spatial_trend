@@ -342,10 +342,27 @@ true_param_list_ecoregion <- function(real_post_means, year_region_true) {
 #' @param truth Named list from true_param_list().
 #' @return List with simulated y (nsite x y_ncol) and y_inat (ncell50 x nyear).
 simulate_replicate_data <- function(model_code, constants, inat_effort, y_ncol, truth) {
+  # y[i, 1:J[i]] ~ dOcc_v(...) is a RAGGED vectorized declaration -- J[i]
+  # varies by site, and when the real data includes a J[i]==1 site, NIMBLE's
+  # automatic node-dimension inference can disagree with the fixed
+  # nsite x y_ncol shape the model actually needs (a documented NIMBLE
+  # gotcha for vectorized declarations with a variable upper bound; see the
+  # NIMBLE user manual section on specifying `dimensions`). y_ncol was
+  # accepted as a parameter and documented ("Number of occasion columns for
+  # the camera y array") but never actually passed to nimbleModel() -- this
+  # is almost certainly the cause of the "Dimension of 'y[i, 1:J[i]]' does
+  # not match required dimension for the distribution 'dOcc_v'. Necessary
+  # dimension is 1" compile error hit on Hazel for ALL THREE arms (this
+  # node is shared/byte-identical across estimators). Passing it explicitly
+  # pins y's shape regardless of any individual J[i] value.
+  # NOT YET VERIFIED: dyn.load()/compileNimble() is blocked in this sandbox,
+  # so this fix is untested past nimbleModel() construction -- confirm on
+  # Hazel before trusting it.
   truth_model <- nimbleModel(
     model_code, constants = constants,
     data = list(inat_effort = inat_effort),
-    inits = truth, calculate = FALSE)
+    inits = truth, calculate = FALSE,
+    dimensions = list(y = c(constants$nsite, y_ncol)))
   truth_model$calculate()
   simulate(truth_model, nodes = c("y_inat", "y"), includeData = TRUE)
   list(y = truth_model$y, y_inat = truth_model$y_inat)
@@ -420,10 +437,31 @@ fit_replicate <- function(model_code, constants, inat_effort, sim_data, base_ini
   # initialize in a non-zero-probability region.
   if (!is.null(sim_data$N_a_init)) fit_inits$N_a <- sim_data$N_a_init
 
+  # y[i, 1:J[i]] ~ dOcc_v(...) (camera arms) and w[a, 1:n_a[a]] ~ dOcc_v(...)
+  # (array_occ) are RAGGED vectorized declarations -- whenever some J[i] (or
+  # n_a[a]) equals 1, "1:1" collapses to a scalar rather than a length-1
+  # vector, and dOcc_v (a vector-valued distribution) rejects a scalar with
+  # "Dimension of '...' does not match required dimension ... Necessary
+  # dimension is 1" -- a compile-time-only failure (nimbleModel() build
+  # succeeds; compileNimble() fails). This is the SAME mechanics as the
+  # array-singleton (n_a[a]==1) bug already fixed by dropping singleton
+  # arrays upstream -- but J[i]==1 camera sites are real, retained data, not
+  # a droppable degenerate case, so this fixes it the general way: pin the
+  # node's dimensions explicitly to the actual supplied matrix's shape
+  # (which is already the correct fixed nsite/narray x max-occasions shape
+  # regardless of any individual row's real length) so NIMBLE's inference
+  # never collapses it.
+  # NOT YET VERIFIED: dyn.load()/compileNimble() is blocked in this sandbox;
+  # this fix is untested past nimbleModel() construction -- confirm on Hazel.
+  fit_dims <- list()
+  if (!is.null(cam_data$y)) fit_dims$y <- dim(cam_data$y)
+  if (!is.null(cam_data$w)) fit_dims$w <- dim(cam_data$w)
+
   fit_model <- nimbleModel(
     model_code, constants = constants,
     data = c(cam_data, list(y_inat = sim_data$y_inat, inat_effort = inat_effort)),
     inits = fit_inits,
+    dimensions = fit_dims,
     calculate = FALSE)
 
   Cmodel <- compileNimble(fit_model)
