@@ -1,3 +1,101 @@
+## STATUS UPDATE (read this first — supersedes the original prompt below)
+
+Since the original prompt below was written, three more rounds of fixes
+happened (see `git log --oneline` — commits `c69ec6e`, `1c5d8a0`,
+`96b6c9f`, on top of the two the original prompt already reflects). Do
+**not** restart from the original prompt's Step 1-3 as written; pick up
+from here.
+
+**What's now done and confirmed:**
+
+- `inputs$site_array` is built and validated
+  (`00b3_validate_array_split.R`, `00c_build_site_array.R`) — the
+  re-derived 5 km complete-linkage split matches the agreed reference
+  numbers essentially exactly (4,003 vs 4,002 array-years; the single
+  discrepancy is one cluster boundary sitting on the 5 km cut height,
+  not a rule mismatch — already root-caused and reported, not silently
+  accepted). `prepped_sim_inputs_with_array.RDS` is the input file to
+  use; the original `prepped_sim_inputs.RDS` is untouched.
+- Two upstream data-parsing bugs were found and fixed during that work
+  (a CSV quoting bug that shifted columns, and an integer-factor-code
+  vs. label mismatch in `occ.covs` — see commit `c69ec6e` for detail).
+- Five more bugs in `01i_run_estimator_sweep.R` beyond the original
+  four were found and fixed: wrong input filename, wrong field names
+  (`inputs$cl` etc. instead of the real `inputs$constants_list` etc.),
+  a missing `source()` for `integration_helper.R`, and (this session,
+  locally) a stale `inputs$y_template` reference that should be
+  `reduced$y_ncol`.
+- **The pilot's site-reduction design has changed.** Independent
+  random-site sampling (the original `build_reduced_constants()`
+  default) was found to destroy the array structure being tested —
+  see `sample_sites_by_array()` in `sim_helpers_array.R` (commit
+  `96b6c9f`) for the diagnostic numbers and the fix. `01i` now samples
+  **whole array-year units** (up to a ~700-camera budget) instead of
+  independent sites, via `build_reduced_constants(...,
+  site_keep_override = sample_sites_by_array(...)$site_keep)`. This
+  changes which sites `camera_occ` fits too (not just the array arms)
+  — that's intentional; all three arms should be compared on the same
+  retained-site set either way.
+- A latent bug in `assign_arrays_from_field()` was also fixed: sites
+  with no real array label (`NA`) were being spuriously pooled into a
+  shared fake array with other same-year `NA` sites. Now excluded
+  correctly.
+- **The current blocker**, per your last report: all three arms
+  (including `camera_occ`) got past model *definition* and into C++
+  *compilation*, then failed identically with:
+
+  ```
+  Dimension of 'y[i, 1:J[i]]' does not match required dimension for the
+  distribution 'dOcc_v'. Necessary dimension is 1.
+  ```
+
+  Root cause (diagnosed locally, fix applied in commit `1c5d8a0`, but
+  **not yet verified past `nimbleModel()` construction** since
+  `compileNimble()`/`dyn.load()` are blocked in this sandbox): this is
+  a ragged vectorized declaration (`y[i, 1:J[i]] ~ dOcc_v(...)`), and
+  whenever some `J[i] == 1` (a real, legitimate single-occasion camera
+  site — not a droppable degenerate case), `1:1` collapses to a scalar
+  rather than a length-1 vector, which `dOcc_v` — a vector-valued
+  distribution — rejects. Fixed by passing an explicit `dimensions=`
+  argument to both `nimbleModel()` calls (`simulate_replicate_data()`
+  and `fit_replicate()` in `sim_helpers.R`), pinning `y`'s (or `w`'s)
+  shape to the actual supplied matrix's dimensions regardless of any
+  individual row's real length.
+
+## What to do next
+
+1. `git pull`/sync so you have commits `c69ec6e` through `96b6c9f`.
+2. Re-run the smoke test (one rep of `camera_occ`, `array_occ`,
+   `array_rn` at bobcat abundance, `varying` scenario). Use the same
+   `--time=02:00:00` budget as below — the earlier `dOcc_v` failure
+   happened well before the MCMC budget mattered, but the corrected
+   run needs real wall-clock room.
+3. **If the `dOcc_v` compile error is gone**: check the resulting
+   `array_diag$mean_prop_detect` / camera-count numbers against the
+   whole-array-sampling design's expectations (should look like a
+   genuine, if smaller, version of the real array structure — not the
+   near-singleton distribution the old random-site design produced),
+   then proceed to the full N_REP=3 pilot as originally planned.
+4. **If the `dOcc_v` error persists** (i.e. the `dimensions=` fix
+   wasn't sufficient): this means the fix needs to go further than
+   pinning dimensions — likely reformulating the ragged declaration
+   itself (e.g., splitting out `J[i]==1` sites into an explicit scalar
+   `dbern()` likelihood rather than routing them through `dOcc_v` at
+   all). Report back rather than attempting that rewrite blind — it
+   touches the byte-identical camera-observation block shared
+   assumption and needs to be checked against all three arms
+   consistently.
+5. Re-confirm the reseed/degeneracy guard (SEED §7) once you have
+   real `status == "OK"` rows — this has shipped broken twice before
+   and neither previous round of fixes touched that logic, so it's
+   still an open risk once fits start succeeding.
+
+Everything below this line is the original prompt, kept for the
+smoke-test/pilot/reporting steps (3 onward) that are still accurate —
+just skip its Step 1 (site_array prep, now done) and don't reintroduce
+independent random-site sampling.
+
+---
 # Prompt for Claude Code (Hazel) — array-level estimator sweep, bobcat only
 
 Paste everything below this line into Claude Code on a machine with working
