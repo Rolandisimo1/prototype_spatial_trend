@@ -297,11 +297,29 @@ run_estimator_replicate <- function(cfg) {
   # (`sigma_region = 1`) rather than relying on prior-simulation; do the
   # same here rather than leave an NA-at-construction gap for two arms that
   # happened not to visibly break.
+  # q_beta is the SECOND frozen-year_beta cause, found by Hazel diagnostic
+  # after the first (sigma_year_beta/sigma_year_var, commit 35b6777) was
+  # fixed and array_occ still didn't move: q_beta is a NEW 5-element node
+  # (yday, yday^2, canopy, roaddist, log_effort) specific to the array
+  # models' detection block -- the baseline's analogous node is p_beta
+  # (4 elements, initialized from the real fit's inputs$base_inits). q_beta
+  # has no counterpart in base_inits (it didn't exist in the real fit) and
+  # was never added to trend_inits either -- an identical shape of gap to
+  # the sigma_year one, just on a different node. With the driver's own
+  # inits, q_beta = NA propagates to all detection nodes (q/w for array_occ,
+  # r/p_cam/w for array_rn) and gives a NA total logProb, freezing every
+  # downstream parameter including year_beta -- confirmed via Hazel
+  # diagnostic: q_beta = rep(0,5) takes the model from NA logProb to
+  # -7110.14, with year_beta's own dependency block at -2909.72.
+  # Harmless for camera_occ (model_code_national_scalar has no q_beta node
+  # -- nimbleModel() ignores an inits entry with no matching node, the same
+  # way it ignores an unused constants/data entry).
   samples <- fit_replicate(model_code, fit_constants, inat_effort,
                            fit_data, base_inits = inputs$base_inits,
                            n_burnin = N_BURNIN, n_iter = N_ITER,
                            trend_inits = list(year_beta = 0, year_var = 0,
-                                             sigma_year_beta = 1, sigma_year_var = 1),
+                                             sigma_year_beta = 1, sigma_year_var = 1,
+                                             q_beta = rep(0, 5)),
                            extra_monitors = character(0))
   elapsed <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
 
