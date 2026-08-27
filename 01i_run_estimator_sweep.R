@@ -89,7 +89,24 @@ BASE <- Sys.getenv("SIM_BASE", ".")
 # THREE arms. 01e_run_abundance_sweep.R:50 sources the same file from the same
 # per-species location; this driver simply omitted it.
 PROJ_ROOT <- normalizePath(file.path(BASE, ".."), mustWork = FALSE)
-source(file.path(PROJ_ROOT, "HPC", "bobcat", "integration_helper.R"))
+# Path resolution has to work in two layouts: the production tree, where
+# integration_helper.R sits one level ABOVE the sim code at
+# <PROJ_ROOT>/HPC/<species>/, and the standalone reproducible bundle, which
+# carries its own verified copy at <BASE>/HPC/bobcat/. Try the production
+# location first so a real run always picks up the real file, then fall back.
+# Failing loudly with both paths named beats a bare "cannot open the
+# connection", which is what this previously produced.
+.ih_candidates <- c(
+  file.path(PROJ_ROOT, "HPC", "bobcat", "integration_helper.R"),
+  file.path(BASE,      "HPC", "bobcat", "integration_helper.R")
+)
+.ih <- .ih_candidates[file.exists(.ih_candidates)]
+if (length(.ih) == 0) {
+  stop("integration_helper.R not found -- calcIntensity_SVC() would be ",
+       "undefined and nimbleModel() would fail for every arm. Looked in:\n  ",
+       paste(.ih_candidates, collapse = "\n  "))
+}
+source(.ih[1])
 source(file.path(BASE, "sim_helpers.R"))
 source(file.path(BASE, "sim_helpers_abundance.R"))
 source(file.path(BASE, "sim_helpers_array.R"))
@@ -97,6 +114,7 @@ source(file.path(BASE, "sim_helpers_estimator_metrics.R"))
 source(file.path(BASE, "model_code_national_scalar.R"))
 source(file.path(BASE, "model_code_array_occ.R"))
 source(file.path(BASE, "model_code_array_rn.R"))
+source(file.path(BASE, "model_code_camera_rn.R"))
 
 DESIGN_SEED <- 20260823L
 N_REP       <- as.integer(Sys.getenv("N_REP", "20"))
@@ -104,8 +122,18 @@ N_BURNIN    <- as.integer(Sys.getenv("N_BURNIN", "2000"))
 N_ITER      <- as.integer(Sys.getenv("N_ITER", "8000"))
 ARRAY_RADIUS_KM   <- as.numeric(Sys.getenv("ARRAY_RADIUS_KM", "5.0"))
 ARRAY_MAX_PER     <- as.integer(Sys.getenv("ARRAY_MAX_PER", "25"))
-OUTDIR      <- file.path(BASE, "estimator_sweep_out")
-dir.create(OUTDIR, showWarnings = FALSE)
+# OUTDIR is env-overridable, and MUST be a fresh directory whenever N_REP
+# changes. row_id is assigned AFTER sorting the design (build_design_df below),
+# so the cell a given row_id denotes depends on n_rep: at N_REP=3, row 4 is
+# (bobcat_baseline, null, rep 1); at N_REP=30 the same row 4 is
+# (bobcat_baseline, varying, rep 4). Combined with the "already done, exiting"
+# skip on an existing row_%05d.rds, pointing a 540-row run at the 3-rep pilot's
+# output directory would silently adopt 54 stale files under the wrong cell
+# labels -- 10% of the sweep, wrong, with nothing in the logs to show for it.
+# Seeds have the same exposure (set.seed(DESIGN_SEED + row_id)).
+OUTDIR      <- Sys.getenv("SWEEP_OUTDIR", file.path(BASE, "estimator_sweep_out"))
+dir.create(OUTDIR, showWarnings = FALSE, recursive = TRUE)
+cat("OUTDIR:", OUTDIR, "\n")
 
 # ---- design ----------------------------------------------------------------
 #' @name build_design_df
@@ -117,7 +145,7 @@ build_design_df <- function(n_rep = N_REP) {
     rep_id    = seq_len(n_rep),
     scenario  = c("varying", "null"),
     abundance = c("bobcat_baseline", "moderate", "common_deerlike"),
-    estimator = c("camera_occ", "array_occ", "array_rn"),
+    estimator = c("camera_occ", "camera_rn", "array_occ", "array_rn"),
     stringsAsFactors = FALSE
   )
   d <- d[order(d$estimator, d$abundance, d$scenario, d$rep_id), ]
@@ -231,11 +259,22 @@ run_estimator_replicate <- function(cfg) {
                                  inat_effort,
                                  y_ncol = reduced$y_ncol, truth)
 
-  if (cfg$estimator == "camera_occ") {
+  if (cfg$estimator %in% c("camera_occ", "camera_rn")) {
+    # Both camera-level arms consume the SAME simulated y matrix with no
+    # aggregation; they differ only in the model fitted to it. This is what
+    # makes the estimator effect (occupancy vs RN) separable from the
+    # aggregation effect (camera vs array) -- the 2x2 the sweep now spans.
     fit_constants <- constants
     fit_data      <- list(y = sim$y, y_inat = sim$y_inat)
-    model_code    <- model_code_national_scalar
+    model_code    <- if (cfg$estimator == "camera_occ") model_code_national_scalar
+                     else model_code_camera_rn
     array_diag    <- NULL
+    if (cfg$estimator == "camera_rn") {
+      # Start N_cam above the observed per-camera detection count so the
+      # chain begins in a feasible region (mirrors the array_rn N_a_init
+      # treatment: p_cam = 0 when N = 0, so any detected site needs N >= 1).
+      fit_data$N_cam_init <- pmax(1L, rowSums(sim$y, na.rm = TRUE))
+    }
   } else {
     # Array structure comes from the REAL subproject_name x year field,
     # carried through 00_prep_sim_inputs.R as inputs$site_array (see
@@ -320,8 +359,59 @@ run_estimator_replicate <- function(cfg) {
                            trend_inits = list(year_beta = 0, year_var = 0,
                                              sigma_year_beta = 1, sigma_year_var = 1,
                                              q_beta = rep(0, 5)),
-                           extra_monitors = character(0))
+                           extra_monitors = if (cfg$estimator == "camera_rn")
+                                              "N_cam" else character(0))
   elapsed <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+
+  # ---- N_cam runaway diagnostic (camera_rn only) ---------------------------
+  # RN's documented failure mode is abundance inflation under unmodelled
+  # detection heterogeneity. N_cam ~ dpois(lambda_cam) is UNBOUNDED, so there
+  # is no cap to saturate against -- the thing to watch is runaway magnitude,
+  # not a ceiling. N_cam is not top-level stochastic, so it is not in NIMBLE's
+  # default monitors and must be requested explicitly (above); monitoring does
+  # not alter the sampling, only what is retained.
+  #
+  # Written to a SIDE FILE, never into the returned metrics row. The collector
+  # stacks all 720 row_*.rds with do.call(rbind, ...), and the 540 existing
+  # files have a fixed schema -- extra columns on the camera_rn rows alone
+  # would make that rbind fail with "numbers of columns of arguments do not
+  # match". Keeping this out-of-band means the collector needs no change.
+  #
+  # Wrapped in tryCatch: this is a diagnostic, and it must never be the reason
+  # a 6-hour replicate is lost.
+  if (cfg$estimator == "camera_rn") {
+    try({
+      ncols <- grep("^N_cam\\[", colnames(samples), value = TRUE)
+      if (length(ncols) > 0) {
+        nmat      <- samples[, ncols, drop = FALSE]
+        site_mean <- colMeans(nmat)          # posterior mean N per camera
+        diag_dir  <- file.path(OUTDIR, "ncam_diag")
+        dir.create(diag_dir, showWarnings = FALSE, recursive = TRUE)
+        saveRDS(data.frame(
+          row_id          = cfg$row_id,
+          abundance       = cfg$abundance,
+          scenario        = cfg$scenario,
+          rep_id          = cfg$rep_id,
+          n_sites         = length(ncols),
+          lambda_true_med = stats::median(exp(truth$link_occ_intercept), na.rm = TRUE),
+          ncam_mean       = mean(site_mean),
+          ncam_med        = stats::median(site_mean),
+          ncam_q99        = stats::quantile(site_mean, 0.99, names = FALSE),
+          ncam_max        = max(site_mean),
+          ncam_draw_max   = max(nmat),        # largest single draw anywhere
+          frac_site_gt50  = mean(site_mean > 50),
+          frac_site_gt200 = mean(site_mean > 200),
+          stringsAsFactors = FALSE
+        ), file.path(diag_dir, sprintf("ncam_%05d.rds", cfg$row_id)))
+        cat(sprintf("[ncam] mean=%.1f med=%.1f q99=%.1f max=%.1f draw_max=%.0f\n",
+                    mean(site_mean), stats::median(site_mean),
+                    stats::quantile(site_mean, 0.99, names = FALSE),
+                    max(site_mean), max(nmat)))
+      } else {
+        cat("[ncam] WARNING: no N_cam columns in samples\n")
+      }
+    }, silent = FALSE)
+  }
 
   m <- compute_estimator_metrics(samples, truth, constants, inputs$cell100_geo)
   cbind(cfg, m, elapsed_sec = elapsed, status = "OK",

@@ -458,6 +458,15 @@ fit_replicate <- function(model_code, constants, inat_effort, sim_data, base_ini
   # initialize in a non-zero-probability region.
   if (!is.null(sim_data$N_a_init)) fit_inits$N_a <- sim_data$N_a_init
 
+  # N_cam is the CAMERA-level RN arm's equivalent latent discrete node
+  # (model_code_camera_rn.R), one per site rather than one per array. Same
+  # requirement and same reason as N_a above: p_cam = 1 - (1-r)^N is exactly 0
+  # when N = 0, so any site with an observed detection has zero likelihood at
+  # N = 0 and the chain cannot initialize. Without this hook the driver's
+  # N_cam_init would be silently ignored -- fit_inits is just a list, so an
+  # unconsumed entry raises no error.
+  if (!is.null(sim_data$N_cam_init)) fit_inits$N_cam <- sim_data$N_cam_init
+
   # y[i, 1:J[i]] ~ dOcc_v(...) (camera arms) and w[a, 1:n_a[a]] ~ dOcc_v(...)
   # (array_occ) are RAGGED vectorized declarations -- whenever some J[i] (or
   # n_a[a]) equals 1, "1:1" collapses to a scalar rather than a length-1
