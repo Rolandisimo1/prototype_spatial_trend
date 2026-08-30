@@ -144,7 +144,12 @@ build_design_df <- function(n_rep = N_REP) {
   d <- expand.grid(
     rep_id    = seq_len(n_rep),
     scenario  = c("varying", "null"),
-    abundance = c("bobcat_baseline", "moderate", "common_deerlike"),
+    # Levels are abundance_levels_measured()$level verbatim, so the lookup in
+    # run_estimator_replicate() cannot miss. NOTE: renaming changes the sort
+    # order and therefore what each row_id denotes, so results from the
+    # inert-ladder run are NOT comparable row-by-row and must be re-run whole
+    # (they are tagged n30_4arm and preserved separately).
+    abundance = c("bobcat_like", "intermediate", "deer_like"),
     estimator = c("camera_occ", "camera_rn", "array_occ", "array_rn"),
     stringsAsFactors = FALSE
   )
@@ -246,7 +251,51 @@ run_estimator_replicate <- function(cfg) {
     amplitude = if (cfg$scenario == "null") 0 else 0.3
   )
   truth <- true_param_list(inputs$real_post_means, year_effect_true)
-  truth <- scale_truth_abundance(truth, label = cfg$abundance)
+
+  # ---- APPLY THE ABUNDANCE LADDER ------------------------------------------
+  # scale_truth_abundance() does NOT look a label up -- it only RECORDS one as
+  # an attribute. Its scaling comes exclusively from occ_shift and
+  # count_log_mult, which default to 0. An earlier version of this driver
+  # called it as scale_truth_abundance(truth, label = cfg$abundance), which
+  # therefore scaled NOTHING: all three "abundance levels" were i.i.d.
+  # replicate sets from one data-generating process, differing only by seed.
+  # Confirmed from the output as well as the code -- mean_prop_detect was
+  # 0.1458 / 0.1435 / 0.1444 across the three levels (Kruskal-Wallis p = 0.58)
+  # where the ladder implies a 1x / 2.12x / 4.48x spread in lambda.
+  #
+  # That invalidated the sweep's central design claim, since abundance is the
+  # axis along which occupancy and Royle-Nichols are expected to DIVERGE:
+  # occupancy's information dies as psi saturates while RN keeps reading
+  # detection frequency. Both RN arms were never tested where they should win.
+  #
+  # The ladder used is abundance_levels_measured(), anchored on real
+  # per-window detection counts from the raw camera data (bobcat 1.555,
+  # deer 6.405 mean detections per occupied window, geometric midpoint 3.156)
+  # -- not abundance_levels_default(), whose multipliers its own docstring
+  # flags as placeholders rather than fitted numbers.
+  #
+  # The design levels are the ladder's own `level` values so the lookup cannot
+  # silently miss. The previous design used bobcat_baseline/moderate/
+  # common_deerlike, which matched NEITHER ladder (default has "common", not
+  # "common_deerlike"), so a naive label lookup would have failed too.
+  abn_ladder <- abundance_levels_measured()
+  abn <- abn_ladder[abn_ladder$level == cfg$abundance, ]
+  if (nrow(abn) != 1L) {
+    stop(sprintf(paste("abundance level '%s' not found in",
+                       "abundance_levels_measured() (levels: %s). Refusing to",
+                       "run with an unscaled truth -- that is the inert-ladder",
+                       "bug this check exists to prevent."),
+                 cfg$abundance, paste(abn_ladder$level, collapse = ", ")))
+  }
+  truth <- scale_truth_abundance(truth,
+                                 occ_shift      = abn$occ_shift,
+                                 count_log_mult = abn$count_log_mult,
+                                 label          = cfg$abundance)
+  # Fail loudly if the scaling was a no-op for a level that should have moved.
+  stopifnot(identical(attr(truth, "occ_shift"), abn$occ_shift))
+  if (cfg$abundance != abn_ladder$level[1] && abn$occ_shift == 0) {
+    stop("abundance ladder applied a zero shift to a non-baseline level")
+  }
 
   # inputs$y_template does not exist (see the field-name fix above -- the
   # real field is inputs$real_y_template); build_reduced_constants() already
