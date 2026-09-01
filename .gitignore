@@ -14,3 +14,12 @@
 .Renviron
 .env
 *.pem
+
+# August snapshot bundle of the simulation codebase. Deliberately excluded:
+# it duplicates scripts that live tracked in the repo root, and is STALE for
+# at least one of them (01i_camera_rn_sbatch.sh), so committing it would create
+# exactly the two-parallel-forks problem this repo exists to avoid. The files
+# that existed ONLY in the bundle have been recovered into the repo with
+# provenance headers -- see PIPELINE.md section 4.
+isdm_sim_codebase/
+isdm_sim_codebase.tar.gz

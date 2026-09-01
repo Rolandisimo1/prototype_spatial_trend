@@ -1,0 +1,4 @@
+species,n_deployments,occupied_windows,mean_count,median_count,p95_count,max_count,frac_gt1
+Bobcat,3538,6079,1.555,1,4,27,0.2828
+Moose,337,609,1.757,1,4,16,0.3432
+White-tailed Deer,19016,60125,6.405,4,21,132,0.7865

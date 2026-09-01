@@ -1,0 +1,9 @@
+region_name,n_camera_sites,n_inat_cells,abs_trend_mean,abs_p_negative,model_direction,dominant_dir,v2b_agreement
+Northern Forests,925,95,-0.240003544056082,0.997366666666667,decreasing,stable,disagree
+Northwestern Forested Mountains,602,161,-0.0660595767285181,0.859555555555556,uncertain/stable,stable,agree
+Eastern Temperate Forests,78,36,-0.203412466368765,0.9302,uncertain/stable,stable,agree
+North American Deserts,43,62,-0.0475188668796393,0.666077777777778,uncertain/stable,increasing,disagree
+Water,6,13,-0.144258398154959,0.848766666666667,uncertain/stable,mixed,agency mixed
+Great Plains,0,55,0.0404680554842583,0.425922222222222,uncertain/stable,stable,agree
+Marine West Coast Forest,0,0,-0.132279646612488,0.749388888888889,no data (prior only),stable,no model data
+Mediterranean California,0,0,-0.132204080401425,0.747011111111111,no data (prior only),,no model data
