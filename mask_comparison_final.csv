@@ -1,0 +1,4 @@
+species,c100_iucn,c100_pres,c100_exp,c100_union,c100_tot,c50_iucn,c50_pres,c50_exp,c50_union,c50_tot,rec_iucn,rec_pres,rec_exp,rec_union,pres_outside_iucn,iucn_zero_record,union_pct_of_grid
+moose,83,178,129,183,893,382,421,473,525,3322,62.93,100,70.3,100,143,104,15.8
+bobcat,766,588,831,845,893,3145,1390,3139,3184,3322,98.68,100,99.89,100,39,1794,95.8
+white-tailed_deer,681,655,746,750,893,2848,2104,2783,2860,3322,98.94,100,100,100,12,756,86.1
