@@ -685,3 +685,51 @@ Not yet applied to any file as of this addendum. `bobcat_v2b_national_scalar`
 chain 1 -- the one chain that was permanently displaced rather than
 recovering -- should be restarted once the fix is validated (still free:
 its remaining chain jobs are unstarted in the queue as of 8/20).
+
+---
+
+## Issue 5 (added 2026-09-01): a third range-mask option -- IUCN polygon
+## expanded by contiguous iNat presence, not a replacement for Fix 2b
+
+**Not a bug -- a new candidate mask, requested to compare against Fix 2b's
+pure-presence approach.** Per a convention used in a different project: the
+IUCN polygon serves as a base "in range" set, then expands outward through a
+**contiguous chain** of grid100 (100 km) cells that individually clear a
+detection threshold (**>2 detections**, after the same isolation/captive
+filtering Fix 2b already applies). A cell joins the mask only if reachable
+from the polygon through an unbroken chain of qualifying cells -- a
+genuinely isolated record far from both the polygon and any other detection
+cluster does not pull its own cell in, even if that one cell individually
+clears the threshold. 4-connectivity (edge-adjacent neighbors only), per
+2026-09-01 decision.
+
+**Why a third option, not a replacement:** Fix 2b (pure presence threshold,
+no polygon at all) is already validated on real fits -- `moose_v2b`
+converged and recovered the Colorado/Utah cells the original IUCN mask
+excluded. This candidate has not been fit to anything yet. The point of
+building it is to compare mask choice against real fleet results, not to
+assume one is better going in.
+
+**Implementation:** [build_iucn_expanded_mask.R](build_iucn_expanded_mask.R)
+-- the core flood-fill function (`flood_fill_expand_mask()`) is logic-tested
+against synthetic data (4 cases: chain propagation through qualifying cells,
+threshold correctly blocking propagation, an isolated-but-eligible cell
+correctly excluded for lack of a connected path, base cells always
+retained -- all passed). **The driver is NOT yet wired to real data** -- it
+deliberately `stop()`s rather than guess two things that need confirming on
+Hazel directly:
+1. The exact per-species file naming convention in the IUCN range directory
+   (`RANGE_DIR`) -- referenced by `build_moose_unmasked_review.R` but never
+   actually read from there in this repo, so the naming pattern is unverified.
+2. Where Fix 2b's isolation/captive-**filtered** cell100 detection counts are
+   cached per species. The `>2 detections` threshold must be evaluated on the
+   SAME filtered counts Fix 2b uses to define "presence" -- recomputing from
+   raw, unfiltered records would silently disagree with what the rest of the
+   pipeline already calls a valid detection for the same species.
+
+**Once wired:** run for moose, bobcat, and WTD, and compare resulting
+cell50/cell100 counts against both the original IUCN-only mask and Fix 2b's
+presence-only mask (the moose/bobcat/WTD range-mask-exclusion table already
+in Issue 3's addendum gives the baseline to compare against). Do not wire
+this into any HPC run script until that three-way comparison has been made
+and reviewed -- this is a candidate under evaluation, not a settled fix.
