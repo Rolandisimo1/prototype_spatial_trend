@@ -1,0 +1,4 @@
+species,cells_total,cells_in_range,cells_masked_out,records_total,records_out_of_range,pct_records_dropped,occupied_cells_dropped,max_records_in_a_dropped_cell
+moose,3322,382,2940,11581,4293,37.07,143,751
+bobcat,3322,3145,177,18725,248,1.32,39,67
+white-tailed_deer,3322,2848,474,188939,2006,1.06,12,969
