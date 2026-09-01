@@ -1,0 +1,4 @@
+species,cell50_iucn,cell50_presence,cell50_expanded,cell50_union,cell50_total,rec_pct_iucn,rec_pct_expanded,rec_pct_union,absence_cells_kept_union,absence_cells_kept_presence
+moose,382,421,473,525,3322,62.93,70.3,100,104,0
+bobcat,3145,1390,3139,3184,3322,98.68,99.89,100,1794,0
+white-tailed_deer,2848,2104,2783,2860,3322,98.94,100,100,756,0
