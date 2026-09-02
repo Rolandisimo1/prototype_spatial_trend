@@ -252,6 +252,27 @@ run_estimator_replicate <- function(cfg) {
   )
   truth <- true_param_list(inputs$real_post_means, year_effect_true)
 
+  # ---- NULL SCENARIO: ZERO THE TREND ITSELF (fix, 2026-09-02) ---------------
+  # `amplitude = 0` above removes only the SPATIAL deviation field
+  # (year_effect). It never touched year_beta/year_var, which true_param_list()
+  # copies straight from the real posterior means -- so the true national trend
+  # was present in BOTH scenarios and tvb_true = year_beta + year_var was
+  # -0.1795 under the "null" arm as well as the "varying" one. The null arm's
+  # detect_rate was therefore power-under-a-spatially-flat-truth, NOT a Type I
+  # error rate, and no false-positive rate has ever been measured. The earlier
+  # "false-positive > power" finding derived from it was retracted.
+  #
+  # sigma_year_beta / sigma_year_var are deliberately NOT rederived here. They
+  # are the dunif(0,2) prior scales / inits for the stochastic nodes of the
+  # same name (see model_code_*.R), not part of the generating truth; holding
+  # them fixed keeps the null and varying arms differing ONLY in the truth the
+  # data are generated from.
+  if (cfg$scenario == "null") {
+    truth$year_beta <- 0
+    truth$year_var  <- 0
+    stopifnot(truth$year_beta + truth$year_var == 0)   # tvb_true must be 0
+  }
+
   # ---- APPLY THE ABUNDANCE LADDER ------------------------------------------
   # scale_truth_abundance() does NOT look a label up -- it only RECORDS one as
   # an attribute. Its scaling comes exclusively from occ_shift and
