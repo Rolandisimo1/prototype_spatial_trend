@@ -1,0 +1,6 @@
+"model","family","n_params","n_finite_rhat","max_rhat","mean_rhat","n_over_1.1","worst_param","params_over_1.1"
+"national_scalar","other",14,14,1.03116422834039,1.01001034398488,0,"intercept_tau",""
+"national_scalar","CAR_fields",2724,2724,1.03049770622855,1.00540523757933,0,"link_occ_intercept[438]",""
+"national_scalar","iNat",3,3,1.02986064699876,1.01872930159467,0,"theta0",""
+"national_scalar","trend",4,4,1.0062059375496,1.00271486500709,0,"total_var_beta",""
+"national_scalar","detection",5,5,1.0009088038034,1.00039161614365,0,"det_intercept",""
