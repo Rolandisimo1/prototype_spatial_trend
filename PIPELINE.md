@@ -99,23 +99,71 @@ broken earlier draft; the repo-root copy is correct). Two files existed *only*
 there and have been recovered into the repo with provenance headers:
 `01j_collect_estimator_sweep.R` and `HPC_reference/bobcat/integration_helper.R`.
 
-**Known defect, not yet confirmed fixed locally:** the sweep's "null" scenario
-zeroed only the spatial deviation amplitude, never `year_beta`/`year_var`, so
-the true national trend was present in both scenarios. No false-positive rate
-has ever been measured; the earlier "false-positive > power" finding was
-retracted. See the header of `01j_collect_estimator_sweep.R`.
+**Null-scenario defect — FIXED and verified 2026-09-03 (commit 781f156, sweep
+739f6fb).** The defect: the sweep's "null" scenario zeroed only the spatial
+deviation amplitude, never `year_beta`/`year_var`, so the true national trend
+was present in both scenarios and no false-positive rate was ever measured. An
+earlier "false-positive > power" finding derived from it was retracted.
+
+The fix zeroes `truth$year_beta` and `truth$year_var` under
+`scenario == "null"`, guarded by `stopifnot(tvb_true == 0)` so it cannot be
+silently un-fixed. `sigma_year_beta`/`sigma_year_var` were deliberately left
+alone — they are `dunif(0,2)` prior scales on stochastic nodes, not the
+generating truth — so the two arms now differ only in the truth. The corrected
+720-task sweep completed 720/720.
+
+**Result: the retracted claim is not merely withdrawn, it is contradicted in
+the opposite direction.** Power exceeds the false-positive rate for every arm
+by 5–19×. False-positive rates (n = 90 per arm, Wilson 95% CI): `array_occ`
+1.1% [0.2, 6.0], `array_rn` 3.3% [1.1, 9.3], `camera_occ` 3.3% [1.1, 9.3],
+`camera_rn` 7.8% [3.8, 15.2].
+
+**One unresolved item that matters for the headline recommendation:** both
+Royle-Nichols arms show false-positive rates rising monotonically with
+abundance (`array_rn` 0.0 / 3.3 / 6.7%; `camera_rn` 0.0 / 10.0 / 13.3% across
+bobcat-like / intermediate / deer-like), whereas neither occupancy arm does.
+`camera_rn` is the only arm whose overall rate sits above nominal 5%. Its CI
+still covers 5%, so at n = 30 per design cell this is suggestive rather than
+established — but it lands on the estimator family this work recommends, at
+precisely the abundance where the recommendation carries the most weight. Do
+not treat it as cleared on the grounds that the interval covers 5%; it needs
+replicates, not argument. See `01j_collect_estimator_sweep.R` and
+`ARRAY_SIM_RESULTS_n30.md`.
 
 ## 5. Conventions worth not rediscovering
 
-- **Version control flow.** Changes are drafted and tested locally, committed
-  and pushed by the user from GitHub Desktop, and pulled by Claude Code from
-  `origin/main`. Files are never hand-delivered to the cluster outside git —
-  that is what produced the untracked hand-edited cluster copies now sitting in
-  `HPC_reference/`.
+- **Version control flow — and its one real gap.** Changes are drafted and
+  tested locally, committed and pushed by the user from GitHub Desktop, and
+  pulled from `origin/main` for local work.
+
+  **Correction (2026-09-03):** an earlier version of this section claimed files
+  are never hand-delivered to the cluster outside git. That is aspirational, not
+  factual. **Neither `$PROJ/prototype_spatial_trend` nor `~/isdm/repo` on Hazel
+  is a git checkout** — code reaches the cluster by `scp`. So the repo is the
+  source of truth for *local* work only; the cluster copy is a delivered
+  snapshot with no version history of its own, and drift between the two is
+  possible and has happened (this is the mechanism that produced the
+  hand-edited cluster copies now preserved in `HPC_reference/`).
+
+  Practical rules that follow: verify delivery by checksum after any `scp`,
+  back up the pre-edit file cluster-side before editing in place, and when a
+  cluster-side and local file are expected to match, diff them rather than
+  assuming. Making one of those cluster directories a real checkout would close
+  this gap and is worth doing.
 - **Hazel sbatch preamble.** `source ~/.bashrc; conda activate <env>` does not
   work: `compileNimble()` shells out to `R CMD SHLIB`, so bare `R` must be on
   `PATH`. Use the `export PATH="$DST/bin:$PATH"` form from a known-working
-  wrapper. `--qos=short` caps at 02:00:00; longer jobs need
-  `--partition=compute --qos=long`.
+  wrapper. For walltime beyond 2h use `--partition=compute --qos=long`; note
+  that **`--qos=short` is invalid on `partition=compute`** (`normal` works
+  there), so a wrapper copied between partitions needs its QOS checked.
+- **`--export` on sbatch is comma-separated.** `--export=MU_YEARS=2015,2020,2025`
+  parses as `MU_YEARS=2015` plus two stray variable names. Export multi-value
+  variables into the submitting environment instead. This bit once; combined
+  with the silent year-dropping below it produces a plausible-looking wrong
+  figure rather than an error.
+- **The posterior extractor drops out-of-range snapshot years silently**
+  (`SNAP <- SNAP[SNAP %in% years_all]`). Asking a 5-year windowed fit
+  (2021–2025) for 2015/2020/2025 returns a one-panel result with no warning.
+  Check the returned year count against the requested one.
 - **`*.RDS` is gitignored** — bundles are regenerable pipeline intermediates,
   not source. That is also precisely why step 4 going missing was costly.
