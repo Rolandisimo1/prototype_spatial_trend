@@ -96,6 +96,11 @@ INPUTS = {
 # The five mappable environmental covariates and the grid column each lives in. They span two
 # grid files joined on cell25: the seam-fixed grid carries population, canopy and temperature,
 # the four-covariate grid carries cropland and ruggedness at 5 km.
+# Row/column labels in predictor_correlations_v8.csv that correspond to the five MAPPED
+# environmental conditions. The correlation matrix also carries the three count-derived
+# predictors, which are not mapped.
+ENV_LABELS = ["Population", "Cropland", "Tree canopy", "Ruggedness", "Summer heat"]
+
 MAP_COVARIATES = [
     ("pop_1km", "grid", "Population density", "people per km2, log scale", True),
     ("ag_5km", "grid_4cov", "Cropland", "share of land within 5 km", False),
@@ -497,15 +502,16 @@ def fig05_covariate_maps(D, style=None):
         sc = ax.scatter(gx[ok], gy[ok], c=vv, s=1.5, cmap=SEQ_CMAP, lw=0,
                         vmin=np.nanpercentile(vv, 2), vmax=np.nanpercentile(vv, hi_pct))
         if logscale:
-            tk = [t_ for t_ in [0, 1, 2, 3, 4] if t_ <= np.nanpercentile(vv, hi_pct)]
-            cb_ticks = tk
+            top = np.nanpercentile(vv, hi_pct)
+            cb_ticks = [np.log10(x + 1) for x in [0, 1, 3, 10, 30, 100]
+                        if np.log10(x + 1) <= top]
         ax.set_xlim(-.385, .375); ax.set_ylim(-.225, .262)
         ax.set_aspect("equal"); ax.axis("off")
         cb = fig.colorbar(sc, ax=ax, fraction=.030, pad=.005, shrink=.72)
         cb.ax.tick_params(labelsize=5.4)
         if logscale:
             cb.set_ticks(cb_ticks)
-            cb.set_ticklabels([f"{10 ** t_ - 1:,.0f}" for t_ in cb_ticks])
+            cb.set_ticklabels([f"{10 ** t_ - 1:,.0f}" for t_ in cb_ticks], fontsize=5.4)
         ax.set_title(f"{'abcde'[k]}   {title}", loc="left", fontsize=8.2)
         ax.text(.02, .02, unit + (" (log)" if logscale else ""), transform=ax.transAxes,
                 fontsize=5.8, color=MUTED)
@@ -526,10 +532,23 @@ def fig05_covariate_maps(D, style=None):
                     color="white" if abs(M[i, j]) > .35 else INK)
     cb = fig.colorbar(im, ax=ax, fraction=.030, pad=.02, shrink=.72)
     cb.ax.tick_params(labelsize=5.4)
-    off = M[~mask]
-    ax.set_title(f"f   How much the conditions overlap\nlargest pairing {np.abs(off).max():.2f}",
-                 loc="left", fontsize=8.2)
-    fig.suptitle("The environmental conditions used to predict activity", fontsize=10, y=.97)
+    # Panel f shows ALL EIGHT model predictors, not only the five conditions mapped in a-e.
+    # Report the largest pairing for each set separately: quoting the eight-predictor maximum
+    # under an "environmental conditions" heading attributes a predator-abundance pairing to
+    # the environmental covariates.
+    full = np.abs(M[~np.eye(len(C), dtype=bool)])
+    i_f, j_f = np.unravel_index(np.nanargmax(np.abs(np.where(~np.eye(len(C), dtype=bool),
+                                                             M, np.nan))), M.shape)
+    env = [c for c in ENV_LABELS if c in C.index]
+    Me = C.loc[env, env].values.astype(float)
+    oe = ~np.eye(len(env), dtype=bool)
+    i_e, j_e = np.unravel_index(np.nanargmax(np.abs(np.where(oe, Me, np.nan))), Me.shape)
+    ax.set_title(f"f   Overlap among all eight model predictors\n"
+                 f"largest {np.nanmax(full):.2f} ({C.index[i_f]} vs {C.columns[j_f]}); "
+                 f"among the five mapped, {abs(Me[i_e, j_e]):.2f} "
+                 f"({env[i_e]} vs {env[j_e]})", loc="left", fontsize=7.4)
+    fig.suptitle("The environmental conditions used to map activity, and how the model's "
+                 "predictors overlap", fontsize=10, y=.97)
     return fig
 
 
