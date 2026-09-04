@@ -21,9 +21,17 @@ def main():
     ap.add_argument("--outdir", default="figs")
     ap.add_argument("--only", nargs="*", default=None,
                     help="figure names to render; default all")
+    ap.add_argument("--role", default=None, choices=["methods", "results"],
+                    help="render only the methods figures or only the results figures")
+    ap.add_argument("--index", action="store_true",
+                    help="print the figure index (name, role) and exit")
     ap.add_argument("--no-style", action="store_true",
                     help="skip the figure-style hook (use plain matplotlib defaults)")
     args = ap.parse_args()
+
+    if args.index:
+        print(dielfigs.figure_index().to_string(index=False))
+        return
 
     try:
         host  # provided by the Claude Science kernel
@@ -39,7 +47,8 @@ def main():
         except NameError:
             style = None
 
-    made = dielfigs.render_all(host, outdir=args.outdir, style=style, only=args.only)
+    made = dielfigs.render_all(host, outdir=args.outdir, style=style, only=args.only,
+                               role=args.role)
     for name, path in sorted(made.items()):
         print(f"{name:<32} {path}")
     print(f"\n{len(made)} figures written to {args.outdir}")
