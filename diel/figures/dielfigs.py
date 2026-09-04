@@ -91,6 +91,7 @@ INPUTS = {
     "states": "viewer_states.json",
     "effort_nonuniform": "stage1_effort_nonuniformity.csv",
     "grid_4cov": "national_grid_covariates_4cov_25km.csv",
+    "curve_shifts": "stage6_curve_shifts.csv",
 }
 
 # The five mappable environmental covariates and the grid column each lives in. They span two
@@ -636,12 +637,223 @@ def fig05_covariate_maps(D, style=None):
     return fig
 
 
+def fig06_timestamp_qc(D, style=None):
+    """The camera clocks that were wrong, where they were, and what removing them did.
+
+    Panel b is drawn from stage6_curve_shifts.csv rather than embedding a rendered figure, so
+    it scales with the rest of the set.
+    """
+    if style:
+        style()
+    ex, arrays, cs = D["excluded"], D["arrays"], D["curve_shifts"]
+    coords = arrays.drop_duplicates("dep_key")
+    coords = coords.set_index(coords.dep_key.astype(str))
+    hit = coords.reindex(ex.dep_key.astype(str)).dropna(subset=["latitude", "longitude"])
+    px, py = albers(hit.longitude.values, hit.latitude.values)
+
+    fig, axes = plt.subplots(1, 3, figsize=(13.4, 4.2),
+                             gridspec_kw=dict(width_ratios=[1.15, 1, .85], wspace=.28))
+    ax = axes[0]
+    draw_states(ax, D["states"], lw=.35, color="#c9cfd4")
+    a_, b_ = albers(coords.longitude.values, coords.latitude.values)
+    ax.scatter(a_, b_, s=.7, c="#dde1e4", lw=0, zorder=2)
+    ax.scatter(px, py, s=30, c="#b5442e", lw=.35, edgecolor="white", zorder=4)
+    ax.set_xlim(-.385, .375); ax.set_ylim(-.225, .262)
+    ax.set_aspect("equal"); ax.axis("off")
+    nproj = ex.wi_project_title.nunique() if "wi_project_title" in ex.columns else np.nan
+    ax.set_title(f"a   {len(hit)} excluded cameras across {nproj:.0f} projects\n"
+                 f"(grey: every other camera)", loc="left", fontsize=8.4)
+
+    # (b) each affected curve, before against after
+    ax = axes[1]
+    for g_, col in [("diurnal", GUILD_COLOUR["diurnal"]),
+                    ("intermediate", GUILD_COLOUR["intermediate"]),
+                    ("nocturnal", GUILD_COLOUR["nocturnal"])]:
+        sub = cs[cs.guild == g_]
+        ax.scatter(sub.pct_noct_pre, sub.d, s=13, c=col, lw=0, alpha=.85,
+                   label=f"{g_} ({len(sub)})", zorder=3)
+    ax.axhline(0, color=MUTED, lw=.8, ls="--")
+    ax.set_xlabel("% of activity at night before the exclusions")
+    ax.set_ylabel("change after the exclusions\n(percentage points)")
+    ax.legend(fontsize=6.2, frameon=False, loc="upper left")
+    ax.set_title("b   Every affected curve moved toward\nits species' real rhythm",
+                 loc="left", fontsize=8.4)
+
+    # (c) the direction test
+    ax = axes[2]
+    gl = ["diurnal", "intermediate", "nocturnal"]
+    med = [cs[cs.guild == g_].d.median() for g_ in gl]
+    ax.barh(range(3), med, color=[GUILD_COLOUR[g_] for g_ in gl], height=.62)
+    ax.axvline(0, color=INK, lw=.9)
+    for i, (g_, v) in enumerate(zip(gl, med)):
+        n_ = int((cs[cs.guild == g_].d < 0).sum()) if g_ == "diurnal" \
+            else int((cs[cs.guild == g_].d > 0).sum())
+        tot = int((cs.guild == g_).sum())
+        ax.text(v, i - .40, f"{n_} of {tot} in the expected direction",
+                va="bottom", ha="left" if v >= 0 else "right", fontsize=5.8, color=MUTED)
+    ax.set_yticks(range(3)); ax.set_yticklabels(gl, fontsize=6.6)
+    ax.set_xlabel("median change in % at night\n(percentage points)")
+    lo_x, hi_x = min(med) * 1.9 - .4, max(med) * 1.9 + .4
+    ax.set_xlim(lo_x, hi_x)
+    ax.set_title("c   Diurnal species lost false night activity;\nnocturnal species regained real "
+                 "night activity", loc="left", fontsize=8.4)
+    n_dn = int(((cs.guild == "diurnal") & (cs.d < 0)).sum())
+    n_d = int((cs.guild == "diurnal").sum())
+    n_nn = int(((cs.guild == "nocturnal") & (cs.d > 0)).sum())
+    n_n = int((cs.guild == "nocturnal").sum())
+    fig.suptitle(f"Finding and removing cameras whose clocks were wrong: {len(cs)} curves moved, "
+                 f"{n_dn} of {n_d} diurnal downward and {n_nn} of {n_n} nocturnal upward",
+                 fontsize=9.6, y=1.03)
+    return fig
+
+def fig07_model_effects(D, style=None):
+    """What the model found: effect direction and strength, by mechanism."""
+    if style:
+        style()
+    e = D["effects"].copy()
+    order = (e.groupby("mechanism").sig.sum().sort_values(ascending=False).index.tolist())
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.8, 4.6),
+                             gridspec_kw=dict(width_ratios=[1.15, 1], wspace=.30))
+    # (a) how many effects each mechanism carries, and how many survive the geography control
+    ax = axes[0]
+    y = np.arange(len(order))
+    tot = [int((e.mechanism == mm).sum()) for mm in order]
+    sig = [int(e[e.mechanism == mm].sig.sum()) for mm in order]
+    sur = [int(e[e.mechanism == mm].survives_spatial.sum()) for mm in order]
+    ax.barh(y, tot, color="#eceff1", height=.70, label="fitted (61 per mechanism)")
+    ax.barh(y, sig, color="#7fa9bb", height=.70, label="statistically clear")
+    ax.barh(y, sur, color="#1f6f8b", height=.70, label="and still clear with geography held")
+    for i, (s_, u_) in enumerate(zip(sig, sur)):
+        ax.text(s_ + 1.2, i, f"{s_}", va="center", fontsize=6.6, color="#4a6b78")
+        if u_:
+            ax.text(u_ / 2, i, f"{u_}", va="center", ha="center", fontsize=6.4, color="white")
+    ax.set_yticks(y); ax.set_yticklabels(order, fontsize=7)
+    ax.invert_yaxis(); ax.set_xlabel("species-measure combinations (of 61)")
+    ax.legend(fontsize=6.2, frameon=False, loc="lower right")
+    ax.set_title("a   How many effects each mechanism carries", loc="left", fontsize=8.8)
+
+    # (b) partial R2: the share of site-to-site variation a mechanism explains on its own
+    ax = axes[1]
+    for i, mm in enumerate(order):
+        v = e[e.mechanism == mm].partial_r2.dropna().values
+        xj = np.random.default_rng(i).normal(0, .075, len(v))
+        s_ = e[e.mechanism == mm]
+        clear = s_.sig.fillna(False).values.astype(bool)
+        pr = s_.partial_r2.values
+        ax.scatter(pr[~clear], i + xj[:len(pr)][~clear], s=8, c="#ffffff",
+                   edgecolor="#c3cbd0", lw=.5, zorder=2)
+        ax.scatter(pr[clear], i + xj[:len(pr)][clear], s=13, c="#1f6f8b", lw=0, zorder=3)
+        ax.plot([np.nanmedian(v)], [i], marker="|", ms=13, color=INK, zorder=4)
+    ax.set_yticks(range(len(order))); ax.set_yticklabels([])
+    ax.invert_yaxis()
+    ax.set_xlabel("share of site-to-site variation explained on its own\n"
+                  "with the other seven mechanisms held constant")
+    ax.set_xlim(-.01, min(0.42, float(np.nanpercentile(e.partial_r2, 99.5))))
+    ax.legend(handles=[Line2D([], [], marker="o", ls="", mfc="#1f6f8b", mec="#1f6f8b", ms=4,
+                              label="statistically clear"),
+                       Line2D([], [], marker="o", ls="", mfc="white", mec="#c3cbd0", ms=4,
+                              label="not clear"),
+                       Line2D([], [], marker="|", ls="", color=INK, ms=9, label="median")],
+              fontsize=6.2, frameon=False, loc="upper right",
+              bbox_to_anchor=(1.0, 1.02))
+    ax.set_title("b   How much each mechanism explains", loc="left", fontsize=8.8)
+    ntot, nsig, nsur = len(e), int(e.sig.sum()), int(e.survives_spatial.sum())
+    fig.suptitle(f"Eight mechanisms across 61 models: {nsig} of {ntot} effects are "
+                 f"statistically clear, {nsur} survive holding geography constant",
+                 fontsize=10, y=1.02)
+    return fig
+
+
+def fig08_predator_abundance(D, style=None, focal="Eastern Fox Squirrel"):
+    """Predator abundance: the effects, one species in detail, and its overlap with richness."""
+    if style:
+        style()
+    pab, sites, harm = D["abundance"], D["sites"], D["harmonics"]
+    sig = pab[pab.significant.fillna(False)].copy()
+    sig["label"] = sig.species + "\n" + sig.measure.map(MEASURE_LABEL).fillna(sig.measure)
+    sig = sig.sort_values("partial_r2")
+
+    fig = plt.figure(figsize=(13.4, 4.5))
+    gs = fig.add_gridspec(1, 3, width_ratios=[1.15, 1, 1], wspace=.34)
+
+    # (a) the significant effects with intervals
+    ax = fig.add_subplot(gs[0, 0])
+    y = np.arange(len(sig))
+    ax.errorbar(sig.beta, y, xerr=[sig.beta - sig.lo, sig.hi - sig.beta], fmt="o",
+                ms=5, lw=1.1, color="#1f6f8b", ecolor="#7fa9bb", capsize=2)
+    ax.axvline(0, color="#b5442e", lw=.9, ls=":")
+    for i, (_, r_) in enumerate(sig.iterrows()):
+        ax.text(r_.hi + (sig.hi.max() - sig.lo.min()) * .03, i,
+                f"R2 {r_.partial_r2:.3f}", va="center", fontsize=6.0, color=MUTED)
+    ax.set_yticks(y); ax.set_yticklabels(sig.label, fontsize=6.0)
+    ax.set_xlabel("change in the measure per unit of predator abundance")
+    ax.set_title(f"a   The {len(sig)} clear predator-abundance effects", loc="left",
+                 fontsize=8.6)
+
+    # (b) the focal species' curves at low against high predator abundance
+    ax = fig.add_subplot(gs[0, 1])
+    t, _ = curve_grid()
+    sub = sites[sites.species == focal].dropna(subset=["pred_rate_total"])
+    q1, q3 = sub.pred_rate_total.quantile([.25, .75])
+    hh = harm[harm.species == focal].dropna(subset=["s1", "c1", "s2", "c2"])
+    hh = hh.merge(sub[["final_array", "pred_rate_total"]], on="final_array", how="inner")
+    ax.axvspan(12, 24, color=NIGHT_SHADE, zorder=0, lw=0)
+    for grp, col, lab in [(hh[hh.pred_rate_total <= q1], "#4E9A6A", "few predators"),
+                          (hh[hh.pred_rate_total >= q3], "#b5442e", "many predators")]:
+        if not len(grp):
+            continue
+        M = curves_from_harmonics(grp, t)
+        M = M / M.sum(axis=1, keepdims=True)
+        mu = M.mean(axis=0) * 1000
+        ax.plot(t, mu, color=col, lw=2.2, zorder=4,
+                label=f"{lab} ({len(grp)} sites)")
+        ax.fill_between(t, 0, mu, color=col, alpha=.13, zorder=2)
+    ax.set_xlim(0, 24); ax.set_xticks([0, 6, 12, 18, 24])
+    ax.set_xticklabels(["sunrise", "noon", "sunset", "midnight", "sunrise"], fontsize=6.4)
+    ax.set_ylabel("share of daily activity")
+    ax.legend(fontsize=6.4, frameon=False, loc="upper right")
+    ax.set_title(f"b   {focal}: where predators are common,\nactivity shifts toward midday",
+                 loc="left", fontsize=8.6)
+
+    # (c) richness against abundance, and which effects each carries
+    ax = fig.add_subplot(gs[0, 2])
+    ss = sites.drop_duplicates("final_array").dropna(subset=["pred_richness",
+                                                             "pred_rate_total"])
+    ax.scatter(ss.pred_richness + np.random.default_rng(0).normal(0, .09, len(ss)),
+               np.log1p(ss.pred_rate_total), s=8, c="#7fa9bb", lw=0, alpha=.7)
+    # Two correlations, both correct for what they describe. The panel plots one point per
+    # SITE, so quote that; the methods table reports the value over the MODEL rows, where
+    # sites contributing more species-measure combinations weigh more heavily.
+    r_site = float(np.corrcoef(ss.pred_richness, np.log1p(ss.pred_rate_total))[0, 1])
+    zz = sites[["pred_richness", "pred_rate_total"]].dropna()
+    r_model = float(np.corrcoef(zz.pred_richness, np.log1p(zz.pred_rate_total))[0, 1])
+    ax.set_xlabel("predator richness (species at the site)")
+    ax.set_ylabel("predator abundance (detections per 100\ncamera-days, log scale)")
+    only_a = int(((pab.significant.fillna(False)) & (~pab.richness_significant.fillna(False))).sum())
+    only_r = int(((~pab.significant.fillna(False)) & (pab.richness_significant.fillna(False))).sum())
+    both = int(((pab.significant.fillna(False)) & (pab.richness_significant.fillna(False))).sum())
+    ax.text(.03, .97, f"correlation {r_site:+.2f} across the {len(ss)} sites shown\n"
+                      f"({r_model:+.2f} across model rows, as in the methods)\n\n"
+                      f"{only_r} combinations carry richness only\n"
+                      f"{only_a} carry abundance only\n{both} carry both",
+            transform=ax.transAxes, fontsize=6.2, va="top", color=INK)
+    ax.set_title("c   Richness and abundance are\nnearly independent", loc="left",
+                 fontsize=8.6)
+    fig.suptitle("Predator abundance is a separate signal from how many predator species "
+                 "are present", fontsize=10, y=1.02)
+    return fig
+
+
 FIGURES = {
     "fig01_data_coverage": fig01_data_coverage,
     "fig02_species_curves": fig02_species_curves,
     "fig03_effort_offset": fig03_effort_offset,
     "fig04_measures_reliability": fig04_measures_reliability,
     "fig05_covariate_maps": fig05_covariate_maps,
+    "fig06_timestamp_qc": fig06_timestamp_qc,
+    "fig07_model_effects": fig07_model_effects,
+    "fig08_predator_abundance": fig08_predator_abundance,
 }
 
 
