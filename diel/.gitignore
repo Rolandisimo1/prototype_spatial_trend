@@ -1,0 +1,26 @@
+# Data — never committed. Source records live outside this repo.
+*.csv
+*.parquet
+*.rds
+*.RDS
+*.tif
+*.geojson
+*.zip
+*.tar.gz
+data/
+outputs/
+
+# Large rendered deliverables
+*.png
+*.html
+*.docx
+*.pdf
+
+# Environment and scratch
+__pycache__/
+*.pyc
+.Rhistory
+.RData
+.Rproj.user/
+.DS_Store
+_*.csv
