@@ -8,10 +8,11 @@ as the original did), so new values are drawn from the same distribution as stor
 """
 import ee, json, os, time
 import numpy as np, pandas as pd
+import os
 from google.oauth2 import service_account
 from concurrent.futures import ThreadPoolExecutor
 
-KEY = "/Users/rwkays/claude_code/keys/snapshotusa-fd9e954c98b9.json"
+KEY = os.environ.get("GEE_SERVICE_ACCOUNT_KEY", "keys/service_account.json")
 
 
 def init():

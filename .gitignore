@@ -23,3 +23,11 @@
 # provenance headers -- see PIPELINE.md section 4.
 isdm_sim_codebase/
 isdm_sim_codebase.tar.gz
+
+# Service-account keys and credential files. This repo is public: never commit key
+# material. Scripts read the path from GEE_SERVICE_ACCOUNT_KEY instead.
+keys/
+*-service-account*.json
+*serviceaccount*.json
+*.pem
+*credentials*.json

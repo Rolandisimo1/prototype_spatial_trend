@@ -12,7 +12,7 @@ import ee, json, math, sys, time
 import pandas as pd, numpy as np
 from google.oauth2 import service_account
 
-KEY = "/Users/rwkays/claude_code/keys/snapshotusa-fd9e954c98b9.json"
+KEY = os.environ.get("GEE_SERVICE_ACCOUNT_KEY", "keys/service_account.json")
 _ki = json.load(open(KEY))
 ee.Initialize(service_account.Credentials.from_service_account_file(
     KEY, scopes=["https://www.googleapis.com/auth/earthengine",

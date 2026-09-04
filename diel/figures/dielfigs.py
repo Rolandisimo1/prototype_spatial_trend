@@ -66,8 +66,10 @@ NIGHT_SHADE = "#e6e9eb"
 # Deployment start and end dates are needed for the seasonal-coverage panel and live in the raw
 # export rather than in an artifact. Override with load_all(host, deployments_csv=...) if the
 # export moves.
-DEPLOYMENTS_CSV = ("/Users/rwkays/claude_code/activity_patterns/activity_data/"
-                   "trend_data_arielle_used/combined_deployments_all.csv")
+DEPLOYMENTS_CSV = os.environ.get(
+    "DIEL_DEPLOYMENTS_CSV",
+    os.path.expanduser("~/claude_code/activity_patterns/activity_data/"
+                       "trend_data_arielle_used/combined_deployments_all.csv"))
 
 INPUTS = {
     "sites": "site_analysis_table_v2.csv",
