@@ -92,6 +92,10 @@ INPUTS = {
     "effort_nonuniform": "stage1_effort_nonuniformity.csv",
     "grid_4cov": "national_grid_covariates_4cov_25km.csv",
     "curve_shifts": "stage6_curve_shifts.csv",
+    "null": "stage4_counting_noise_null.csv",
+    "cv": "cv_results_v8.csv",
+    "surface_diag": "prediction_surface_diagnostics_v8.csv",
+    "surfaces": "prediction_surfaces_v8.csv",
 }
 
 # The five mappable environmental covariates and the grid column each lives in. They span two
@@ -845,6 +849,238 @@ def fig08_predator_abundance(D, style=None, focal="Eastern Fox Squirrel"):
     return fig
 
 
+def fig09_spatial_control(D, style=None):
+    """What survives holding geography constant, and what does not."""
+    if style:
+        style()
+    e = D["effects"].dropna(subset=["beta", "beta_spatial"]).copy()
+    order = D["effects"].groupby("mechanism").sig.sum().sort_values(ascending=False).index.tolist()
+
+    fig, axes = plt.subplots(1, 3, figsize=(13.4, 4.3),
+                             gridspec_kw=dict(width_ratios=[1, 1, 1.05], wspace=.32))
+    # (a) coefficient before against after, on a common standardised footing
+    ax = axes[0]
+    z = e.assign(zb=e.beta / e.se, zs=e.beta_spatial / e.se_spatial)
+    z = z[np.isfinite(z.zb) & np.isfinite(z.zs)]
+    lim = float(np.nanpercentile(np.abs(np.r_[z.zb, z.zs]), 99)) * 1.05
+    keep = z.survives_spatial.fillna(False).values.astype(bool)
+    ax.axhline(0, color="#d5d9dc", lw=.7); ax.axvline(0, color="#d5d9dc", lw=.7)
+    ax.plot([-lim, lim], [-lim, lim], color=MUTED, lw=.8, ls="--", zorder=1)
+    ax.scatter(z.zb[~keep], z.zs[~keep], s=9, c="#ffffff", edgecolor="#c3cbd0", lw=.5, zorder=2)
+    ax.scatter(z.zb[keep], z.zs[keep], s=13, c="#1f6f8b", lw=0, zorder=3)
+    ax.set_xlim(-lim, lim); ax.set_ylim(-lim, lim)
+    ax.set_xlabel("effect strength, geography free")
+    ax.set_ylabel("effect strength, geography held constant")
+    ax.text(.03, .97, "points below the dashed line weakened\nwhen geography was held constant",
+            transform=ax.transAxes, fontsize=6.0, color=MUTED, va="top")
+    ax.set_title("a   Every effect, before and after", loc="left", fontsize=8.6)
+
+    # (b) survival rate per mechanism
+    ax = axes[1]
+    rows = []
+    for mm in order:
+        s_ = D["effects"][D["effects"].mechanism == mm]
+        nsig = int(s_.sig.sum())
+        nsur = int(s_.survives_spatial.sum())
+        rows.append((mm, nsig, nsur, 100 * nsur / nsig if nsig else np.nan))
+    R = pd.DataFrame(rows, columns=["mech", "sig", "sur", "pct"])
+    y = np.arange(len(R))
+    ax.barh(y, R.pct.fillna(0), color=["#1f6f8b" if p > 50 else "#c98b5e" if p > 0 else "#b5442e"
+                                       for p in R.pct.fillna(0)], height=.66)
+    for i, r_ in R.iterrows():
+        lab = f"{int(r_.sur)} of {int(r_.sig)}" if r_.sig else "none clear"
+        ax.text((r_.pct if np.isfinite(r_.pct) else 0) + 2, i, lab, va="center",
+                fontsize=6.2, color=MUTED)
+    ax.set_yticks(y); ax.set_yticklabels(R.mech, fontsize=6.8); ax.invert_yaxis()
+    ax.set_xlim(0, 118); ax.set_xticks([0, 25, 50, 75, 100])
+    ax.set_xlabel("% of clear effects still clear with geography held")
+    ax.set_title("b   Which mechanisms are separable\nfrom position on the map", loc="left",
+                 fontsize=8.6)
+
+    # (c) the two extremes named
+    ax = axes[2]
+    best = R.dropna(subset=["pct"]).nlargest(1, "pct").iloc[0]
+    worst = R.dropna(subset=["pct"]).nsmallest(1, "pct").iloc[0]
+    t, _ = curve_grid()
+    ax.axis("off")
+    txt = (f"Best separated: {best.mech}\n"
+           f"   {int(best.sur)} of {int(best.sig)} clear effects survive "
+           f"({best.pct:.0f}%).\n"
+           f"   Population density varies between neighbouring sites,\n"
+           f"   so its effect is not a restatement of where the site is.\n\n"
+           f"Not separated: {worst.mech}\n"
+           f"   {int(worst.sur)} of {int(worst.sig)} survive ({worst.pct:.0f}%).\n"
+           f"   Summer heat changes smoothly with latitude, so a smooth\n"
+           f"   function of position absorbs it entirely. The correlation\n"
+           f"   with activity is real; the causal reading is not available\n"
+           f"   from these data.\n\n"
+           f"Held constant using a thin-plate spline on site position,\n"
+           f"refitted alongside all eight predictors.")
+    ax.text(0, .98, txt, transform=ax.transAxes, fontsize=7.0, va="top", color=INK,
+            linespacing=1.55)
+    ax.set_title("c   Reading the two extremes", loc="left", fontsize=8.6)
+    nsig, nsur = int(D["effects"].sig.sum()), int(D["effects"].survives_spatial.sum())
+    fig.suptitle(f"Holding geography constant: {nsur} of {nsig} clear effects survive",
+                 fontsize=10, y=1.03)
+    return fig
+
+
+def fig10_counting_noise(D, style=None):
+    """The counting-noise test, for the three predictors built from detection counts.
+
+    Applies ONLY to predictors derived from detection counts. The five environmental
+    covariates are not count-derived, so the test does not apply to them and they are absent
+    here by construction rather than by omission.
+    """
+    if style:
+        style()
+    nt = D["null"].copy()
+    mechs = nt.mechanism.dropna().unique().tolist()
+
+    fig, axes = plt.subplots(1, 3, figsize=(13.2, 4.2),
+                             gridspec_kw=dict(width_ratios=[1, 1, 1], wspace=.32))
+    # (a) observed effect against what pure counting noise reproduces
+    ax = axes[0]
+    for mm, col in zip(mechs, ["#1f6f8b", "#c98b5e", "#7a5aa8"]):
+        s_ = nt[nt.mechanism == mm]
+        ax.scatter(s_.null_abs_median, s_.obs_beta.abs(), s=14, c=col, lw=0, alpha=.85,
+                   label=mm)
+    hi = float(np.nanpercentile(np.r_[nt.obs_beta.abs(), nt.null_abs_median], 99)) * 1.08
+    ax.plot([0, hi], [0, hi], color=MUTED, lw=.9, ls="--")
+    ax.set_xlim(0, hi); ax.set_ylim(0, hi)
+    ax.set_xlabel("effect size counting noise alone reproduces")
+    ax.set_ylabel("effect size observed")
+    ax.legend(fontsize=6.2, frameon=False, loc="lower right")
+    ax.text(.03, .97, "on the dashed line, the effect is\nwhat noise alone would give",
+            transform=ax.transAxes, fontsize=6.0, color=MUTED, va="top")
+    ax.set_title("a   Observed against simulated", loc="left", fontsize=8.6)
+
+    # (b) share of the observed effect the null reproduces
+    ax = axes[1]
+    for i, mm in enumerate(mechs):
+        v = nt[nt.mechanism == mm].abs_frac_reproduced.dropna().clip(0, 2)
+        xj = np.random.default_rng(i).normal(0, .07, len(v))
+        ax.scatter(v, i + xj, s=11, c="#7fa9bb", lw=0, alpha=.8, zorder=3)
+        ax.plot([float(np.median(v))], [i], marker="|", ms=15, color=INK, zorder=4)
+        ax.text(1.92, i - .28, f"median {np.median(v):.2f}", fontsize=6.0, color=MUTED,
+                ha="right")
+    ax.axvline(1, color="#b5442e", lw=1.0, ls=":")
+    ax.text(1.03, -.42, "noise reproduces\nthe whole effect", fontsize=6.0,
+            color="#b5442e", va="top")
+    ax.text(.99, .03, "values above 2 are drawn at 2", transform=ax.transAxes,
+            fontsize=5.8, color=MUTED, ha="right")
+    ax.set_yticks(range(len(mechs))); ax.set_yticklabels(mechs, fontsize=6.8)
+    ax.set_xlim(-.05, 2.0); ax.invert_yaxis()
+    ax.set_xlabel("share of the observed effect that counting noise reproduces")
+    ax.set_title("b   How much is noise", loc="left", fontsize=8.6)
+
+    # (c) what is left
+    ax = axes[2]
+    y = np.arange(len(mechs))
+    sig = [int(nt[nt.mechanism == mm].obs_sig.sum()) for mm in mechs]
+    sur = [int(nt[nt.mechanism == mm].survives_null.sum()) for mm in mechs]
+    ax.barh(y, sig, color="#dfe5e8", height=.64, label="clear before the test")
+    ax.barh(y, sur, color="#1f6f8b", height=.64, label="still clear after")
+    for i, (s_, u_) in enumerate(zip(sig, sur)):
+        ax.text(s_ + .4, i, f"{u_} of {s_}", va="center", fontsize=6.4, color=MUTED)
+    ax.set_yticks(y); ax.set_yticklabels(mechs, fontsize=6.8); ax.invert_yaxis()
+    ax.set_xlabel("species-measure combinations")
+    ax.set_xlim(0, max(sig) * 1.32)
+    ax.legend(fontsize=6.2, frameon=False, loc="lower right")
+    ax.set_title("c   What survives the test", loc="left", fontsize=8.6)
+    fig.suptitle("Counting-noise test: applies only to the three predictors built from "
+                 "detection counts, never to the environmental covariates",
+                 fontsize=9.8, y=1.03)
+    return fig
+
+
+def fig11_skill_and_maps(D, style=None):
+    """Out-of-sample skill for every combination, and the surfaces that earned a map."""
+    if style:
+        style()
+    cv, sd, ps = D["cv"], D["surface_diag"], D["surfaces"]
+
+    fig = plt.figure(figsize=(13.4, 7.8))
+    gs = fig.add_gridspec(2, 4, height_ratios=[1, 1.15], hspace=.34, wspace=.14)
+
+    # (a) skill for every species-measure combination, by predictor set
+    ax = fig.add_subplot(gs[0, :2])
+    sets = cv.predictor_set.dropna().unique().tolist()
+    for i, st in enumerate(sets):
+        s_ = cv[cv.predictor_set == st]
+        xj = np.random.default_rng(i).normal(0, .08, len(s_))
+        won = s_.beats_null.fillna(False).values.astype(bool)
+        ax.scatter(s_.skill[~won], i + xj[~won], s=11, c="#ffffff", edgecolor="#c3cbd0",
+                   lw=.5, zorder=2)
+        ax.scatter(s_.skill[won], i + xj[won], s=16, c="#1f6f8b", lw=0, zorder=3)
+        ax.plot([float(np.nanmedian(s_.skill))], [i], marker="|", ms=15, color=INK, zorder=4)
+        ax.text(.985, 1 - (i + .62) / len(sets), f"{int(won.sum())} of {len(s_)} beat the null",
+                transform=ax.transAxes, fontsize=6.2, color=MUTED, ha="right")
+    ax.axvline(0, color="#b5442e", lw=1.0, ls=":")
+    # A handful of folds give large negative skill and would compress everything else to a
+    # line. Clip the view and say how many points fall outside it.
+    lo_c = float(np.nanpercentile(cv.skill, 2)) - .05
+    n_off = int((cv.skill < lo_c).sum())
+    ax.set_xlim(lo_c, float(np.nanmax(cv.skill)) * 1.35 + .02)
+    if n_off:
+        ax.text(.015, .04, f"{n_off} rows fall below {lo_c:.2f} and are outside this view",
+                transform=ax.transAxes, fontsize=6.0, color=MUTED)
+    ax.set_yticks(range(len(sets))); ax.set_yticklabels(sets, fontsize=6.8)
+    ax.invert_yaxis()
+    ax.set_xlabel("skill against one nationwide curve\n(0 means no better than the same "
+                  "rhythm everywhere)")
+    ax.set_title("a   Out-of-sample skill, every combination", loc="left", fontsize=8.8)
+
+    # (b) roughness against skill for the mapped surfaces
+    ax = fig.add_subplot(gs[0, 2:])
+    ax.axhline(0, color="#b5442e", lw=.9, ls=":")
+    ax.axvline(1, color=MUTED, lw=.8, ls="--")
+    for _, r_ in sd.iterrows():
+        ax.errorbar(r_.roughness_ratio, r_.cv_skill,
+                    yerr=[[r_.cv_skill - r_.cv_lo], [r_.cv_hi - r_.cv_skill]],
+                    fmt="o", ms=6, lw=1.1, color="#1f6f8b", ecolor="#7fa9bb", capsize=2)
+        ax.annotate(f"{r_.species}\n{MEASURE_LABEL.get(r_.measure, r_.measure)}",
+                    (r_.roughness_ratio, r_.cv_skill), xytext=(7, 0),
+                    textcoords="offset points", fontsize=6.0, va="center", color=INK)
+    ax.set_xlabel("neighbouring-cell change / site-to-site spread\n"
+                  "(above 1 means the surface is rougher than the real variation)")
+    ax.set_ylabel("skill against one\nnationwide curve")
+    ax.yaxis.set_label_position("right"); ax.yaxis.tick_right()
+    ax.set_xlim(0, max(1.25, float(sd.roughness_ratio.max()) * 1.45))
+    ax.set_title("b   The surfaces that earned a map", loc="left", fontsize=8.8)
+
+    # (c-f) the surfaces themselves
+    for k, (_, r_) in enumerate(sd.iterrows()):
+        if k >= 4:
+            break
+        ax = fig.add_subplot(gs[1, k])
+        g = ps[(ps.species == r_.species) & (ps.measure == r_.measure) & ps.drawn.fillna(False)]
+        draw_states(ax, D["states"], lw=.30, color="#c9cfd4")
+        cyc = r_.measure == "peak_h"
+        v = g.pred.values
+        # NOT g.gx / g.gy: those columns are integer GRID INDICES (range -94..90), not the
+        # Albers coordinates the state outlines use. Project from lon/lat instead.
+        px, py = albers(g.lon.values, g.lat.values)
+        sc = ax.scatter(px, py, c=v, s=2.2,
+                        cmap=CYCLIC_CMAP if cyc else SEQ_CMAP, lw=0,
+                        vmin=0 if cyc else np.nanpercentile(v, 2),
+                        vmax=24 if cyc else np.nanpercentile(v, 98))
+        ax.set_xlim(-.385, .375); ax.set_ylim(-.225, .262)
+        ax.set_aspect("equal"); ax.axis("off")
+        cb = fig.colorbar(sc, ax=ax, fraction=.030, pad=.005, shrink=.68)
+        cb.ax.tick_params(labelsize=5.4)
+        ax.set_title(f"{'cdef'[k]}   {r_.species}\n{MEASURE_LABEL.get(r_.measure, r_.measure)}",
+                     loc="left", fontsize=7.6)
+        ax.text(.02, .04, f"{int(r_.n_cells_drawn):,} cells\n"
+                          f"median interval width {np.nanmedian(g.ci95_width):.1f}",
+                transform=ax.transAxes, fontsize=5.6, color=MUTED)
+    nwon = int(cv.beats_null.fillna(False).sum())
+    fig.suptitle(f"Out-of-sample skill and the four surfaces that passed: {nwon} of {len(cv)} "
+                 f"combination-and-predictor-set rows beat a single nationwide curve",
+                 fontsize=9.8, y=.965)
+    return fig
+
+
 FIGURES = {
     "fig01_data_coverage": fig01_data_coverage,
     "fig02_species_curves": fig02_species_curves,
@@ -854,6 +1090,9 @@ FIGURES = {
     "fig06_timestamp_qc": fig06_timestamp_qc,
     "fig07_model_effects": fig07_model_effects,
     "fig08_predator_abundance": fig08_predator_abundance,
+    "fig09_spatial_control": fig09_spatial_control,
+    "fig10_counting_noise": fig10_counting_noise,
+    "fig11_skill_and_maps": fig11_skill_and_maps,
 }
 
 
