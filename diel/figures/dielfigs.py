@@ -106,6 +106,16 @@ INPUTS = {
 # predictors, which are not mapped.
 ENV_LABELS = ["Population", "Cropland", "Tree canopy", "Ruggedness", "Summer heat"]
 
+# The eight model predictors as they appear in the site table, the mechanism each stands for,
+# and which enter on a log scale.
+MODEL_PREDICTORS = ["pop_1km", "nlcd_5k_crop", "tcc_1km", "rug_5km", "tmax_hottest_month",
+                    "pred_richness", "pred_rate_total", "log_det_rate"]
+LOG_PREDICTORS = {"pop_1km", "pred_rate_total"}
+MECH_OF = {"pop_1km": "human disturbance", "nlcd_5k_crop": "agriculture",
+           "tcc_1km": "vegetation", "rug_5km": "terrain",
+           "tmax_hottest_month": "summer heat", "pred_richness": "predator richness",
+           "pred_rate_total": "predator abundance", "log_det_rate": "relative abundance"}
+
 # The three count-derived predictors are NOT available on the prediction grid, and relative
 # abundance is a property of the survey rather than of the landscape so it cannot be mapped in
 # principle. They are shown as values at the 489 sites, never as national surfaces.
@@ -849,81 +859,127 @@ def fig08_predator_abundance(D, style=None, focal="Eastern Fox Squirrel"):
     return fig
 
 
-def fig09_spatial_control(D, style=None):
-    """What survives holding geography constant, and what does not."""
+def local_variability(sites, predictors=None, radius_km=50):
+    """How much each predictor changes between sites closer than `radius_km`, against its
+    national spread.
+
+    This is the quantity that decides whether a position spline can absorb a predictor. A
+    predictor that varies only over long distances is a smooth function of position, so the
+    spline reproduces it and the partial coefficient loses its footing. One that differs
+    between neighbouring sites carries information position does not.
+    """
+    from scipy.spatial import cKDTree
+    predictors = predictors or MODEL_PREDICTORS
+    st = sites.drop_duplicates("final_array")
+    st = st[["final_array", "x_km", "y_km"] + list(predictors)].dropna(subset=["x_km", "y_km"])
+    pairs = cKDTree(np.c_[st.x_km, st.y_km]).query_pairs(r=radius_km, output_type="ndarray")
+    rows = []
+    for c in predictors:
+        v = st[c].values.astype(float)
+        if c in LOG_PREDICTORS:
+            v = np.log1p(v)
+        tot = np.nanstd(v, ddof=1)
+        ok = np.isfinite(v[pairs[:, 0]]) & np.isfinite(v[pairs[:, 1]])
+        d = np.abs(v[pairs[:, 0]][ok] - v[pairs[:, 1]][ok])
+        local = np.sqrt(np.mean(d ** 2) / 2) if len(d) else np.nan
+        rows.append((MECH_OF.get(c, c), c, tot, local, local / tot if tot else np.nan))
+    out = pd.DataFrame(rows, columns=["mechanism", "predictor", "sd_total",
+                                      "sd_local", "ratio"])
+    out.attrs["n_pairs"] = int(len(pairs))
+    out.attrs["radius_km"] = radius_km
+    return out.sort_values("ratio", ascending=False)
+
+
+def fig09_spatial_control(D, style=None, radius_km=50):
+    """Why some mechanisms survive holding geography constant and others do not.
+
+    The earlier version of panel a plotted each coefficient against its own value under the
+    position control, which can only fall near the identity line and says nothing. It is
+    replaced by the property that actually decides the outcome: how locally variable the
+    predictor is.
+    """
     if style:
         style()
-    e = D["effects"].dropna(subset=["beta", "beta_spatial"]).copy()
-    order = D["effects"].groupby("mechanism").sig.sum().sort_values(ascending=False).index.tolist()
+    e = D["effects"]
+    LV = local_variability(D["sites"], radius_km=radius_km)
+    n_pairs = LV.attrs["n_pairs"]   # merge below drops DataFrame.attrs
+    surv = e.groupby("mechanism").agg(sig=("sig", "sum"), sur=("survives_spatial", "sum"))
+    surv["pct"] = 100 * surv.sur / surv.sig.replace(0, np.nan)
+    LV = LV.merge(surv.reset_index(), on="mechanism", how="left")
+    order = e.groupby("mechanism").sig.sum().sort_values(ascending=False).index.tolist()
 
     fig, axes = plt.subplots(1, 3, figsize=(13.4, 4.3),
-                             gridspec_kw=dict(width_ratios=[1, 1, 1.05], wspace=.32))
-    # (a) coefficient before against after, on a common standardised footing
+                             gridspec_kw=dict(width_ratios=[1, 1, 1.1], wspace=.34))
+    # (a) how locally variable each predictor is
     ax = axes[0]
-    z = e.assign(zb=e.beta / e.se, zs=e.beta_spatial / e.se_spatial)
-    z = z[np.isfinite(z.zb) & np.isfinite(z.zs)]
-    lim = float(np.nanpercentile(np.abs(np.r_[z.zb, z.zs]), 99)) * 1.05
-    keep = z.survives_spatial.fillna(False).values.astype(bool)
-    ax.axhline(0, color="#d5d9dc", lw=.7); ax.axvline(0, color="#d5d9dc", lw=.7)
-    ax.plot([-lim, lim], [-lim, lim], color=MUTED, lw=.8, ls="--", zorder=1)
-    ax.scatter(z.zb[~keep], z.zs[~keep], s=9, c="#ffffff", edgecolor="#c3cbd0", lw=.5, zorder=2)
-    ax.scatter(z.zb[keep], z.zs[keep], s=13, c="#1f6f8b", lw=0, zorder=3)
-    ax.set_xlim(-lim, lim); ax.set_ylim(-lim, lim)
-    ax.set_xlabel("effect strength, geography free")
-    ax.set_ylabel("effect strength, geography held constant")
-    ax.text(.03, .97, "points below the dashed line weakened\nwhen geography was held constant",
-            transform=ax.transAxes, fontsize=6.0, color=MUTED, va="top")
-    ax.set_title("a   Every effect, before and after", loc="left", fontsize=8.6)
+    L = LV.sort_values("ratio")
+    y = np.arange(len(L))
+    ax.barh(y, L.ratio, color=["#1f6f8b" if r_ > .7 else "#c98b5e" if r_ > .55 else "#b5442e"
+                               for r_ in L.ratio], height=.66)
+    for i, r_ in enumerate(L.ratio):
+        ax.text(r_ + .012, i, f"{r_:.2f}", va="center", fontsize=6.2, color=MUTED)
+    ax.set_yticks(y); ax.set_yticklabels(L.mechanism, fontsize=6.8)
+    ax.set_xlim(0, 1.14)
+    ax.set_xlabel(f"change between sites under {radius_km} km apart,\n"
+                  f"as a fraction of the national spread")
+    ax.set_title(f"a   How local each mechanism is\n({n_pairs} nearby site pairs)",
+                 loc="left", fontsize=8.6)
 
     # (b) survival rate per mechanism
     ax = axes[1]
-    rows = []
-    for mm in order:
-        s_ = D["effects"][D["effects"].mechanism == mm]
-        nsig = int(s_.sig.sum())
-        nsur = int(s_.survives_spatial.sum())
-        rows.append((mm, nsig, nsur, 100 * nsur / nsig if nsig else np.nan))
-    R = pd.DataFrame(rows, columns=["mech", "sig", "sur", "pct"])
+    R = pd.DataFrame({"mech": order,
+                      "sig": [int(e[e.mechanism == mm].sig.sum()) for mm in order],
+                      "sur": [int(e[e.mechanism == mm].survives_spatial.sum())
+                              for mm in order]})
+    R["pct"] = 100 * R.sur / R.sig.replace(0, np.nan)
     y = np.arange(len(R))
-    ax.barh(y, R.pct.fillna(0), color=["#1f6f8b" if p > 50 else "#c98b5e" if p > 0 else "#b5442e"
-                                       for p in R.pct.fillna(0)], height=.66)
+    ax.barh(y, R.pct.fillna(0),
+            color=["#1f6f8b" if p > 50 else "#c98b5e" if p > 0 else "#b5442e"
+                   for p in R.pct.fillna(0)], height=.66)
     for i, r_ in R.iterrows():
-        lab = f"{int(r_.sur)} of {int(r_.sig)}" if r_.sig else "none clear"
-        ax.text((r_.pct if np.isfinite(r_.pct) else 0) + 2, i, lab, va="center",
-                fontsize=6.2, color=MUTED)
+        ax.text((r_.pct if np.isfinite(r_.pct) else 0) + 2.5, i,
+                f"{int(r_.sur)} of {int(r_.sig)}" if r_.sig else "none clear",
+                va="center", fontsize=6.2, color=MUTED)
     ax.set_yticks(y); ax.set_yticklabels(R.mech, fontsize=6.8); ax.invert_yaxis()
-    ax.set_xlim(0, 118); ax.set_xticks([0, 25, 50, 75, 100])
-    ax.set_xlabel("% of clear effects still clear with geography held")
-    ax.set_title("b   Which mechanisms are separable\nfrom position on the map", loc="left",
-                 fontsize=8.6)
+    ax.set_xlim(0, 122); ax.set_xticks([0, 25, 50, 75, 100])
+    ax.set_xlabel("% of clear effects still clear with\ngeography held constant")
+    ax.set_title("b   Which mechanisms survive", loc="left", fontsize=8.6)
 
-    # (c) the two extremes named
+    # (c) the relationship: local variability predicts survival
     ax = axes[2]
-    best = R.dropna(subset=["pct"]).nlargest(1, "pct").iloc[0]
-    worst = R.dropna(subset=["pct"]).nsmallest(1, "pct").iloc[0]
-    t, _ = curve_grid()
-    ax.axis("off")
-    txt = (f"Best separated: {best.mech}\n"
-           f"   {int(best.sur)} of {int(best.sig)} clear effects survive "
-           f"({best.pct:.0f}%).\n"
-           f"   Population density varies between neighbouring sites,\n"
-           f"   so its effect is not a restatement of where the site is.\n\n"
-           f"Not separated: {worst.mech}\n"
-           f"   {int(worst.sur)} of {int(worst.sig)} survive ({worst.pct:.0f}%).\n"
-           f"   Summer heat changes smoothly with latitude, so a smooth\n"
-           f"   function of position absorbs it entirely. The correlation\n"
-           f"   with activity is real; the causal reading is not available\n"
-           f"   from these data.\n\n"
-           f"Held constant using a thin-plate spline on site position,\n"
-           f"refitted alongside all eight predictors.")
-    ax.text(0, .98, txt, transform=ax.transAxes, fontsize=7.0, va="top", color=INK,
-            linespacing=1.55)
-    ax.set_title("c   Reading the two extremes", loc="left", fontsize=8.6)
-    nsig, nsur = int(D["effects"].sig.sum()), int(D["effects"].survives_spatial.sum())
-    fig.suptitle(f"Holding geography constant: {nsur} of {nsig} clear effects survive",
-                 fontsize=10, y=1.03)
+    P = LV.dropna(subset=["ratio", "pct"])
+    ax.scatter(P.ratio, P.pct, s=42, c="#1f6f8b", lw=.4, edgecolor="white", zorder=3)
+    # Hand-placed offsets: four mechanisms cluster in the upper right and collide at any
+    # single offset. Keys are mechanism names, values are (dx, dy) in points.
+    OFF = {"human disturbance": (0, -13), "predator abundance": (-4, 9),
+           "relative abundance": (2, -13), "predator richness": (0, 9),
+           "summer heat": (6, 9), "vegetation": (0, 9), "terrain": (0, 9),
+           "agriculture": (0, 9)}
+    for _, r_ in P.iterrows():
+        dx, dy = OFF.get(r_.mechanism, (0, 9))
+        ax.annotate(r_.mechanism, (r_.ratio, r_.pct), xytext=(dx, dy),
+                    textcoords="offset points", fontsize=6.0, ha="center", color=INK)
+    rho = float(P[["ratio", "pct"]].corr(method="spearman").iloc[0, 1])
+    # Agriculture breaks the pattern: it is the LEAST locally variable predictor yet half its
+    # clear effects survive. Name it rather than let the trend line imply otherwise.
+    ag = P[P.mechanism == "agriculture"]
+    ax.set_xlabel(f"change between sites under {radius_km} km apart,\n"
+                  f"as a fraction of the national spread")
+    ax.set_ylabel("% of clear effects surviving")
+    ax.set_xlim(P.ratio.min() - .09, P.ratio.max() + .09)
+    ax.set_ylim(-26, 122)
+    note = f"rank correlation {rho:+.2f} across {len(P)} mechanisms"
+    if len(ag):
+        note += (f"\nagriculture is the exception: least locally variable\n"
+                 f"({float(ag.ratio.iloc[0]):.2f}) yet {float(ag.pct.iloc[0]):.0f}% survive")
+    ax.text(.03, .04, note, transform=ax.transAxes, fontsize=6.2, color=INK, va="bottom")
+    ax.set_title("c   Mechanisms varying between neighbours mostly\nsurvive; smooth ones "
+                 "mostly do not", loc="left", fontsize=8.6)
+    nsig, nsur = int(e.sig.sum()), int(e.survives_spatial.sum())
+    fig.suptitle(f"Holding geography constant: {nsur} of {nsig} clear effects survive, and "
+                 f"which ones is predicted by how locally the mechanism varies",
+                 fontsize=9.8, y=1.03)
     return fig
-
 
 def fig10_counting_noise(D, style=None):
     """The counting-noise test, for the three predictors built from detection counts.
@@ -1081,6 +1137,23 @@ def fig11_skill_and_maps(D, style=None):
     return fig
 
 
+# Which figures document HOW the analysis was done and which report WHAT it found. The methods
+# set exists for review and for a supplement; it is not intended for the main paper. The
+# results set is where detail belongs, so keep those panels rich even when trimming elsewhere.
+ROLE = {
+    "fig01_data_coverage": "methods",
+    "fig02_species_curves": "results",
+    "fig03_effort_offset": "methods",
+    "fig04_measures_reliability": "methods",
+    "fig05_covariate_maps": "methods",
+    "fig06_timestamp_qc": "methods",
+    "fig07_model_effects": "results",
+    "fig08_predator_abundance": "results",
+    "fig09_spatial_control": "results",
+    "fig10_counting_noise": "results",
+    "fig11_skill_and_maps": "results",
+}
+
 FIGURES = {
     "fig01_data_coverage": fig01_data_coverage,
     "fig02_species_curves": fig02_species_curves,
@@ -1096,7 +1169,14 @@ FIGURES = {
 }
 
 
-def render_all(host, outdir=".", style=None, only=None):
+def figure_index():
+    """One row per figure: name, role, and whether it is a main-paper candidate."""
+    return pd.DataFrame([{"figure": k, "role": ROLE.get(k, "unclassified"),
+                          "main_paper_candidate": ROLE.get(k) == "results"}
+                         for k in FIGURES])
+
+
+def render_all(host, outdir=".", style=None, only=None, role=None):
     """Render every registered figure to PNG at 300 dpi. Returns {name: path}."""
     import os
     os.makedirs(outdir, exist_ok=True)
@@ -1104,6 +1184,10 @@ def render_all(host, outdir=".", style=None, only=None):
     made = {}
     for name, fn in FIGURES.items():
         if only and name not in only:
+            continue
+        if role and ROLE.get(name) != role:
+            continue
+        if role and ROLE.get(name) != role:
             continue
         fig = fn(D, style=style)
         path = os.path.join(outdir, f"{name}.png")
