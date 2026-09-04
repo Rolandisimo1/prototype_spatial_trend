@@ -101,6 +101,17 @@ INPUTS = {
 # predictors, which are not mapped.
 ENV_LABELS = ["Population", "Cropland", "Tree canopy", "Ruggedness", "Summer heat"]
 
+# The three count-derived predictors are NOT available on the prediction grid, and relative
+# abundance is a property of the survey rather than of the landscape so it cannot be mapped in
+# principle. They are shown as values at the 489 sites, never as national surfaces.
+SITE_PREDICTORS = [
+    ("pred_richness", "Predator richness", "carnivore species at the site", False, None),
+    ("pred_rate_total", "Predator abundance", "carnivore detections per 100 camera-days",
+     True, None),
+    ("log_det_rate", "Relative abundance", "own detections per camera-hour, log",
+     False, "White-tailed Deer"),
+]
+
 MAP_COVARIATES = [
     ("pop_1km", "grid", "Population density", "people per km2, log scale", True),
     ("ag_5km", "grid_4cov", "Cropland", "share of land within 5 km", False),
@@ -396,19 +407,34 @@ def fig03_effort_offset(D, style=None, binned_suntime=None, binned_clock=None):
     return fig
 
 
-def fig04_measures_reliability(D, style=None, example_species="Coyote"):
-    """What the five measures read off a curve, and which are reliable enough to model."""
+def fig04_measures_reliability(D, style=None, example_species="Coyote", min_events=300):
+    """What the five measures read off a curve, and which are reliable enough to model.
+
+    Panel b contrasts a nearly flat curve with a sharply peaked one, both from well-measured
+    site-species combinations, because "concentration" is the measure a reader is least likely
+    to picture from a definition alone.
+    """
     if style:
         style()
-    harm, rel = D["harmonics"], D["reliability"]
+    harm, rel, sites = D["harmonics"], D["reliability"], D["sites"]
     t, _ = curve_grid()
+
+    def site_curve(species, site):
+        g = harm[(harm.species == species) & (harm.final_array.astype(str) == str(site))]
+        g = g.dropna(subset=["s1", "c1", "s2", "c2"])
+        if not len(g):
+            return None
+        v = curves_from_harmonics(g, t)[0]
+        return v / v.sum() * 1000
+
+    fig = plt.figure(figsize=(13.6, 4.3))
+    gs = fig.add_gridspec(1, 3, width_ratios=[1, 1, 1.35], wspace=.30)
+
+    # (a) the five measures annotated on one species-average curve
+    ax = fig.add_subplot(gs[0, 0])
     g = harm[harm.species == example_species].dropna(subset=["s1", "c1", "s2", "c2"])
     mu = curves_from_harmonics(g, t).mean(axis=0)
     mu = mu / mu.sum() * 1000
-
-    fig, axes = plt.subplots(1, 2, figsize=(12.4, 4.3),
-                             gridspec_kw=dict(width_ratios=[1, 1.25], wspace=.28))
-    ax = axes[0]
     ax.axvspan(12, 24, color=NIGHT_SHADE, zorder=0, lw=0)
     ax.plot(t, mu, color=INK, lw=2.2, zorder=4)
     ax.fill_between(t, 0, mu, where=(t >= 12), color="#3E5C93", alpha=.30, zorder=2)
@@ -417,28 +443,54 @@ def fig04_measures_reliability(D, style=None, example_species="Coyote"):
                         alpha=.45, zorder=3)
     ax.fill_between(t, 0, mu, where=((t >= 5) & (t <= 7)), color="#4E9A6A", alpha=.45, zorder=3)
     pk = float(t[np.argmax(mu)])
-    ax.annotate("", xy=(pk, mu.max()), xytext=(pk, mu.max() * 1.30),
+    ax.annotate("", xy=(pk, mu.max()), xytext=(pk, mu.max() * 1.26),
                 arrowprops=dict(arrowstyle="->", color="#b5442e", lw=1.2))
-    ax.text(pk, mu.max() * 1.34, "time of peak", ha="center", fontsize=6.6, color="#b5442e")
+    ax.text(pk, mu.max() * 1.30, "time of peak", ha="center", fontsize=6.6, color="#b5442e")
     ax.text(18, mu.max() * .32, "share at night", ha="center", fontsize=6.6, color="white")
-    ax.text(1.0, mu.max() * .50, "dawn", ha="center", fontsize=6.0, color=INK)
-    ax.text(11.0, mu.max() * .50, "dusk", ha="center", fontsize=6.0, color=INK)
+    ax.text(1.0, mu.max() * .52, "dawn", ha="center", fontsize=6.0, color=INK)
+    ax.text(11.0, mu.max() * .52, "dusk", ha="center", fontsize=6.0, color=INK)
     ax.text(6.0, mu.max() * .22, "midday", ha="center", fontsize=6.0, color=INK)
-    ax.text(.4, mu.max() * 1.52, "concentration = how peaked the whole curve is",
-            fontsize=6.4, color=MUTED)
     ax.set_xlim(0, 24); ax.set_xticks([0, 6, 12, 18, 24])
     ax.set_xticklabels(["sunrise", "noon", "sunset", "midnight", "sunrise"], fontsize=6.4)
-    ax.set_ylim(0, mu.max() * 1.62)
+    ax.set_ylim(0, mu.max() * 1.48)
     ax.set_ylabel("share of daily activity")
-    ax.set_title(f"a   The five measures, read off one curve\n({example_species})",
+    ax.set_title(f"a   Four measures read off one curve\n({example_species} average)",
                  loc="left", fontsize=8.6)
 
-    ax = axes[1]
+    # (b) concentration: flat against peaked, both well measured
+    ax = fig.add_subplot(gs[0, 1])
+    w = sites.dropna(subset=["conc"])
+    w = w[w.n_events >= min_events]
+    lo_r = w.nsmallest(1, "conc").iloc[0]
+    hi_r = w.nlargest(1, "conc").iloc[0]
+    drew = 0
+    for r_, col, tag in [(lo_r, "#4E9A6A", "spread through the day"),
+                         (hi_r, "#b5442e", "concentrated in a few hours")]:
+        v = site_curve(r_.species, r_.final_array)
+        if v is None:
+            continue
+        drew += 1
+        ax.plot(t, v, color=col, lw=2.2, zorder=4)
+        ax.fill_between(t, 0, v, color=col, alpha=.16, zorder=2)
+        y0 = .96 - .135 * (drew - 1)
+        ax.text(.03, y0, f"concentration {r_.conc:.2f}   {tag}",
+                transform=ax.transAxes, fontsize=6.6, color=col, va="top")
+        ax.text(.03, y0 - .058,
+                f"{r_.species}, one site, {int(r_.n_events):,} detections",
+                transform=ax.transAxes, fontsize=5.7, color=MUTED, va="top")
+    ax.axvspan(12, 24, color=NIGHT_SHADE, zorder=0, lw=0)
+    ax.set_xlim(0, 24); ax.set_xticks([0, 6, 12, 18, 24])
+    ax.set_xticklabels(["sunrise", "noon", "sunset", "midnight", "sunrise"], fontsize=6.4)
+    ax.set_ylabel("share of daily activity")
+    ax.set_ylim(0, ax.get_ylim()[1] * 1.34)
+    ax.set_title("b   The fifth measure, concentration:\nhow much of the day the animal uses",
+                 loc="left", fontsize=8.6)
+
+    # (c) reliability
+    ax = fig.add_subplot(gs[0, 2])
     piv = rel.pivot(index="species", columns="metric", values="reliability")
     cols = [c for c in MEASURES if c in piv.columns]
-    piv = piv[cols]
-    order_sp = piv.mean(axis=1).sort_values().index
-    piv = piv.loc[order_sp]
+    piv = piv[cols].loc[piv[cols].mean(axis=1).sort_values().index]
     for i, sp in enumerate(piv.index):
         for j, mm in enumerate(cols):
             v = piv.loc[sp, mm]
@@ -456,71 +508,79 @@ def fig04_measures_reliability(D, style=None, example_species="Coyote"):
     ax.set_xticklabels([MEASURE_LABEL[c].replace("% of activity ", "").replace("% ", "")
                         for c in cols], fontsize=6.2, rotation=18, ha="right")
     ax.set_yticks(range(len(piv.index))); ax.set_yticklabels(piv.index, fontsize=6.2)
-    ax.set_xlim(-.6, len(cols) - .4); ax.set_ylim(-.7, len(piv.index) - .3)
-    # Count ONLY over the measures actually modelled. The full table also scores overall
-    # activity level and breadth, which are not modelled, and including them overstates this.
+    ax.set_xlim(-.6, len(cols) - .4)
     nfail = int((rel[rel.metric.isin(cols)].reliability < 0.5).sum())
     act = rel[rel.metric == "act"]
+    ylim_hi = len(piv.index) - .3
     if len(act):
         ya = len(piv.index) + .55
         ax.axhline(len(piv.index) - .1, color="#d5d9dc", lw=.8)
-        for j, mm in enumerate(cols):
-            pass
-        ax.scatter([len(cols) / 2 - .5], [ya], s=42 + 150 * float(act.reliability.median()),
+        ax.scatter([1.0], [ya], s=42 + 150 * float(act.reliability.median()),
                    c="#ffffff", edgecolor="#b5442e", lw=1.4, zorder=3)
-        ax.text(len(cols) / 2 - .5, ya, "x", ha="center", va="center", fontsize=5.6,
-                color="#b5442e", zorder=4)
-        ax.text(len(cols) / 2 + .18, ya, f"overall activity level, median "
-                f"{act.reliability.median():.2f}\nexcluded from all spatial analysis",
+        ax.text(1.0, ya, "x", ha="center", va="center", fontsize=5.6, color="#b5442e", zorder=4)
+        ax.text(1.35, ya, f"overall activity level, median {act.reliability.median():.2f}\n"
+                          f"excluded from all spatial analysis",
                 fontsize=5.7, color="#b5442e", va="center")
-        ax.set_ylim(-.7, ya + .7)
-    ax.set_title(f"b   Reliability: is a site's value real, or counting noise?\n"
+        ylim_hi = ya + .7
+    ax.set_ylim(-.7, ylim_hi)
+    ax.set_title(f"c   Reliability: is a site's value real, or counting noise?\n"
                  f"Larger is more reliable; {nfail} of {len(cols) * len(piv.index)} "
                  f"combinations fall below 0.5 and are not modelled", loc="left", fontsize=8.6)
     fig.suptitle("What the measures are, and which ones the data can support",
                  fontsize=10, y=1.03)
     return fig
 
-
 def fig05_covariate_maps(D, style=None):
-    """The five mappable environmental conditions, and how little they overlap."""
+    """The eight model predictors: five as national surfaces, three as site values.
+
+    The split is not cosmetic. Predator richness, predator abundance and relative abundance are
+    not available on the prediction grid, so only the five environmental covariates can carry a
+    surface; relative abundance cannot be mapped in principle.
+    """
     if style:
         style()
     gj = D["grid"][["cell25", "lon", "lat", "pop_1km", "tcc_1km", "t_warmmonth"]].merge(
         D["grid_4cov"][["cell25", "ag_5km", "rug_5km"]], on="cell25", how="left")
     gx, gy = albers(gj.lon.values, gj.lat.values)
 
-    fig = plt.figure(figsize=(13.0, 6.2))
-    gs = fig.add_gridspec(2, 3, hspace=.10, wspace=.06)
+    sites = D["sites"]
+    harm = D["harmonics"]
+    xy = harm.groupby("final_array").agg(lat=("lat", "first"), lon=("lon", "first"))
+
+    fig = plt.figure(figsize=(13.0, 9.4))
+    gs = fig.add_gridspec(3, 3, hspace=.22, wspace=.06)
+
+    def _basemap(ax):
+        draw_states(ax, D["states"], lw=.30, color="#c9cfd4")
+        ax.set_xlim(-.385, .375); ax.set_ylim(-.225, .262)
+        ax.set_aspect("equal"); ax.axis("off")
+
     for k, (col, _src, title, unit, logscale) in enumerate(MAP_COVARIATES):
         ax = fig.add_subplot(gs[k // 3, k % 3])
         v = gj[col].values.astype(float)
         ok = np.isfinite(v)
         vv = np.log10(v[ok] + 1) if logscale else v[ok]
-        draw_states(ax, D["states"], lw=.30, color="#c9cfd4")
+        _basemap(ax)
         hi_pct = 99.8 if logscale else 98.0
+        top = np.nanpercentile(vv, hi_pct)
         sc = ax.scatter(gx[ok], gy[ok], c=vv, s=1.5, cmap=SEQ_CMAP, lw=0,
-                        vmin=np.nanpercentile(vv, 2), vmax=np.nanpercentile(vv, hi_pct))
-        if logscale:
-            top = np.nanpercentile(vv, hi_pct)
-            cb_ticks = [np.log10(x + 1) for x in [0, 1, 3, 10, 30, 100]
-                        if np.log10(x + 1) <= top]
-        ax.set_xlim(-.385, .375); ax.set_ylim(-.225, .262)
-        ax.set_aspect("equal"); ax.axis("off")
+                        vmin=np.nanpercentile(vv, 2), vmax=top)
         cb = fig.colorbar(sc, ax=ax, fraction=.030, pad=.005, shrink=.72)
         cb.ax.tick_params(labelsize=5.4)
         if logscale:
-            cb.set_ticks(cb_ticks)
-            cb.set_ticklabels([f"{10 ** t_ - 1:,.0f}" for t_ in cb_ticks], fontsize=5.4)
-        ax.set_title(f"{'abcde'[k]}   {title}", loc="left", fontsize=8.2)
+            tk = [np.log10(x + 1) for x in [0, 1, 3, 10, 30, 100] if np.log10(x + 1) <= top]
+            cb.set_ticks(tk)
+            cb.set_ticklabels([f"{10 ** t_ - 1:,.0f}" for t_ in tk], fontsize=5.4)
+        ax.set_title(f"{'abcdefgh'[k]}   {title}", loc="left", fontsize=8.2)
         ax.text(.02, .02, unit + (" (log)" if logscale else ""), transform=ax.transAxes,
                 fontsize=5.8, color=MUTED)
 
+    # correlation panel in the free slot of row 2
     ax = fig.add_subplot(gs[1, 2])
     C = D["corr"]
-    M = C.values.astype(float).copy()
-    mask = np.triu(np.ones_like(M, dtype=bool))
-    Mm = np.ma.masked_where(mask, M)
+    M = C.values.astype(float)
+    diag = np.eye(len(C), dtype=bool)
+    Mm = np.ma.masked_where(np.triu(np.ones_like(M, dtype=bool)), M)
     im = ax.imshow(Mm, cmap="RdBu_r", vmin=-.6, vmax=.6)
     ax.set_xticks(range(len(C))); ax.set_yticks(range(len(C)))
     ax.set_xticklabels(C.columns, fontsize=5.0, rotation=45, ha="right")
@@ -532,23 +592,47 @@ def fig05_covariate_maps(D, style=None):
                     color="white" if abs(M[i, j]) > .35 else INK)
     cb = fig.colorbar(im, ax=ax, fraction=.030, pad=.02, shrink=.72)
     cb.ax.tick_params(labelsize=5.4)
-    # Panel f shows ALL EIGHT model predictors, not only the five conditions mapped in a-e.
-    # Report the largest pairing for each set separately: quoting the eight-predictor maximum
-    # under an "environmental conditions" heading attributes a predator-abundance pairing to
-    # the environmental covariates.
-    full = np.abs(M[~np.eye(len(C), dtype=bool)])
-    i_f, j_f = np.unravel_index(np.nanargmax(np.abs(np.where(~np.eye(len(C), dtype=bool),
-                                                             M, np.nan))), M.shape)
+    i_f, j_f = np.unravel_index(np.nanargmax(np.abs(np.where(~diag, M, np.nan))), M.shape)
     env = [c for c in ENV_LABELS if c in C.index]
     Me = C.loc[env, env].values.astype(float)
     oe = ~np.eye(len(env), dtype=bool)
     i_e, j_e = np.unravel_index(np.nanargmax(np.abs(np.where(oe, Me, np.nan))), Me.shape)
-    ax.set_title(f"f   Overlap among all eight model predictors\n"
-                 f"largest {np.nanmax(full):.2f} ({C.index[i_f]} vs {C.columns[j_f]}); "
-                 f"among the five mapped, {abs(Me[i_e, j_e]):.2f} "
-                 f"({env[i_e]} vs {env[j_e]})", loc="left", fontsize=7.4)
-    fig.suptitle("The environmental conditions used to map activity, and how the model's "
-                 "predictors overlap", fontsize=10, y=.97)
+    ax.set_title(f"f   Overlap among all eight predictors\n"
+                 f"largest {abs(M[i_f, j_f]):.2f} ({C.index[i_f]} vs {C.columns[j_f]}); "
+                 f"among the five mapped {abs(Me[i_e, j_e]):.2f}", loc="left", fontsize=7.2)
+
+    # row 3: the three count-derived predictors, at sites only
+    for k, (col, title, unit, logscale, species) in enumerate(SITE_PREDICTORS):
+        ax = fig.add_subplot(gs[2, k])
+        sub = sites if species is None else sites[sites.species == species]
+        agg = (sub.groupby("final_array")[col].mean() if species is None
+               else sub.set_index("final_array")[col])
+        dd = agg.to_frame("v").join(xy, how="inner").dropna()
+        v = np.log10(dd.v.values + 1) if logscale else dd.v.values
+        px, py = albers(dd.lon.values, dd.lat.values)
+        _basemap(ax)
+        o = np.argsort(v)
+        sc = ax.scatter(px[o], py[o], c=v[o], s=13, cmap="magma_r", lw=.25,
+                        edgecolor="white", zorder=3,
+                        vmin=np.nanpercentile(v, 2), vmax=np.nanpercentile(v, 98))
+        cb = fig.colorbar(sc, ax=ax, fraction=.030, pad=.005, shrink=.72)
+        cb.ax.tick_params(labelsize=5.4)
+        if logscale:
+            tk = [np.log10(x + 1) for x in [0, 1, 3, 10, 30, 100]
+                  if np.log10(x + 1) <= np.nanpercentile(v, 98)]
+            cb.set_ticks(tk)
+            cb.set_ticklabels([f"{10 ** t_ - 1:,.0f}" for t_ in tk], fontsize=5.4)
+        ax.set_title(f"{'abcdefghi'[6 + k]}   {title}", loc="left", fontsize=8.2)
+        sp_note = f"{species}\n" if species else ""
+        ax.text(.02, .02, f"{sp_note}{unit}\n{len(dd)} sites, no national layer",
+                transform=ax.transAxes, fontsize=5.6, color=MUTED)
+
+    fig.text(.008, .655, "national surfaces", rotation=90, fontsize=7.4, color=MUTED,
+             va="center")
+    fig.text(.008, .175, "site values only", rotation=90, fontsize=7.4, color="#b5442e",
+             va="center")
+    fig.suptitle("The eight model predictors: five can be mapped nationally, three only "
+                 "where cameras were placed", fontsize=10, y=.945)
     return fig
 
 
