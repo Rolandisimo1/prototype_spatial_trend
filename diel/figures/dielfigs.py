@@ -89,7 +89,20 @@ INPUTS = {
     "sources": "data_sources_used.csv",
     "excluded": "excluded_deployments.csv",
     "states": "viewer_states.json",
+    "effort_nonuniform": "stage1_effort_nonuniformity.csv",
+    "grid_4cov": "national_grid_covariates_4cov_25km.csv",
 }
+
+# The five mappable environmental covariates and the grid column each lives in. They span two
+# grid files joined on cell25: the seam-fixed grid carries population, canopy and temperature,
+# the four-covariate grid carries cropland and ruggedness at 5 km.
+MAP_COVARIATES = [
+    ("pop_1km", "grid", "Population density", "people per km2, log scale", True),
+    ("ag_5km", "grid_4cov", "Cropland", "share of land within 5 km", False),
+    ("tcc_1km", "grid", "Tree canopy", "percent cover", False),
+    ("rug_5km", "grid_4cov", "Ruggedness", "terrain roughness index", False),
+    ("t_warmmonth", "grid", "Summer heat", "max temperature of hottest month, C", False),
+]
 
 
 # ---------------------------------------------------------------- loading
@@ -119,7 +132,7 @@ def load_all(host, extra=None, deployments_csv=DEPLOYMENTS_CSV):
             with open(path) as fh:
                 out[key] = json.load(fh)
         else:
-            idx = 0 if key == "species" else None
+            idx = 0 if key in ("species", "corr") else None
             out[key] = pd.read_csv(path, index_col=idx, low_memory=False)
     if deployments_csv and os.path.exists(deployments_csv):
         dep = pd.read_csv(deployments_csv, low_memory=False,
@@ -323,9 +336,209 @@ def fig02_species_curves(D, style=None, n_show=200, seed=0):
     return fig
 
 
+def fig03_effort_offset(D, style=None, binned_suntime=None, binned_clock=None):
+    """Why sun-anchored time needs a per-bin effort offset.
+
+    Panel a needs the binned tables, which are large; pass them in rather than loading here.
+    If they are absent the panel is replaced by a note and panel b still renders from the
+    summary table.
+    """
+    if style:
+        style()
+    nu = D["effort_nonuniform"]
+    dep = nu[nu.level == "deployment"].iloc[0]
+
+    fig, axes = plt.subplots(1, 2, figsize=(11.2, 3.9), gridspec_kw=dict(wspace=.30))
+    ax = axes[0]
+    if binned_suntime is not None:
+        g = binned_suntime.sort_values("bin")
+        ax.step(g["bin"], g.effort_h, where="mid", color="#1f6f8b", lw=1.6,
+                label="sun-anchored time")
+        if binned_clock is not None:
+            gc = binned_clock.sort_values("bin")
+            ax.step(gc["bin"], gc.effort_h, where="mid", color=MUTED, lw=1.4, ls="--",
+                    label="clock time")
+        ax.axvspan(24, 48, color=NIGHT_SHADE, zorder=0, lw=0)
+        ax.set_xlim(0, 48); ax.set_xticks([0, 12, 24, 36, 48])
+        ax.set_xticklabels(["sunrise", "noon", "sunset", "midnight", "sunrise"], fontsize=6.4)
+        ax.set_ylabel("camera hours in the bin")
+        ax.set_ylim(0, g.effort_h.max() * 1.25)
+        ax.legend(fontsize=6.4, frameon=False, loc="upper left")
+        ratio = g.effort_h.max() / g.effort_h.min()
+        ax.set_title(f"a   One camera: effort is flat on the clock,\nnot in sun time "
+                     f"({ratio:.2f} times more in the widest bin)", loc="left", fontsize=8.4)
+    else:
+        ax.axis("off")
+        ax.text(.5, .5, "binned tables not supplied", ha="center", va="center",
+                fontsize=7, color=MUTED, transform=ax.transAxes)
+
+    ax = axes[1]
+    vals = [dep["median"], dep["p99"], dep["max"]]
+    labs = ["typical camera\n(median)", "99th\npercentile", "worst\ncamera"]
+    ax.bar(range(3), vals, color=["#9dbcc9", "#4d8fa6", "#1f6f8b"], width=.62)
+    for i, v in enumerate(vals):
+        ax.text(i, v + .06, f"{v:.2f}x", ha="center", fontsize=7.2, color=INK)
+    ax.axhline(1.0, color="#b5442e", lw=1.0, ls=":")
+    ax.text(-0.42, 0.94, "equal effort in every bin", fontsize=6.2, color="#b5442e",
+            ha="left", va="top")
+    ax.set_xticks(range(3)); ax.set_xticklabels(labs, fontsize=6.4)
+    ax.set_ylabel("most crowded bin / emptiest bin")
+    ax.set_ylim(0, max(vals) * 1.22)
+    ax.set_title("b   How unequal the bins get,\nacross all 22,912 cameras", loc="left",
+                 fontsize=8.4)
+    fig.suptitle("Rescaling the day to sunrise and sunset makes the time bins unequal",
+                 fontsize=10, y=1.04)
+    return fig
+
+
+def fig04_measures_reliability(D, style=None, example_species="Coyote"):
+    """What the five measures read off a curve, and which are reliable enough to model."""
+    if style:
+        style()
+    harm, rel = D["harmonics"], D["reliability"]
+    t, _ = curve_grid()
+    g = harm[harm.species == example_species].dropna(subset=["s1", "c1", "s2", "c2"])
+    mu = curves_from_harmonics(g, t).mean(axis=0)
+    mu = mu / mu.sum() * 1000
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.4, 4.3),
+                             gridspec_kw=dict(width_ratios=[1, 1.25], wspace=.28))
+    ax = axes[0]
+    ax.axvspan(12, 24, color=NIGHT_SHADE, zorder=0, lw=0)
+    ax.plot(t, mu, color=INK, lw=2.2, zorder=4)
+    ax.fill_between(t, 0, mu, where=(t >= 12), color="#3E5C93", alpha=.30, zorder=2)
+    for lo, hi in [(0, 2), (10, 12)]:
+        ax.fill_between(t, 0, mu, where=((t >= lo) & (t <= hi)), color="#D08C1F",
+                        alpha=.45, zorder=3)
+    ax.fill_between(t, 0, mu, where=((t >= 5) & (t <= 7)), color="#4E9A6A", alpha=.45, zorder=3)
+    pk = float(t[np.argmax(mu)])
+    ax.annotate("", xy=(pk, mu.max()), xytext=(pk, mu.max() * 1.30),
+                arrowprops=dict(arrowstyle="->", color="#b5442e", lw=1.2))
+    ax.text(pk, mu.max() * 1.34, "time of peak", ha="center", fontsize=6.6, color="#b5442e")
+    ax.text(18, mu.max() * .32, "share at night", ha="center", fontsize=6.6, color="white")
+    ax.text(1.0, mu.max() * .50, "dawn", ha="center", fontsize=6.0, color=INK)
+    ax.text(11.0, mu.max() * .50, "dusk", ha="center", fontsize=6.0, color=INK)
+    ax.text(6.0, mu.max() * .22, "midday", ha="center", fontsize=6.0, color=INK)
+    ax.text(.4, mu.max() * 1.52, "concentration = how peaked the whole curve is",
+            fontsize=6.4, color=MUTED)
+    ax.set_xlim(0, 24); ax.set_xticks([0, 6, 12, 18, 24])
+    ax.set_xticklabels(["sunrise", "noon", "sunset", "midnight", "sunrise"], fontsize=6.4)
+    ax.set_ylim(0, mu.max() * 1.62)
+    ax.set_ylabel("share of daily activity")
+    ax.set_title(f"a   The five measures, read off one curve\n({example_species})",
+                 loc="left", fontsize=8.6)
+
+    ax = axes[1]
+    piv = rel.pivot(index="species", columns="metric", values="reliability")
+    cols = [c for c in MEASURES if c in piv.columns]
+    piv = piv[cols]
+    order_sp = piv.mean(axis=1).sort_values().index
+    piv = piv.loc[order_sp]
+    for i, sp in enumerate(piv.index):
+        for j, mm in enumerate(cols):
+            v = piv.loc[sp, mm]
+            if not np.isfinite(v):
+                continue
+            passes = v >= 0.5
+            ax.scatter(j, i, s=42 + 150 * min(max(v, 0), 1),
+                       c="#1f6f8b" if passes else "#ffffff",
+                       edgecolor="#1f6f8b" if passes else "#b5442e",
+                       lw=.9 if passes else 1.4, zorder=3)
+            if not passes:
+                ax.text(j, i, "x", ha="center", va="center", fontsize=5.6, color="#b5442e",
+                        zorder=4)
+    ax.set_xticks(range(len(cols)))
+    ax.set_xticklabels([MEASURE_LABEL[c].replace("% of activity ", "").replace("% ", "")
+                        for c in cols], fontsize=6.2, rotation=18, ha="right")
+    ax.set_yticks(range(len(piv.index))); ax.set_yticklabels(piv.index, fontsize=6.2)
+    ax.set_xlim(-.6, len(cols) - .4); ax.set_ylim(-.7, len(piv.index) - .3)
+    # Count ONLY over the measures actually modelled. The full table also scores overall
+    # activity level and breadth, which are not modelled, and including them overstates this.
+    nfail = int((rel[rel.metric.isin(cols)].reliability < 0.5).sum())
+    act = rel[rel.metric == "act"]
+    if len(act):
+        ya = len(piv.index) + .55
+        ax.axhline(len(piv.index) - .1, color="#d5d9dc", lw=.8)
+        for j, mm in enumerate(cols):
+            pass
+        ax.scatter([len(cols) / 2 - .5], [ya], s=42 + 150 * float(act.reliability.median()),
+                   c="#ffffff", edgecolor="#b5442e", lw=1.4, zorder=3)
+        ax.text(len(cols) / 2 - .5, ya, "x", ha="center", va="center", fontsize=5.6,
+                color="#b5442e", zorder=4)
+        ax.text(len(cols) / 2 + .18, ya, f"overall activity level, median "
+                f"{act.reliability.median():.2f}\nexcluded from all spatial analysis",
+                fontsize=5.7, color="#b5442e", va="center")
+        ax.set_ylim(-.7, ya + .7)
+    ax.set_title(f"b   Reliability: is a site's value real, or counting noise?\n"
+                 f"Larger is more reliable; {nfail} of {len(cols) * len(piv.index)} "
+                 f"combinations fall below 0.5 and are not modelled", loc="left", fontsize=8.6)
+    fig.suptitle("What the measures are, and which ones the data can support",
+                 fontsize=10, y=1.03)
+    return fig
+
+
+def fig05_covariate_maps(D, style=None):
+    """The five mappable environmental conditions, and how little they overlap."""
+    if style:
+        style()
+    gj = D["grid"][["cell25", "lon", "lat", "pop_1km", "tcc_1km", "t_warmmonth"]].merge(
+        D["grid_4cov"][["cell25", "ag_5km", "rug_5km"]], on="cell25", how="left")
+    gx, gy = albers(gj.lon.values, gj.lat.values)
+
+    fig = plt.figure(figsize=(13.0, 6.2))
+    gs = fig.add_gridspec(2, 3, hspace=.10, wspace=.06)
+    for k, (col, _src, title, unit, logscale) in enumerate(MAP_COVARIATES):
+        ax = fig.add_subplot(gs[k // 3, k % 3])
+        v = gj[col].values.astype(float)
+        ok = np.isfinite(v)
+        vv = np.log10(v[ok] + 1) if logscale else v[ok]
+        draw_states(ax, D["states"], lw=.30, color="#c9cfd4")
+        hi_pct = 99.8 if logscale else 98.0
+        sc = ax.scatter(gx[ok], gy[ok], c=vv, s=1.5, cmap=SEQ_CMAP, lw=0,
+                        vmin=np.nanpercentile(vv, 2), vmax=np.nanpercentile(vv, hi_pct))
+        if logscale:
+            tk = [t_ for t_ in [0, 1, 2, 3, 4] if t_ <= np.nanpercentile(vv, hi_pct)]
+            cb_ticks = tk
+        ax.set_xlim(-.385, .375); ax.set_ylim(-.225, .262)
+        ax.set_aspect("equal"); ax.axis("off")
+        cb = fig.colorbar(sc, ax=ax, fraction=.030, pad=.005, shrink=.72)
+        cb.ax.tick_params(labelsize=5.4)
+        if logscale:
+            cb.set_ticks(cb_ticks)
+            cb.set_ticklabels([f"{10 ** t_ - 1:,.0f}" for t_ in cb_ticks])
+        ax.set_title(f"{'abcde'[k]}   {title}", loc="left", fontsize=8.2)
+        ax.text(.02, .02, unit + (" (log)" if logscale else ""), transform=ax.transAxes,
+                fontsize=5.8, color=MUTED)
+
+    ax = fig.add_subplot(gs[1, 2])
+    C = D["corr"]
+    M = C.values.astype(float).copy()
+    mask = np.triu(np.ones_like(M, dtype=bool))
+    Mm = np.ma.masked_where(mask, M)
+    im = ax.imshow(Mm, cmap="RdBu_r", vmin=-.6, vmax=.6)
+    ax.set_xticks(range(len(C))); ax.set_yticks(range(len(C)))
+    ax.set_xticklabels(C.columns, fontsize=5.0, rotation=45, ha="right")
+    ax.set_yticklabels(C.index, fontsize=5.0)
+    ax.set_xlim(-.6, len(C) - 1.4); ax.set_ylim(len(C) - .4, .6)
+    for i in range(len(C)):
+        for j in range(i):
+            ax.text(j, i, f"{M[i, j]:.2f}", ha="center", va="center", fontsize=5.0,
+                    color="white" if abs(M[i, j]) > .35 else INK)
+    cb = fig.colorbar(im, ax=ax, fraction=.030, pad=.02, shrink=.72)
+    cb.ax.tick_params(labelsize=5.4)
+    off = M[~mask]
+    ax.set_title(f"f   How much the conditions overlap\nlargest pairing {np.abs(off).max():.2f}",
+                 loc="left", fontsize=8.2)
+    fig.suptitle("The environmental conditions used to predict activity", fontsize=10, y=.97)
+    return fig
+
+
 FIGURES = {
     "fig01_data_coverage": fig01_data_coverage,
     "fig02_species_curves": fig02_species_curves,
+    "fig03_effort_offset": fig03_effort_offset,
+    "fig04_measures_reliability": fig04_measures_reliability,
+    "fig05_covariate_maps": fig05_covariate_maps,
 }
 
 
