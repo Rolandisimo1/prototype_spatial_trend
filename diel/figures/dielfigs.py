@@ -22,6 +22,8 @@ PEAK TIME (peak_h) is CIRCULAR. Never draw it on a linear sequential ramp; use C
 GUILD COLOURS are by behaviour, never by which analysis wave introduced a species.
 """
 import json
+import os
+
 import numpy as np
 import pandas as pd
 import matplotlib as mpl
