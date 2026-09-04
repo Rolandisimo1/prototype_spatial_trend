@@ -960,9 +960,18 @@ def fig09_spatial_control(D, style=None, radius_km=50):
         ax.annotate(r_.mechanism, (r_.ratio, r_.pct), xytext=(dx, dy),
                     textcoords="offset points", fontsize=6.0, ha="center", color=INK)
     rho = float(P[["ratio", "pct"]].corr(method="spearman").iloc[0, 1])
-    # Agriculture breaks the pattern: it is the LEAST locally variable predictor yet half its
-    # clear effects survive. Name it rather than let the trend line imply otherwise.
-    ag = P[P.mechanism == "agriculture"]
+    # One mechanism breaks the pattern. Identify it FROM THE DATA rather than naming it in a
+    # string: a hardcoded name silently outlives the result it describes, which is exactly how
+    # the panel this replaced came to caption one predictor with another's rationale.
+    # The exception is the least locally variable mechanism whose survival is nonetheless
+    # above the median across mechanisms.
+    # The exception is the mechanism whose survival most exceeds what its locality predicts:
+    # the largest positive residual in rank space. Reported only when that residual is at
+    # least 2 ranks, so a near-perfect ordering yields no claim rather than a spurious one.
+    Q = P.assign(r_ratio=P.ratio.rank(), r_pct=P.pct.rank())
+    Q["resid"] = Q.r_pct - Q.r_ratio
+    top = Q.nlargest(1, "resid")
+    ag = top if len(top) and float(top.resid.iloc[0]) >= 2 else P.iloc[:0]
     ax.set_xlabel(f"change between sites under {radius_km} km apart,\n"
                   f"as a fraction of the national spread")
     ax.set_ylabel("% of clear effects surviving")
@@ -970,8 +979,9 @@ def fig09_spatial_control(D, style=None, radius_km=50):
     ax.set_ylim(-26, 122)
     note = f"rank correlation {rho:+.2f} across {len(P)} mechanisms"
     if len(ag):
-        note += (f"\nagriculture is the exception: least locally variable\n"
-                 f"({float(ag.ratio.iloc[0]):.2f}) yet {float(ag.pct.iloc[0]):.0f}% survive")
+        note += (f"\n{ag.mechanism.iloc[0]} is the exception: survives more\n"
+                 f"({float(ag.pct.iloc[0]):.0f}%) than its locality "
+                 f"({float(ag.ratio.iloc[0]):.2f}) predicts")
     ax.text(.03, .04, note, transform=ax.transAxes, fontsize=6.2, color=INK, va="bottom")
     ax.set_title("c   Mechanisms varying between neighbours mostly\nsurvive; smooth ones "
                  "mostly do not", loc="left", fontsize=8.6)
