@@ -251,27 +251,49 @@ triggering rather than that camera data never corroborates.
 > years and is not the intended headline. Windowed refits over 2021–2025 and
 > 2016–2025 are the intended primary results; they require input bundles
 > rebuilt on the current mask and covariate design and have not yet been run.
-## Data provenance caveat — moose v2b numbers are from a superseded extraction
+## Isolating the effect of the range mask on moose
 
-Not all eight fits are of equal evidential standing, and the report must say so.
+Two moose tracks were fit specifically to separate the two corrections applied
+this summer: `moose_v1fix9` uses the original IUCN-polygon mask, `moose_v2b`
+uses the presence-based replacement, and **both use the same corrected
+nine-covariate design**. The mask is therefore the only difference between
+them, which makes the contrast interpretable.
 
-Bobcat, white-tailed deer, and moose_v1fix9 posteriors were all extracted on
-2026-08-28 from **single continuous MCMC chains**, which structurally cannot be
-affected by the chunked-checkpoint burn-in defect (Issue 4) that contaminated
-the earlier fleet — resumed chunks skipped re-adaptation burn-in, inflating
-credible intervals and distorting R-hat at every resume boundary.
+For a period this comparison was confounded: `moose_v2b`'s only available
+extraction dated from the chunked-checkpoint era and so carried the resumed-chunk
+burn-in defect (Issue 4), while `moose_v1fix9` had been extracted from single
+continuous chains. The two tracks differed in MCMC regime as well as design, and
+two same-day extractions of `moose_v2b` disagreed with each other
+(`trend_robust_indicator` 0.2448 versus 0.2551). **That is now resolved:**
+`moose_v2b` was re-extracted from its single-shot chains on 2026-09-03, so all
+eight reported fits come from single continuous chains and none can be affected
+by the burn-in defect.
 
-**`moose_v2b`'s posteriors were never re-extracted from single-shot chains.**
-The only available `moose_v2b` extraction dates to 2026-08-20, in the chunked
-era. Its numbers are therefore subject to the Issue 4 defect, and two
-extractions from that date disagree slightly with each other
-(`trend_robust_indicator` 0.2448 versus 0.2551; `total_var_beta` −0.1162 versus
-−0.1192), consistent with different chain subsets being pooled.
+**The mask choice materially changes the estimated moose trend:**
 
-Practical consequence: the moose_v2b-versus-moose_v1fix9 comparison — the whole
-point of running two moose tracks, to separate the range-mask fix from the
-covariate fix — is currently **not a clean comparison**, because the two tracks
-come from different MCMC regimes as well as different designs. A single-shot
-re-extraction of moose_v2b is needed before that comparison can carry weight.
-Until then, moose_v1fix9 is the more trustworthy of the two moose tracks on
-provenance grounds alone.
+| parameter | IUCN mask (`v1fix9`) | presence mask (`v2b`) |
+|---|---|---|
+| national 18-yr trend (`total_var_beta`) | −0.308 [−0.455, −0.177] | **−0.121** [−0.227, −0.025] |
+| camera-anchored component (`year_beta`) | −0.249 | −0.121 |
+| trend robustness indicator | 0.488 | 0.260 |
+
+Under the old IUCN mask the estimated decline is roughly **2.5-fold steeper**
+than under the presence mask, and the two credible intervals only narrowly
+overlap. Both fits agree moose is declining — the direction is not in question —
+but they disagree materially on how fast.
+
+The mechanism is straightforward and was the original motivation for replacing
+the mask: the cells the IUCN polygon excluded were disproportionately the
+southern-edge and disjunct populations (Colorado, Utah) where moose have been
+expanding. Removing growing cells from the fit while retaining declining ones
+biases the national trend downward. The presence-mask fit, which retains those
+cells, lands on a shallower decline.
+
+Two consequences for interpretation. First, **the earlier steeper moose decline
+figures should be treated as superseded**, not as an alternative estimate.
+Second, the mask change also lowers camera corroboration (0.488 to 0.260),
+meaning the shallower trend is *less* camera-anchored than the steeper one it
+replaces — so the improvement in spatial coverage came at some cost in
+cross-stream agreement, and the moose trend remains substantially
+iNaturalist-driven under either mask.
+

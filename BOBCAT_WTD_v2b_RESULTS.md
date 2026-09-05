@@ -172,24 +172,32 @@ network.
 
 ---
 
-## 5. Range-mask exclusion — moose-specific, not a bobcat/WTD problem
+## 5. Range mask: why the IUCN polygon was replaced
 
-The original static IUCN-polygon mask (superseded by the presence-based
-mask, Fix 2b) excluded real, iNat-documented records at strikingly different
-rates by species:
+The original static IUCN-polygon mask excluded real, iNaturalist-documented
+records in every species, by discarding grid cells the polygon placed outside
+the range:
 
-| species | records dropped | % of total | cells dropped |
-|---|---|---|---|
-| **Moose** | 4,293 | **37.07%** | 143 |
-| Bobcat | — | 1.32% | 39 |
-| WTD | — | 1.06% | 12 |
+| species | cells dropped holding real records | records dropped (% of total) |
+|---|---|---|
+| Moose | 143 | 4,293 (37.1%) |
+| Bobcat | 39 | 1.3% |
+| WTD | 12 | 1.1% |
 
-Bobcat and WTD's exposure to this problem is real but minor — an order of
-magnitude smaller than moose's. The presence-mask fix (Fix 2b) is a
-correctness tidy-up for these two species, not the rescue operation it was
-for moose. (WTD's dropped-cell count is small but not uniformly distributed —
-its single worst dropped cell held 969 records, so the 1.06% is concentrated
-rather than spread evenly.)
+**These percentages should not be read as a cross-species comparison.** The
+per-species magnitude is governed mainly by how well that species' IUCN
+polygon happens to be drawn, and IUCN range-map quality varies substantially
+between species for reasons unrelated to the species' ecology or to our data.
+A large percentage means that species' polygon was a poorer fit to where the
+animals actually are; it does not mean the mask problem is more real, more
+severe, or more worth fixing for that species. Each species' number stands on
+its own, and the fix is warranted in all three cases on the same grounds:
+cells with documented occurrences were being removed from the model fit
+entirely, not merely from map rendering.
+
+WTD's dropped records are concentrated rather than spread — its single worst
+dropped cell held 969 records — which is a reminder that a small aggregate
+percentage can still remove an important locality.
 
 A third candidate mask (IUCN polygon expanded by a contiguous chain of
 iNat-detection cells, per a convention from a prior project) was tested

@@ -31,3 +31,7 @@ keys/
 *serviceaccount*.json
 *.pem
 *credentials*.json
+
+# Python bytecode caches
+__pycache__/
+*.pyc
