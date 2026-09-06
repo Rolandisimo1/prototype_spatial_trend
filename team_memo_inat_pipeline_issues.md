@@ -733,3 +733,184 @@ presence-only mask (the moose/bobcat/WTD range-mask-exclusion table already
 in Issue 3's addendum gives the baseline to compare against). Do not wire
 this into any HPC run script until that three-way comparison has been made
 and reviewed -- this is a candidate under evaluation, not a settled fix.
+
+---
+
+## Issue 5 (2026-09-05): the trend term bypasses Goldstein's gold-standard mechanism
+
+**This is a model-structure finding, not a bug in our code.** Our
+`model_code_national_scalar.R` is a byte-for-byte fork of Arielle's production
+nimbleCode (sha256 recorded in its header), so nothing on our side changed it.
+The issue is in how the temporal trend was originally grafted onto Ben's
+integrated model.
+
+### What Goldstein et al. actually do
+
+The preprint (bioRxiv 2025.01.17.633640, "Mammal niches are not conserved over
+continental scales") is explicit that cameras are the gold standard, and it
+names the mechanism. iNaturalist counts are modelled as
+
+    N_c ~ NegBinomial(mu_c * E_c, phi)
+    log(mu_c) = theta0 + theta1 * log( sum_{s in c} lambda_s )
+
+and the latent intensity is
+
+    log(lambda_s) = beta0 + x_s' beta_g(s) + eps_g(s),   eps_g ~ CAR(0, sigma^2)
+
+The paper states this formulation "treats the camera trap data as the 'gold
+standard' dataset directly informing the latent intensity process, allowing the
+iNaturalist data to more weakly influence its value if the two datasets
+diverge." The down-weighting is not a prior or a likelihood weight -- it is
+architectural. **iNaturalist never writes into `lambda` directly.** It sees
+`lambda` only through the `theta0`/`theta1` link, so when the two streams
+disagree, `theta0`/`theta1` absorb the disagreement and `lambda` (camera-defined)
+holds. Our own fits estimate theta1 at 0.41-0.61 with every CI excluding 1.0,
+i.e. the attenuation is active and substantial.
+
+Critically: **Ben's `lambda_s` has no year term.** A full-text search of the
+preprint returns zero matches for "temporal trend", "population trend", "trend
+over time", "year effect", or "annual trend". The model is purely spatial.
+
+### Where our structure diverges
+
+The temporal trend is an extension added for this project, and it was inserted
+*inside* `lambda`, not through the theta link:
+
+    log(lambda_s) = intensity_intercept + x*beta + MWMT + MCMT
+                    + total_var_beta * year          <-- trend lives in lambda
+    total_var_beta <- year_beta + year_var
+
+The camera occupancy submodel contains `year_beta` only:
+
+    cloglog(psi_i) = link_occ_intercept + ... + year_beta * year_occ_i
+
+`year_var` therefore appears in **no** camera likelihood term. It is informed
+solely by iNaturalist -- and because it sits inside `lambda`, it modifies the
+gold-standard latent field directly rather than being attenuated by theta1.
+This is the one place in the model where iNaturalist has unmediated write access
+to the camera-defined intensity process, and it is precisely the parameter that
+carries our headline trend.
+
+The priors give no compensating protection; they are symmetric and vague:
+
+    year_beta ~ dnorm(0, sd = sigma_year_beta);  sigma_year_beta ~ dunif(0, 2)
+    year_var  ~ dnorm(0, sd = sigma_year_var);   sigma_year_var  ~ dunif(0, 2)
+
+### What it costs us, measured
+
+Decomposition of the reported trend (single-shot v2b national fits, see
+`table_trend_decomposition.csv`):
+
+| Species | camera-anchored `year_beta` | iNat-only `year_var` | reported (sum) |
+|---|---|---|---|
+| Bobcat | -0.0001 (-0.061, 0.061) | -0.242 (-0.336, -0.150) | -0.242 |
+| White-tailed deer | +0.155 (0.116, 0.192) | +0.022 (-0.030, 0.080) | +0.177 |
+| Moose | -0.121 (-0.313, 0.042) | -0.001 (-0.195, 0.206) | -0.121 |
+
+Bobcat's entire reported decline is the iNaturalist-only term; its cameras
+estimate no trend at all, with a tight interval around zero. WTD is the
+opposite and is genuinely camera-anchored. Moose's two components each span
+zero and are negatively correlated, so only their sum resolves.
+
+`trend_robust_indicator` was intended to flag exactly this, but it is
+`step(year_beta/year_var - 1)` -- a ratio whose denominator sits near zero, so
+its posterior mean is NaN for all three species. It cannot do the job; the
+decomposition table can.
+
+### The tension in fixing it
+
+`year_var` is not purely an artifact channel. It is also the only way the model
+can express "abundance changed while occupancy did not" -- and our own
+array-level simulation study found occupancy-based trend estimators badly biased
+at high abundance for exactly that reason (psi saturation; occupancy overstated
+the decline 3-6x at deer-like abundance). Deleting `year_var` would restore
+Ben's architecture but re-import saturation bias for abundant species.
+
+The problem is not that `year_var` exists; it is that `year_var` is identified
+by one stream only, so real abundance-only change and residual iNaturalist
+effort drift are not separable within it.
+
+### Options (needs a team decision -- all three require refits)
+
+1. **Drop `year_var`**: intensity trend = `year_beta`. Exactly Ben's
+   architecture; iNaturalist influences the trend only through theta. Cost:
+   saturation bias for abundant species, per our own simulation.
+2. **Shrink `year_var` hard toward zero**: keep the term, replace
+   `sigma_year_var ~ dunif(0, 2)` with a tight prior (e.g. half-normal with sd
+   ~0.05) so the trend defaults to the camera value unless iNaturalist evidence
+   is strong. Makes cameras primary in the statistical sense while preserving
+   the ability to detect abundance-only change. Requires a prior-sensitivity
+   check, since the answer will depend on the chosen scale.
+3. **Keep as-is, report the decomposition.** No refit; the report states the
+   camera-anchored and iNaturalist-only components separately for every
+   species and never quotes the sum alone.
+
+Option 3 is already implemented in the report and is not exclusive of 1 or 2 --
+it should be kept regardless of which refit we choose, because the split is
+informative in its own right.
+
+### Issue 5b: what this means for the simulation study
+
+**The estimator sweep is structurally blind to Issue 5, by construction.**
+`01i_run_estimator_sweep.R:240` generates each replicate with
+`simulate_replicate_data(model_code_national_scalar, constants, ...)` -- the
+data-generating model *is* the fitted model. The simulated iNaturalist counts
+are drawn conditional on the real effort matrix exactly as the likelihood
+specifies, so there is no unmodelled iNaturalist effort drift anywhere in the
+simulated data. `year_var` is therefore a legitimately identified parameter in
+simulation, and the fits recover the total well (median bias 0.002 for
+`array_rn`, 0.030 for `camera_rn`).
+
+Consequences, in order of importance:
+
+1. **The sweep's estimator comparison is unaffected.** All four arms faced the
+   same correctly-specified truth, so the bias / precision / coverage /
+   false-positive results stand as measured. The RN-versus-occupancy finding
+   does not depend on Issue 5 in any way.
+
+2. **The sweep's power and coverage are optimistic for real data.** They
+   characterise the estimators under conditions kinder than reality: zero
+   iNaturalist effort drift. Real-data intervals on `total_var_beta` are
+   consequently narrower than warranted, and the real rate of declaring a
+   trend when none exists is higher than the 1.1-7.8% measured here, by an
+   amount nobody has quantified.
+
+3. **The sweep never scores the split.** Only `tvb_true` is recorded; there is
+   no `year_beta_true` or `year_var_true` column, so no replicate was ever
+   checked for whether the camera-anchored and iNaturalist-only components are
+   individually recovered -- only their sum.
+
+4. **Even in the correctly-specified simulation, `year_var` is the noisier
+   component.** Across replicates in the varying scenario:
+
+   | arm | sd `year_beta` | sd `year_var` | sd of sum | corr |
+   |---|---|---|---|---|
+   | camera_rn | 0.104 | 0.173 | 0.184 | -0.19 |
+   | camera_occ | 0.275 | 0.457 | 0.465 | -0.27 |
+   | array_rn | 0.150 | 0.256 | 0.236 | -0.42 |
+   | array_occ | 0.426 | 0.496 | 0.699 | +0.15 |
+
+   `sd(year_var) > sd(year_beta)` in every arm, and the two are negatively
+   correlated (they trade off). So the reported trend's uncertainty is
+   dominated by the one component that a single data stream identifies -- and
+   the sum is no better determined than `year_var` alone. This is the same
+   trade-off seen in the real moose fit, where neither component's CI excludes
+   zero but their sum's does.
+
+### Proposed simulation arm (cheaper than the real-data refits)
+
+The question "how much does Issue 5 actually cost us" is answerable in
+simulation without touching the real fits, and the sweep infrastructure already
+supports it. Generate replicates with `truth$year_var = 0` -- so the entire
+trend is camera-anchored and the iNaturalist stream carries no independent
+temporal signal -- then inject an unmodelled temporal drift into the simulated
+iNaturalist counts (a multiplicative year effect NOT present in the effort
+matrix the model conditions on). Score how much of that drift the fit
+attributes to `year_var`, and how often it reports a population trend that is
+purely injected observer drift.
+
+That is a direct false-trend test aimed at the actual risk, it costs a fraction
+of a real-data refit, and its result is what should inform the choice between
+Issue 5's options 1, 2 and 3. Recommend running it before committing cluster
+time to the structural refits, and sending its result to Arielle and Ben
+alongside Issue 5.

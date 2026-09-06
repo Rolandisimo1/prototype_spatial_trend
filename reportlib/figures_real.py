@@ -8,8 +8,9 @@ from scipy.stats import spearmanr
 from . import inputs, style
 from .conventions import max_rhat_sampled
 
-# The eight fitted models. Two moose tracks differ only in range mask, which is
-# what makes the mask effect separable; both use the corrected 9-covariate design.
+# The six reported fits: three species x two spatial parameterizations. A second
+# moose track on the superseded IUCN mask was dropped from the report -- mask
+# choice is a settled pipeline decision, not a result.
 FITS = {
     "Bobcat, national":             ("pull", "bobcat_v2b_national_scalar_posterior.csv", "bobcat_v2b_national_scalar"),
     "Bobcat, ecoregion":            ("pull", "bobcat_v2b_ecoregion_global.csv", "bobcat_v2b_ecoregion"),
@@ -17,8 +18,6 @@ FITS = {
     "Deer, ecoregion":              ("pull", "white-tailed_deer_v2b_ecoregion_global.csv", "white-tailed_deer_v2b_ecoregion"),
     "Moose, national":              ("repo", "moose_v2b_national_scalar_posterior_single.csv", "moose_v2b_national_scalar"),
     "Moose, ecoregion":             ("repo", "moose_v2b_ecoregion_global_single.csv", "moose_v2b_ecoregion"),
-    "Moose (IUCN mask), national":  ("pull", "moose_v1fix9_national_scalar_posterior.csv", "moose_v1fix9_national_scalar"),
-    "Moose (IUCN mask), ecoregion": ("pull", "moose_v1fix9_ecoregion_global.csv", "moose_v1fix9_ecoregion"),
 }
 
 FAMILY = {                     # label -> (marker, colour)
@@ -111,7 +110,8 @@ def fig_covariates(out="fig_covariates.png"):
     bobcat and deer into an unreadable band.
     """
     occ = inputs.posterior("occbeta")
-    prim = occ[occ.model.str.endswith("national_scalar")].copy()
+    prim = occ[occ.model.str.endswith("national_scalar")
+               & (~occ.model.str.startswith("moose_v1fix9"))].copy()
     prim["species"] = prim["model"].str.replace("_national_scalar", "", regex=False)
     show = [("bobcat_v2b", "Bobcat"), ("white-tailed_deer_v2b", "White-tailed deer"),
             ("moose_v2b", "Moose")]
@@ -153,14 +153,14 @@ def fig_congruence(out="fig_congruence.png"):
     the two data streams. theta1 = 1 would mean proportional scaling.
     """
     th = inputs.posterior("theta")
-    t1 = th[th.parameter == "theta1"].copy()
+    t1 = th[(th.parameter == "theta1") & (~th.model.str.startswith("moose_v1fix9"))].copy()
     t1["track"] = (t1["model"].str.replace("_national_scalar", "", regex=False)
                               .str.replace("_ecoregion", "", regex=False))
     t1["param"] = np.where(t1["model"].str.endswith("national_scalar"),
                            "national", "ecoregion")
     pretty = {"bobcat_v2b": "Bobcat", "white-tailed_deer_v2b": "White-tailed deer",
-              "moose_v2b": "Moose", "moose_v1fix9": "Moose (IUCN mask)"}
-    order = ["bobcat_v2b", "moose_v2b", "moose_v1fix9", "white-tailed_deer_v2b"]
+              "moose_v2b": "Moose"}
+    order = ["bobcat_v2b", "moose_v2b", "white-tailed_deer_v2b"]
 
     fig, ax = plt.subplots(figsize=(6.8, 3.0))
     y = np.arange(len(order))[::-1]
@@ -195,3 +195,71 @@ def fig_congruence(out="fig_congruence.png"):
     fig.savefig(out, bbox_inches="tight", pad_inches=0.06, dpi=300)
     plt.close(fig)
     return out, t1
+
+
+NO_TREND_GREY = "#b8b8b8"   # interval overlaps zero: no direction claimed
+
+
+def national_trend_table(window="full"):
+    """National trend (total_var_beta) with interval and R-hat, per fit."""
+    rows = []
+    for lab, (tag, fname, key) in FITS.items():
+        path = (os.path.join(_dir(tag), fname) if window == "full"
+                else inputs.windowed(fname, window, [_dir(tag)]))
+        d = pd.read_csv(path).set_index("parameter")
+        r = d.loc["total_var_beta"]
+        rows.append({"fit": lab, "mean": r["mean"], "q025": r["q025"], "q975": r["q975"],
+                     "p_negative": r["p_negative"], "rhat": r["rhat"],
+                     "clear": bool(r["q025"] > 0 or r["q975"] < 0)})
+    return pd.DataFrame(rows)
+
+
+def fig_national_trend(window="full", out=None):
+    """National 18-year trend per fit, grouped by species.
+
+    Grey wherever the 95% interval overlaps zero, matching the regional maps: an
+    interval spanning zero supports no direction, so it is not coloured.
+    """
+    out = out or f"fig_national_trend_{window}.png"
+    wlabel = inputs.WINDOWS[window][1]
+    tab = national_trend_table(window)
+    groups = [("Bobcat", ["Bobcat, national", "Bobcat, ecoregion"]),
+              ("White-tailed deer", ["Deer, national", "Deer, ecoregion"]),
+              ("Moose", ["Moose, national", "Moose, ecoregion"])]
+    fig, ax = plt.subplots(figsize=(7.0, 4.0))
+    ax.axvline(0, color="0.35", lw=0.8, ls="--", zorder=1)
+    ypos, ylabels, y = [], [], 0.0
+    for gname, fits in groups[::-1]:
+        for f in fits[::-1]:
+            r = tab[tab.fit == f].iloc[0]
+            col = ("#b2182b" if r["mean"] < 0 else "#1b5e9c") if r["clear"] else NO_TREND_GREY
+            ax.plot([r["q025"], r["q975"]], [y, y], color=col, lw=2.0,
+                    solid_capstyle="round", zorder=2)
+            ax.plot(r["mean"], y, "o", color=col, ms=5.4, zorder=3)
+            ax.annotate(f"{r['mean']:+.3f}", (r["mean"], y), textcoords="offset points",
+                        xytext=(0, 8), fontsize=6.4, color=col, ha="center")
+            ypos.append(y)
+            ylabels.append("national model" if "national" in f else "ecoregion model")
+            y += 1.0
+        ax.text(-0.02, y - 0.5, gname, transform=ax.get_yaxis_transform(),
+                ha="right", va="center", fontsize=7.6, fontweight="bold")
+        y += 0.9
+    ax.set_yticks(ypos); ax.set_yticklabels(ylabels, fontsize=6.8)
+    ax.set_ylim(-0.9, y - 0.5)
+    ax.set_xlabel(f"National trend, {wlabel} (log scale, 95% interval)\n"
+                  "negative = declining")
+    ax.set_title(f"National population trend, {wlabel}")
+    # Caption states the grey count, so derive it rather than asserting a
+    # remembered one: an earlier draft claimed every interval excluded zero,
+    # which was false for two of the eight fits.
+    n_grey = int((~tab["clear"]).sum())
+    grey_fits = ", ".join(tab.loc[~tab["clear"], "fit"])
+    grey_txt = ("No interval overlaps zero." if n_grey == 0 else
+                f"Grey marks an interval overlapping zero: {grey_fits} "
+                f"({n_grey} of {len(tab)} fits).")
+    fig.text(0.5, -0.05,
+             f"{grey_txt}",
+             ha="center", va="top", fontsize=6.3, color="#5f6a73")
+    fig.savefig(out, bbox_inches="tight", pad_inches=0.06, dpi=300)
+    plt.close(fig)
+    return out, tab

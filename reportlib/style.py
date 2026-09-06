@@ -38,3 +38,32 @@ COVAR_LABEL = {
     "terrain_ruggedness": "Terrain ruggedness", "soil_clay": "Soil clay",
     "soil_silt": "Soil silt",
 }
+
+# --- diverging colour scale --------------------------------------------------
+# House convention: green = high or increasing, red = low or declining, with a
+# GREY midpoint rather than white. White at the centre is nearly invisible
+# against a white page, so zero-valued cells read as missing data; grey keeps
+# them visible as real zeros. Lightness still falls away from the centre in both
+# directions, so the scale remains readable in greyscale and to a red-green
+# colour-blind reader, who will see the magnitude even if not the sign.
+_DIVERGING_STOPS = [
+    (0.00, "#67000d"),   # strong decline
+    (0.25, "#cb4335"),
+    (0.48, "#9aa0a6"),   # mid grey, deliberately darker than the land
+    (0.52, "#9aa0a6"),   # background so a zero cell is visibly a value
+    (0.75, "#3f9e4d"),
+    (1.00, "#00441b"),   # strong increase
+]
+
+
+def diverging_cmap(name="kays_rg"):
+    """Red-grey-green diverging colormap; green is the high end."""
+    from matplotlib.colors import LinearSegmentedColormap
+    return LinearSegmentedColormap.from_list(name, _DIVERGING_STOPS)
+
+
+DIVERGING = diverging_cmap()
+
+# Land fill behind map cells. Pale, so it never competes with the data, but not
+# white: against white the faded (unresolved) cells vanish into the page.
+LAND_FILL = "#f4f5f6"

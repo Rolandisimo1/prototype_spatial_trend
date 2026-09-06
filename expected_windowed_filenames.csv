@@ -1,0 +1,19 @@
+fit,window,window_label,expected_filename
+bobcat_v2b_ecoregion,10yr,2016-2025 (10-year),bobcat_v2b_ecoregion_ecoregion_posterior_win10.csv
+bobcat_v2b_ecoregion,10yr,2016-2025 (10-year),bobcat_v2b_ecoregion_global_win10.csv
+bobcat_v2b_national_scalar,10yr,2016-2025 (10-year),bobcat_v2b_national_scalar_posterior_win10.csv
+moose_v2b,10yr,2016-2025 (10-year),moose_v2b_ecoregion_posterior_win10.csv
+moose_v2b_ecoregion,10yr,2016-2025 (10-year),moose_v2b_ecoregion_global_win10.csv
+moose_v2b_national_scalar,10yr,2016-2025 (10-year),moose_v2b_national_scalar_posterior_win10.csv
+white-tailed_deer_v2b_ecoregion,10yr,2016-2025 (10-year),white-tailed_deer_v2b_ecoregion_ecoregion_posterior_win10.csv
+white-tailed_deer_v2b_ecoregion,10yr,2016-2025 (10-year),white-tailed_deer_v2b_ecoregion_global_win10.csv
+white-tailed_deer_v2b_national_scalar,10yr,2016-2025 (10-year),white-tailed_deer_v2b_national_scalar_posterior_win10.csv
+bobcat_v2b_ecoregion,5yr,2021-2025 (5-year),bobcat_v2b_ecoregion_ecoregion_posterior_win5.csv
+bobcat_v2b_ecoregion,5yr,2021-2025 (5-year),bobcat_v2b_ecoregion_global_win5.csv
+bobcat_v2b_national_scalar,5yr,2021-2025 (5-year),bobcat_v2b_national_scalar_posterior_win5.csv
+moose_v2b,5yr,2021-2025 (5-year),moose_v2b_ecoregion_posterior_win5.csv
+moose_v2b_ecoregion,5yr,2021-2025 (5-year),moose_v2b_ecoregion_global_win5.csv
+moose_v2b_national_scalar,5yr,2021-2025 (5-year),moose_v2b_national_scalar_posterior_win5.csv
+white-tailed_deer_v2b_ecoregion,5yr,2021-2025 (5-year),white-tailed_deer_v2b_ecoregion_ecoregion_posterior_win5.csv
+white-tailed_deer_v2b_ecoregion,5yr,2021-2025 (5-year),white-tailed_deer_v2b_ecoregion_global_win5.csv
+white-tailed_deer_v2b_national_scalar,5yr,2021-2025 (5-year),white-tailed_deer_v2b_national_scalar_posterior_win5.csv

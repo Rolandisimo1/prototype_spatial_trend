@@ -118,3 +118,29 @@ def verify_text_within(ax, artists, x0, x1, what="text"):
             f"{what} outside allowed span [{x0}, {x1}]: {bad}. "
             "Widen the container or shorten the label."
         )
+
+
+def verify_text_within_box(ax, artists, x0, x1, y0, y1, what="text"):
+    """Text artists must sit inside the data-space rectangle [x0,x1] x [y0,y1].
+
+    The x-only version of this check (verify_text_within) passed a schematic
+    whose body text ran out through the BOTTOM of three panels: the titles were
+    inside their boxes horizontally, and nothing was checking vertically. Any
+    panel drawn as a bounded rectangle should have all of its text checked
+    against both axes, not one.
+    """
+    fig = ax.get_figure()
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    inv = ax.transData.inverted()
+    bad = []
+    for t in artists:
+        bb = t.get_window_extent(renderer).transformed(inv)
+        if bb.x0 < x0 or bb.x1 > x1 or bb.y0 < y0 or bb.y1 > y1:
+            bad.append((t.get_text()[:40], round(bb.x0, 1), round(bb.x1, 1),
+                        round(bb.y0, 1), round(bb.y1, 1)))
+    if bad:
+        raise AssertionError(
+            f"{what} outside box x[{x0}, {x1}] y[{y0}, {y1}]: {bad}. "
+            "Enlarge the panel, tighten the line spacing, or cut lines."
+        )

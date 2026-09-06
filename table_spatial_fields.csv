@@ -1,0 +1,10 @@
+species,field,cells_in_range,cells_excluding_zero,pct_excluding_zero
+Bobcat,Spatial baseline,885,571,64.5
+Bobcat,Summer warmth response,885,144,16.3
+Bobcat,Winter cold response,885,27,3.1
+White-tailed deer,Spatial baseline,794,412,51.9
+White-tailed deer,Summer warmth response,794,151,19.0
+White-tailed deer,Winter cold response,794,60,7.6
+Moose,Spatial baseline,250,234,93.6
+Moose,Summer warmth response,250,18,7.2
+Moose,Winter cold response,250,36,14.4

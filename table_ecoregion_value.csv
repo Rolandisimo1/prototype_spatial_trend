@@ -1,0 +1,4 @@
+species,nat_mean,nat_width,nat_clear,eco_mean,eco_width,eco_clear,width_ratio,sigma_region,sigma_q025,sigma_q975,n_regions,regions_clear,regions_no_data,distinguishable_pairs,pairs_possible,opposing_national
+Bobcat,-0.2418,0.1421,True,-0.1454,0.4376,False,3.0794,0.2941,0.1503,0.5572,8,6,0,5,15,1
+White-tailed deer,0.1769,0.0845,True,0.1868,0.1564,True,1.852,0.1106,0.01,0.3223,8,5,1,0,10,0
+Moose,-0.121,0.2022,True,-0.1183,0.4293,False,2.1235,0.2017,0.0264,0.5334,8,1,2,0,0,0

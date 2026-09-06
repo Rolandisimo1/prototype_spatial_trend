@@ -82,3 +82,95 @@ def states_conus(cache="states"):
             zf.extractall(cache)
     g = gpd.read_file(shp).to_crs(5070)
     return g[~g["STUSPS"].isin({"HI", "PR", "VI", "GU", "MP", "AS", "AK"})].copy()
+
+
+# --- geospatial and agency inputs -------------------------------------------
+GEODATA = os.path.join(os.path.dirname(os.path.dirname(REPO)), "geospatialdata")
+ECOREGION_SHP = os.path.join(GEODATA, "epa_na_ecoregions_level1", "NA_CEC_Eco_Level1.shp")
+IUCN_RANGES = os.path.join(GEODATA, "mammalranges", "data_0.shp")
+
+_CENSUS_STATES = ("https://www2.census.gov/geo/tiger/GENZ2022/shp/"
+                  "cb_2022_us_state_20m.zip")
+
+
+def states_shapefile(cache_dir=None):
+    """Path to the Census state boundaries, fetched once and cached.
+
+    The session workspace is wiped between sessions, so this caches into the
+    repo rather than the workspace and re-fetches only if the cache is gone.
+    """
+    cache_dir = cache_dir or os.path.join(REPO, "geo_cache", "states")
+    shp = os.path.join(cache_dir, "cb_2022_us_state_20m.shp")
+    if not os.path.exists(shp):
+        import urllib.request, zipfile
+        os.makedirs(cache_dir, exist_ok=True)
+        z = os.path.join(cache_dir, "states.zip")
+        urllib.request.urlretrieve(_CENSUS_STATES, z)
+        with zipfile.ZipFile(z) as zf:
+            zf.extractall(cache_dir)
+    return shp
+
+
+def agency_table():
+    """Path to the compiled state-agency trend table.
+
+    Lives in the artifact store rather than the repo; resolved by filename so a
+    clean checkout finds it without a hand-copied path.
+    """
+    local = os.path.join(REPO, "deer_moose_trends_master.csv")
+    if os.path.exists(local):
+        return local
+    try:
+        import host  # available inside the analysis kernel
+    except ImportError:
+        raise FileNotFoundError(
+            "deer_moose_trends_master.csv is not in the repo and the artifact "
+            "store is unreachable from this process."
+        )
+    hits = host.artifacts(filename="deer_moose_trends_master.csv", exact=True)["artifacts"]
+    if not hits:
+        raise FileNotFoundError("deer_moose_trends_master.csv not found in the artifact store.")
+    return host.artifact_path(hits[0]["latest_version_id"])
+
+
+# --- reporting windows -------------------------------------------------------
+# Each fit estimates ONE slope over whatever record it was fitted to, so a
+# 5- or 10-year trend requires its own refit; it cannot be derived from the
+# full-record posteriors. WINDOWS maps a window key to (filename suffix, label).
+# The suffix is the one assumption here: correct it in this one place if the
+# windowed bundles land under a different naming convention.
+WINDOWS = {
+    "full": ("", "2008-2025 (full record)"),
+    "10yr": ("_win10", "2016-2025 (10-year)"),
+    "5yr":  ("_win5", "2021-2025 (5-year)"),
+}
+
+
+def windowed(fname, window, search_dirs=None):
+    """Resolve a posterior filename for a reporting window.
+
+    Raises with the exact paths checked, so a naming mismatch is obvious rather
+    than silently falling back to the full-record file.
+
+    The `_single` in the moose filenames is a provenance tag from the single-shot
+    re-extraction, not part of the logical name, so it is stripped before the
+    window suffix is appended. Without this, moose resolves to
+    `..._posterior_single_win10.csv` while bobcat and deer resolve to
+    `..._posterior_win10.csv`, and only the flat form is being produced.
+    """
+    if window not in WINDOWS:
+        raise KeyError(f"unknown window {window!r}; expected one of {sorted(WINDOWS)}")
+    suffix, _ = WINDOWS[window]
+    stem, ext = os.path.splitext(fname)
+    stem = stem[:-len("_single")] if stem.endswith("_single") else stem
+    target = f"{stem}{suffix}{ext}"
+    for d in (search_dirs or [REPO, PULL]):
+        cand = os.path.join(d, target)
+        if os.path.exists(cand):
+            return cand
+    raise FileNotFoundError(
+        f"no {WINDOWS[window][1]} posterior for {fname}. Looked for {target} in "
+        f"{search_dirs or [REPO, PULL]}. The windowed refits have not been run; "
+        "they cannot be derived from the full-record fits, which estimate a "
+        "single slope over the whole record."
+    )
