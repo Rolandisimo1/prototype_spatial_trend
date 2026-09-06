@@ -1622,6 +1622,133 @@ def peak_time_wrap(D, threshold_h=1.0):
     return out.sort_values("disagreement", ascending=False)
 
 
+def effect_magnitude(D, lo_q=.05, hi_q=.95):
+    """Every surviving effect on three interpretable scales.
+
+    A standardised coefficient answers "per standard deviation of the predictor", which is not
+    a question anyone asks of a landscape. These are the quantities that carry biological
+    meaning:
+
+      swing              predicted change in the measure across the observed predictor
+                         gradient, from its 5th to its 95th percentile across sites
+      swing_over_real_sd that swing as a multiple of the REAL between-site variation in the
+                         measure, i.e. after removing the part attributable to counting noise
+      swing_pct_of_mean  that swing against the species' own mean level of the measure
+    """
+    s = surviving(D)
+    H, S = D["harmonics"], D["sites"].drop_duplicates("final_array")
+    rel = {(r.species, r.metric): r.reliability for _, r in D["reliability"].iterrows()}
+    rows = []
+    for _, r in s.iterrows():
+        v = H[H.species == r.species][r.measure].dropna()
+        pred = S[r.predictor].dropna()
+        if not len(v) or not len(pred) or pred.std(ddof=1) == 0:
+            continue
+        rl = rel.get((r.species, r.measure), np.nan)
+        real_sd = v.std(ddof=1) * np.sqrt(rl) if np.isfinite(rl) and rl > 0 else np.nan
+        span = (pred.quantile(hi_q) - pred.quantile(lo_q)) / pred.std(ddof=1)
+        swing = r.beta * span
+        rows.append(dict(species=r.species, measure=r.measure, m=r.m,
+                         mechanism=r.mechanism, guild=r.guild, trophic=r.trophic,
+                         beta_per_sd=r.beta, gradient_in_sd=span, swing=swing,
+                         species_mean=v.mean(), real_sd=real_sd,
+                         swing_over_real_sd=abs(swing) / real_sd if real_sd else np.nan,
+                         swing_pct_of_mean=100 * abs(swing) / abs(v.mean()) if v.mean() else np.nan,
+                         partial_r2=r.partial_r2))
+    return pd.DataFrame(rows)
+
+
+def variance_accounting(D):
+    """Per measure: how much between-site variation is noise, explained, and real-but-not.
+
+    The three shares answer the question a standardised coefficient cannot: is the variation
+    we are modelling real, and how much of the real part do the drivers account for.
+    """
+    e, rel = D["effects"], D["reliability"]
+    rows = []
+    for meas in [m for m in MEASURES if m in e.measure.unique()]:
+        rl = float(rel[rel.metric == meas].reliability.median())
+        r2 = float(e[e.measure == meas].r2_adj.dropna().median())
+        noise = 1 - rl
+        explained = min(r2, rl)
+        rows.append(dict(measure=meas, m=MEASURE_SHORT.get(meas, meas),
+                         noise=noise, explained=explained,
+                         real_unexplained=max(rl - explained, 0.0),
+                         pct_of_real_explained=100 * explained / rl if rl else np.nan))
+    return pd.DataFrame(rows)
+
+
+def fig18_effect_magnitude(D, style=None, headline="pct_noct"):
+    """Are the effects biologically large? Yes along their gradients, and small in total.
+
+    Both readings are correct and they are not in conflict: a driver can move activity by more
+    than the real between-site variation across its own range while accounting for a small
+    share of the variation among all sites.
+    """
+    if style:
+        style()
+    M = effect_magnitude(D)
+    VA = variance_accounting(D)
+
+    fig = plt.figure(figsize=(13.8, 4.6))
+    gs = fig.add_gridspec(1, 3, width_ratios=[1, 1.05, 1], wspace=.40)
+
+    # (a) effects on the real-variation scale
+    ax = fig.add_subplot(gs[0, 0])
+    order = M.groupby("m").swing_over_real_sd.median().sort_values().index.tolist()
+    for i, mm in enumerate(order):
+        v = M[M.m == mm].swing_over_real_sd.dropna()
+        xj = np.random.default_rng(i).normal(0, .075, len(v))
+        ax.scatter(v, i + xj, s=15, c="#1f6f8b", lw=0, alpha=.85, zorder=3)
+        ax.plot([float(v.median())], [i], marker="|", ms=16, color=INK, zorder=4)
+    ax.axvline(1, color="#b5442e", lw=1.0, ls=":")
+    ax.text(1.03, -.42, "effect equals the real\nsite-to-site variation",
+            fontsize=5.9, color="#b5442e", va="bottom")
+    ax.set_yticks(range(len(order))); ax.set_yticklabels(order, fontsize=6.6)
+    ax.set_xlabel("change across the observed gradient,\nas a multiple of real site-to-site "
+                  "variation")
+    ax.set_xlim(0, float(M.swing_over_real_sd.max()) * 1.12)
+    ax.set_title(f"a   Along their own gradient the effects\nare substantial "
+                 f"(median {M.swing_over_real_sd.median():.2f}x)", loc="left", fontsize=8.6)
+
+    # (b) the headline measure in native units, so magnitude is not hidden by a ratio
+    ax = fig.add_subplot(gs[0, 1])
+    hb = M[M.measure == headline].copy()
+    hb = hb.reindex(hb.swing.abs().sort_values().index)
+    y = np.arange(len(hb))
+    ax.barh(y, hb.swing, color=[GUILD_COLOUR.get(g, "#1f6f8b") for g in hb.guild], height=.66)
+    ax.axvline(0, color=INK, lw=1.0)
+    ax.set_yticks(y)
+    ax.set_yticklabels([f"{r.species} \u00b7 {r.mechanism}" for _, r in hb.iterrows()],
+                       fontsize=5.8)
+    ax.set_xlabel("predicted change in % of activity at night,\nacross the observed gradient")
+    big = hb.reindex(hb.swing.abs().sort_values(ascending=False).index).iloc[0]
+    ax.set_title(f"b   In plain units: up to {abs(big.swing):.0f} percentage points\n"
+                 f"({big.species}, {big.mechanism})", loc="left", fontsize=8.6)
+
+    # (c) what fraction of the variation the drivers actually account for
+    ax = fig.add_subplot(gs[0, 2])
+    y = np.arange(len(VA))
+    ax.barh(y, VA.explained, color="#1f6f8b", height=.62, label="explained by the drivers")
+    ax.barh(y, VA.real_unexplained, left=VA.explained, color="#9fb4bd", height=.62,
+            label="real, but unexplained")
+    ax.barh(y, VA.noise, left=VA.explained + VA.real_unexplained, color="#e2e6e8",
+            height=.62, label="counting noise")
+    for i, r_ in VA.iterrows():
+        ax.text(1.015, i, f"{r_.pct_of_real_explained:.0f}%", va="center", fontsize=6.2,
+                color="#1f6f8b")
+    ax.set_yticks(y); ax.set_yticklabels(VA.m, fontsize=6.6)
+    ax.set_xlim(0, 1.13); ax.set_xticks([0, .25, .5, .75, 1])
+    ax.set_xlabel("share of between-site variation in the measure")
+    ax.set_ylim(-1.4, len(VA) - .35)
+    ax.legend(fontsize=5.9, frameon=False, loc="lower left", bbox_to_anchor=(.0, .0))
+    ax.set_title("c   But they account for only a small\nshare of it (blue % of the real "
+                 "part)", loc="left", fontsize=8.6)
+    fig.suptitle("Effects are biologically large along their own gradients and explain little "
+                 "of the variation among sites", fontsize=9.8, y=1.04)
+    return fig
+
+
 # Which figures document HOW the analysis was done and which report WHAT it found. The methods
 # set exists for review and for a supplement; it is not intended for the main paper. The
 # results set is where detail belongs, so keep those panels rich even when trimming elsewhere.
@@ -1642,6 +1769,7 @@ ROLE = {
     "fig15_predator_effects": "results",
     "fig16_effect_atlas": "results",
     "fig17_baseline_and_response": "results",
+    "fig18_effect_magnitude": "results",
 }
 
 FIGURES = {
@@ -1661,6 +1789,7 @@ FIGURES = {
     "fig15_predator_effects": fig15_predator_effects,
     "fig16_effect_atlas": fig16_effect_atlas,
     "fig17_baseline_and_response": fig17_baseline_and_response,
+    "fig18_effect_magnitude": fig18_effect_magnitude,
 }
 
 
