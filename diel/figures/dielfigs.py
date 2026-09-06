@@ -1151,6 +1151,100 @@ def fig11_skill_and_maps(D, style=None):
     return fig
 
 
+def fig12_species_responses(D, style=None, headline="pct_noct"):
+    """Which species respond to which mechanism, and in which direction.
+
+    fig07 counts effects per mechanism pooled over species, which hides the finding that
+    matters biologically: within a single mechanism, species move in OPPOSITE directions. This
+    figure is the species-level view of the same fitted model.
+    """
+    if style:
+        style()
+    e = D["effects"]
+    sur = e[e.survives_spatial.fillna(False)].copy()
+    mech_order = (sur.groupby("mechanism").size().sort_values(ascending=False).index.tolist())
+    sp_order = sur.groupby("species").size().sort_values().index.tolist()
+    for sp in e.species.unique():
+        if sp not in sp_order:
+            sp_order = [sp] + sp_order
+
+    fig = plt.figure(figsize=(13.6, 4.6))
+    gs = fig.add_gridspec(1, 3, width_ratios=[1.35, 1, .95], wspace=.42)
+
+    # (a) grid: how many effects, and whether they point up or down
+    ax = fig.add_subplot(gs[0, 0])
+    for i, sp in enumerate(sp_order):
+        for j, mm in enumerate(mech_order):
+            g = sur[(sur.species == sp) & (sur.mechanism == mm)]
+            if not len(g):
+                continue
+            npos = int((g.beta > 0).sum()); nneg = int((g.beta < 0).sum())
+            col = "#b5442e" if npos > nneg else "#1f6f8b" if nneg > npos else "#8a8f94"
+            ax.scatter(j, i, s=26 + 34 * len(g), c=col, lw=.3, edgecolor="white", zorder=3)
+            ax.text(j, i, str(len(g)), ha="center", va="center", fontsize=5.6,
+                    color="white", zorder=4)
+    ax.set_xticks(range(len(mech_order)))
+    ax.set_xticklabels(mech_order, fontsize=6.0, rotation=32, ha="right")
+    ax.set_yticks(range(len(sp_order))); ax.set_yticklabels(sp_order, fontsize=6.2)
+    ax.set_xlim(-.6, len(mech_order) - .4); ax.set_ylim(-.8, len(sp_order) - .2)
+    # Grey marks a species-mechanism cell with equal numbers up and down; it needs its own
+    # key or a reader reads it as a third colour scale.
+    ax.legend(handles=[Line2D([], [], marker="o", ls="", mfc="#b5442e", mec="#b5442e", ms=5,
+                              label="mostly increases the measure"),
+                       Line2D([], [], marker="o", ls="", mfc="#1f6f8b", mec="#1f6f8b", ms=5,
+                              label="mostly decreases it"),
+                       Line2D([], [], marker="o", ls="", mfc="#8a8f94", mec="#8a8f94", ms=5,
+                              label="equal numbers each way")],
+              fontsize=5.6, frameon=False, loc="lower right")
+    n_sp = int((sur.groupby("species").size() > 0).sum())
+    ax.set_title(f"a   Effects surviving the geography control\n"
+                 f"{n_sp} of {e.species.nunique()} species carry at least one",
+                 loc="left", fontsize=8.6)
+
+    # (b) the headline measure: species disagree in direction within one mechanism
+    ax = fig.add_subplot(gs[0, 1])
+    h = sur[(sur.measure == headline) & (sur.mechanism == "human disturbance")]
+    h = h.sort_values("beta")
+    if len(h):
+        y = np.arange(len(h))
+        ax.barh(y, h.beta, color=["#b5442e" if b > 0 else "#1f6f8b" for b in h.beta],
+                height=.62)
+        ax.errorbar(h.beta, y, xerr=[h.beta - h.lo, h.hi - h.beta], fmt="none",
+                    ecolor="#5b6b73", lw=.9, capsize=2)
+        ax.axvline(0, color=INK, lw=.9)
+        ax.set_yticks(y); ax.set_yticklabels(h.species, fontsize=6.2)
+        ax.set_xlabel(f"change in {MEASURE_LABEL.get(headline, headline)}\n"
+                      f"per unit of population density")
+        npos, nneg = int((h.beta > 0).sum()), int((h.beta < 0).sum())
+        ax.set_title(f"b   Near people, {npos} species become more\nnocturnal and {nneg} "
+                     f"become less", loc="left", fontsize=8.6)
+
+    # (c) direction agreement per mechanism
+    ax = fig.add_subplot(gs[0, 2])
+    rows = []
+    for mm in mech_order:
+        g = sur[sur.mechanism == mm]
+        rows.append((mm, len(g), 100 * float((g.beta > 0).mean())))
+    A = pd.DataFrame(rows, columns=["mech", "n", "pct_pos"]).sort_values("pct_pos")
+    y = np.arange(len(A))
+    ax.barh(y, A.pct_pos, color="#b5442e", height=.62, label="increases the measure")
+    ax.barh(y, 100 - A.pct_pos, left=A.pct_pos, color="#1f6f8b", height=.62,
+            label="decreases it")
+    ax.axvline(50, color=INK, lw=.9, ls="--")
+    for i, r_ in A.reset_index(drop=True).iterrows():
+        ax.text(101.5, i, f"n={int(r_.n)}", va="center", fontsize=6.0, color=MUTED)
+    ax.set_yticks(y); ax.set_yticklabels(A.mech, fontsize=6.2)
+    ax.set_xlim(0, 116); ax.set_xticks([0, 25, 50, 75, 100])
+    ax.set_xlabel("% of surviving effects that\nincrease the measure")
+    ax.legend(fontsize=5.6, frameon=False, loc="upper center", bbox_to_anchor=(.5, -.20),
+              ncol=1)
+    ax.set_title("c   No mechanism acts in one direction\nacross all species", loc="left",
+                 fontsize=8.6)
+    fig.suptitle("Which species respond to which mechanism, and which way: the direction is "
+                 "species-specific, not a property of the driver", fontsize=9.8, y=1.04)
+    return fig
+
+
 # Which figures document HOW the analysis was done and which report WHAT it found. The methods
 # set exists for review and for a supplement; it is not intended for the main paper. The
 # results set is where detail belongs, so keep those panels rich even when trimming elsewhere.
@@ -1166,6 +1260,7 @@ ROLE = {
     "fig09_spatial_control": "results",
     "fig10_counting_noise": "results",
     "fig11_skill_and_maps": "results",
+    "fig12_species_responses": "results",
 }
 
 FIGURES = {
@@ -1180,6 +1275,7 @@ FIGURES = {
     "fig09_spatial_control": fig09_spatial_control,
     "fig10_counting_noise": fig10_counting_noise,
     "fig11_skill_and_maps": fig11_skill_and_maps,
+    "fig12_species_responses": fig12_species_responses,
 }
 
 
