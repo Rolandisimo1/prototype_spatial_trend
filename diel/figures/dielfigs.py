@@ -108,6 +108,9 @@ INPUTS = {
 # Row/column labels in predictor_correlations_v8.csv that correspond to the five MAPPED
 # environmental conditions. The correlation matrix also carries the three count-derived
 # predictors, which are not mapped.
+MEASURE_SHORT = {"pct_noct": "night", "pct_crep": "dawn/dusk", "pct_noon": "midday",
+                 "conc": "concentration", "peak_h": "peak time"}
+
 ENV_LABELS = ["Population", "Cropland", "Tree canopy", "Ruggedness", "Summer heat"]
 
 # The eight model predictors as they appear in the site table, the mechanism each stands for,
@@ -1245,6 +1248,380 @@ def fig12_species_responses(D, style=None, headline="pct_noct"):
     return fig
 
 
+# Coarse trophic class for the 13 focal species. Assigned from standard natural history, not
+# read from a trait database, and labelled as such wherever it reaches a figure. Used only to
+# ask whether response DIRECTION tracks what the animal is; never as a model predictor.
+TROPHIC = {
+    "American Black Bear": "carnivore or omnivore", "Coyote": "carnivore or omnivore",
+    "Red Fox": "carnivore or omnivore", "Northern Raccoon": "carnivore or omnivore",
+    "Virginia Opossum": "carnivore or omnivore",
+    "White-tailed Deer": "herbivore", "Mule Deer": "herbivore",
+    "Eastern Cottontail": "herbivore", "Eastern Fox Squirrel": "herbivore",
+    "Eastern Gray Squirrel": "herbivore", "Red Squirrel": "herbivore",
+    "Eastern Chipmunk": "herbivore", "Wild Turkey": "herbivore",
+}
+TROPHIC_COLOUR = {"carnivore or omnivore": "#8a4f2d", "herbivore": "#3f7f4f"}
+
+
+def surviving(D):
+    """Effects that survive the geography control, with guild and trophic class attached."""
+    e = D["effects"]
+    s = e[e.survives_spatial.fillna(False)].copy()
+    s["m"] = s.measure.map(MEASURE_SHORT)
+    gl = D["harmonics"].groupby("species").pct_noct.mean()
+    s["guild"] = s.species.map({sp: guild(v) for sp, v in gl.items()})
+    s["trophic"] = s.species.map(TROPHIC)
+    return s
+
+
+def _effect_panel(ax, g, xlabel, title, colour_by="guild", label="species",
+                  standardise=False):
+    """Horizontal effect sizes with intervals, one row per species, sorted by magnitude."""
+    g = g.copy()
+    if standardise:
+        # A panel that mixes MEASURES cannot share one axis in native units: percentage points
+        # and the concentration index differ by two orders of magnitude, so a real effect on
+        # concentration renders as a zero-length bar. Standardise to effect / standard error.
+        for c_ in ["beta", "lo", "hi"]:
+            g[c_] = g[c_] / g["se"]
+    g = g.sort_values("beta")
+    y = np.arange(len(g))
+    cols = [GUILD_COLOUR.get(v, "#1f6f8b") if colour_by == "guild"
+            else TROPHIC_COLOUR.get(v, "#1f6f8b")
+            for v in (g.guild if colour_by == "guild" else g.trophic)]
+    ax.barh(y, g.beta, color=cols, height=.62, zorder=3)
+    ax.errorbar(g.beta, y, xerr=[g.beta - g.lo, g.hi - g.beta], fmt="none",
+                ecolor="#54646d", lw=.9, capsize=2, zorder=4)
+    ax.axvline(0, color=INK, lw=1.0, zorder=5)
+    ax.set_yticks(y)
+    # When a panel mixes MEASURES within one species, labelling by species alone repeats the
+    # same text on every row and hides what each bar is.
+    if label == "measure":
+        labs = [f"{MEASURE_LABEL.get(r.measure, r.measure)}\n{r.species} ({int(r.n)} sites)"
+                for _, r in g.iterrows()]
+    else:
+        labs = [f"{r.species}  ({int(r.n)} sites)" for _, r in g.iterrows()]
+    ax.set_yticklabels(labs, fontsize=6.0 if label == "measure" else 6.2)
+    span = g.hi.max() - g.lo.min()
+    for i, (_, r) in enumerate(g.iterrows()):
+        # Offset in POINTS from the interval end, so the annotation tracks the bar without
+        # scaling into the neighbouring panel the way a data-unit offset did.
+        end = r.hi if r.beta > 0 else r.lo
+        ax.annotate(f"R\u00b2 {r.partial_r2:.3f}", (end, i),
+                    xytext=(5 if r.beta > 0 else -5, 0), textcoords="offset points",
+                    va="center", ha="left" if r.beta > 0 else "right",
+                    fontsize=5.6, color=MUTED, annotation_clip=False)
+    ax.set_xlabel(xlabel)
+    ax.set_title(title, loc="left", fontsize=8.6)
+    pad = span * .34
+    ax.set_xlim(g.lo.min() - pad, g.hi.max() + pad)
+
+
+def fig13_density_dependence(D, style=None, focal=None):
+    """Local abundance and temporal niche expansion.
+
+    Two measures move together: activity shifts into dawn and dusk and spreads across more of
+    the day. Neither is circular, so both coefficients are read directly.
+    """
+    if style:
+        style()
+    s = surviving(D)
+    dens = s[s.mechanism == "relative abundance"]
+    crep = dens[dens.measure == "pct_crep"]
+    conc = dens[dens.measure == "conc"]
+    # Draw curves for the species with the LARGEST twilight effect rather than a fixed
+    # choice: a strictly nocturnal species has almost no daylight in which to show one.
+    if focal is None:
+        focal = crep.loc[crep.beta.idxmax(), "species"] if len(crep) else "Coyote"
+
+    fig = plt.figure(figsize=(13.6, 4.4))
+    gs = fig.add_gridspec(1, 3, width_ratios=[1, 1, 1.05], wspace=.62)
+
+    ax = fig.add_subplot(gs[0, 0])
+    _effect_panel(ax, crep, "change in % of activity at dawn and dusk\nper unit of local "
+                            "detection rate",
+                  f"a   Crowding shifts activity into twilight\n"
+                  f"{int((crep.beta > 0).sum())} of {len(crep)} species increase")
+    ax = fig.add_subplot(gs[0, 1])
+    _effect_panel(ax, conc, "change in concentration of activity\nper unit of local detection "
+                            "rate",
+                  f"b   and spreads it across more of the day\n"
+                  f"{int((conc.beta < 0).sum())} of {len(conc)} species decrease")
+
+    # (c) real curves at low against high local abundance for one species
+    ax = fig.add_subplot(gs[0, 2])
+    t, _ = curve_grid()
+    sub = D["sites"][D["sites"].species == focal].dropna(subset=["log_det_rate"])
+    hh = D["harmonics"][D["harmonics"].species == focal].dropna(subset=["s1", "c1", "s2", "c2"])
+    hh = hh.merge(sub[["final_array", "log_det_rate"]], on="final_array", how="inner")
+    q1, q3 = hh.log_det_rate.quantile([.25, .75])
+    ax.axvspan(12, 24, color=NIGHT_SHADE, zorder=0, lw=0)
+    for grp, col, lab in [(hh[hh.log_det_rate <= q1], "#4E9A6A", "fewest animals"),
+                          (hh[hh.log_det_rate >= q3], "#b5442e", "most animals")]:
+        if not len(grp):
+            continue
+        M = curves_from_harmonics(grp, t)
+        M = M / M.sum(axis=1, keepdims=True)
+        mu = M.mean(axis=0) * 1000
+        ax.plot(t, mu, color=col, lw=2.2, zorder=4, label=f"{lab} ({len(grp)} sites)")
+        ax.fill_between(t, 0, mu, color=col, alpha=.13, zorder=2)
+    for xw in [(0, 2), (10, 12)]:
+        ax.axvspan(*xw, color="#D08C1F", alpha=.16, zorder=1, lw=0)
+    ax.set_xlim(0, 24); ax.set_xticks([0, 6, 12, 18, 24])
+    ax.set_xticklabels(["sunrise", "noon", "sunset", "midnight", "sunrise"], fontsize=6.4)
+    ax.set_ylabel("share of daily activity")
+    ax.legend(fontsize=6.4, frameon=False, loc="upper left")
+    ax.text(.5, -.30, "amber bands are the dawn and dusk windows", transform=ax.transAxes,
+            fontsize=5.8, color=MUTED, ha="center")
+    ax.set_title(f"c   {focal}, observed curves", loc="left", fontsize=8.6)
+    fig.suptitle("Where a species is locally more abundant, it uses more of the 24-hour cycle",
+                 fontsize=10, y=1.04)
+    return fig
+
+
+def fig14_human_presence(D, style=None):
+    """Human population density: a midday refuge for prey, declined by the one carnivore."""
+    if style:
+        style()
+    s = surviving(D)
+    hd = s[s.mechanism == "human disturbance"]
+    noon = hd[hd.measure == "pct_noon"]
+    noct = hd[hd.measure == "pct_noct"]
+
+    fig = plt.figure(figsize=(13.6, 4.4))
+    gs = fig.add_gridspec(1, 3, width_ratios=[1, 1, 1], wspace=.62)
+
+    ax = fig.add_subplot(gs[0, 0])
+    _effect_panel(ax, noon, "change in % of activity around midday\nper unit of population "
+                            "density",
+                  f"a   Near people, {int((noon.beta > 0).sum())} of {len(noon)} species "
+                  f"gain\nmidday activity", colour_by="trophic")
+    ax = fig.add_subplot(gs[0, 1])
+    _effect_panel(ax, noct, "change in % of activity at night\nper unit of population density",
+                  f"b   Night activity splits: {int((noct.beta > 0).sum())} up, "
+                  f"{int((noct.beta < 0).sum())} down", colour_by="trophic")
+
+    # (c) does trophic class explain the night split?
+    ax = fig.add_subplot(gs[0, 2])
+    rows = []
+    for tr in ["carnivore or omnivore", "herbivore"]:
+        g = noct[noct.trophic == tr]
+        rows.append((tr, len(g), int((g.beta > 0).sum())))
+    T = pd.DataFrame(rows, columns=["trophic", "n", "n_up"])
+    y = np.arange(len(T))
+    ax.barh(y, T.n_up, color="#b5442e", height=.5, label="more nocturnal near people")
+    ax.barh(y, T.n - T.n_up, left=T.n_up, color="#1f6f8b", height=.5,
+            label="less nocturnal near people")
+    for i, r_ in T.iterrows():
+        ax.text(r_.n + .08, i, f"n={int(r_.n)}", va="center", fontsize=6.2, color=MUTED)
+    ax.set_yticks(y); ax.set_yticklabels(T.trophic, fontsize=6.6)
+    ax.set_xlim(0, max(T.n) + 1.15)
+    ax.set_xlabel("species with a surviving\nnight-activity effect")
+    ax.set_ylim(-1.15, len(T) - .25)
+    ax.legend(fontsize=6.0, frameon=False, loc="lower left", bbox_to_anchor=(.0, .02))
+    ax.set_title("c   Every herbivore shifts toward day;\nmost carnivores shift toward night",
+                 loc="left", fontsize=8.6)
+    ax.text(.5, -.36, "trophic class assigned from natural history, not used as a model "
+                      f"predictor; {int(T.n.sum())} species",
+            transform=ax.transAxes, fontsize=5.6, color=MUTED, ha="center")
+    fig.suptitle("Human population density: prey gain midday activity, and the one carnivore "
+                 "in the set does not", fontsize=10, y=1.04)
+    return fig
+
+
+def fig15_predator_effects(D, style=None):
+    """Predator richness and predator abundance, kept separate, with the circular caveat shown."""
+    if style:
+        style()
+    s = surviving(D)
+    rich = s[s.mechanism == "predator richness"]
+    abun = s[s.mechanism == "predator abundance"]
+    wrap = peak_time_wrap(D)
+
+    fig = plt.figure(figsize=(13.6, 4.5))
+    gs = fig.add_gridspec(1, 3, width_ratios=[1, 1, 1], wspace=.62)
+
+    ax = fig.add_subplot(gs[0, 0])
+    rn = rich[rich.measure == "pct_noon"]
+    _effect_panel(ax, rn, "change in % of activity around midday\nper predator species at the "
+                          "site",
+                  f"a   Both deer gain midday activity where\nmore predator species occur",
+                  colour_by="trophic")
+
+    ax = fig.add_subplot(gs[0, 1])
+    nsp = abun.species.nunique()
+    _effect_panel(ax, abun, "effect divided by its standard error\n(measures differ in "
+                            "units, so they are standardised)",
+                  f"b   Predator abundance: {len(abun)} effects\nacross {nsp} species",
+                  colour_by="trophic", label="measure", standardise=True)
+
+    # (c) the peak-time effects with the wrap diagnostic, so a reader sees which are readable
+    ax = fig.add_subplot(gs[0, 2])
+    pk = s[s.measure == "peak_h"].merge(wrap[["species", "disagreement", "R"]], on="species",
+                                        how="left")
+    pk["ok"] = pk.disagreement < 1.0
+    pk = pk.sort_values("disagreement")
+    y = np.arange(len(pk))
+    ax.scatter(pk.disagreement[pk.ok], y[pk.ok.values], s=26, c="#1f6f8b", lw=0, zorder=3,
+               label="readable")
+    ax.scatter(pk.disagreement[~pk.ok], y[(~pk.ok).values], s=32, c="#b5442e", lw=0, zorder=3,
+               marker="X", label="not readable")
+    ax.axvline(1.0, color="#b5442e", lw=1.0, ls=":")
+    ax.set_yticks(y)
+    ax.set_yticklabels([f"{r.species} \u00b7 {r.mechanism}" for _, r in pk.iterrows()],
+                       fontsize=5.6)
+    ax.set_xlabel("disagreement between the linear and\ncircular mean of peak time (hours)")
+    ax.set_xscale("symlog", linthresh=1)
+    ax.set_xlim(-.15, 30)
+    ax.legend(fontsize=6.0, frameon=False, loc="lower right")
+    n_bad = int((~pk.ok).sum())
+    ax.set_title(f"c   Peak time is circular: {n_bad} of {len(pk)} effects\nsit on species "
+                 f"whose peak is undefined", loc="left", fontsize=8.6)
+    fig.suptitle("Predator richness and predator abundance act separately, and two peak-time "
+                 "effects cannot be read", fontsize=9.8, y=1.04)
+    return fig
+
+
+def fig16_effect_atlas(D, style=None):
+    """Every surviving effect at full resolution: species x measure, one panel per mechanism.
+
+    Replaces a single collapsed grid that counted effects across measures, which made a cell
+    reading "4" ambiguous between four different behaviours.
+    """
+    if style:
+        style()
+    s = surviving(D)
+    mechs = s.groupby("mechanism").size().sort_values(ascending=False).index.tolist()
+    measures = [m for m in MEASURES if m in s.measure.unique()]
+    gl = D["harmonics"].groupby("species").pct_noct.mean()
+    sp_order = gl.sort_values().index.tolist()
+
+    ncol = 4
+    nrow = int(np.ceil(len(mechs) / ncol))
+    fig, axes = plt.subplots(nrow, ncol, figsize=(14.2, 3.5 * nrow),
+                             gridspec_kw=dict(hspace=.55, wspace=.28))
+    axes = np.atleast_1d(axes).ravel()
+    vmax = float(s.partial_r2.max())
+    for k, mm in enumerate(mechs):
+        ax = axes[k]
+        g = s[s.mechanism == mm]
+        for i, sp in enumerate(sp_order):
+            for j, meas in enumerate(measures):
+                r = g[(g.species == sp) & (g.measure == meas)]
+                if not len(r):
+                    ax.scatter(j, i, s=3, c="#e8ebed", lw=0, zorder=1)
+                    continue
+                r = r.iloc[0]
+                up = r.beta > 0
+                ax.scatter(j, i, s=24 + 300 * (r.partial_r2 / vmax),
+                           c="#b5442e" if up else "#1f6f8b", lw=.3, edgecolor="white",
+                           marker="^" if up else "v", zorder=3)
+        ax.set_xticks(range(len(measures)))
+        ax.set_xticklabels([MEASURE_SHORT.get(m, m) for m in measures], fontsize=5.6,
+                           rotation=30, ha="right")
+        ax.set_yticks(range(len(sp_order)))
+        ax.set_yticklabels(sp_order if k % ncol == 0 else [], fontsize=5.6)
+        for i, sp in enumerate(sp_order):
+            if k % ncol == 0:
+                ax.get_yticklabels()[i].set_color(GUILD_COLOUR[guild(gl[sp])])
+        ax.set_xlim(-.7, len(measures) - .3); ax.set_ylim(-.7, len(sp_order) - .3)
+        ax.set_title(f"{'abcdefgh'[k]}   {mm}  ({len(g)})", loc="left", fontsize=8.0)
+    for k in range(len(mechs), len(axes)):
+        ax = axes[k]; ax.axis("off")
+        ax.legend(handles=[Line2D([], [], marker="^", ls="", mfc="#b5442e", mec="#b5442e",
+                                  ms=7, label="increases the measure"),
+                           Line2D([], [], marker="v", ls="", mfc="#1f6f8b", mec="#1f6f8b",
+                                  ms=7, label="decreases it"),
+                           Line2D([], [], marker="o", ls="", mfc="#e8ebed", mec="#e8ebed",
+                                  ms=4, label="fitted, no surviving effect")],
+                  fontsize=6.4, frameon=False, loc="upper left", title="marker size is the\n"
+                  "variance explained", title_fontsize=6.4)
+        ax.text(0, .40, "species ordered and coloured by\nbaseline share of activity at night:\n"
+                        "amber diurnal, green intermediate, blue nocturnal",
+                transform=ax.transAxes, fontsize=6.0, color=MUTED, va="top")
+        break
+    fig.suptitle(f"Every surviving effect at full resolution: {len(s)} effects across "
+                 f"{len(mechs)} mechanisms, {len(measures)} measures and "
+                 f"{len(sp_order)} species", fontsize=10, y=.995)
+    return fig
+
+
+def fig17_baseline_and_response(D, style=None, min_n=4):
+    """Does where a species already sits predict how it responds?
+
+    Asked per mechanism on night activity. Pooling mechanisms hides the answer: the pattern is
+    present for local abundance and absent overall.
+    """
+    if style:
+        style()
+    s = surviving(D)
+    base = D["harmonics"].groupby("species").pct_noct.mean()
+    cand = [mm for mm in s.mechanism.unique()
+            if len(s[(s.mechanism == mm) & (s.measure == "pct_noct")]) >= min_n]
+    cand = sorted(cand, key=lambda mm: -len(s[(s.mechanism == mm) & (s.measure == "pct_noct")]))
+
+    fig, axes = plt.subplots(1, len(cand) + 1, figsize=(4.4 * (len(cand) + 1), 4.2),
+                             gridspec_kw=dict(wspace=.34))
+    axes = np.atleast_1d(axes)
+    for k, mm in enumerate(cand):
+        ax = axes[k]
+        g = s[(s.mechanism == mm) & (s.measure == "pct_noct")].copy()
+        g["base"] = g.species.map(base)
+        ax.axhline(0, color=MUTED, lw=.8, ls="--")
+        for _, r in g.iterrows():
+            ax.scatter(r.base, r.beta, s=40, c=GUILD_COLOUR[guild(r.base)], lw=.4,
+                       edgecolor="white", zorder=3)
+            ax.annotate(r.species, (r.base, r.beta), xytext=(0, 8),
+                        textcoords="offset points", fontsize=5.6, ha="center", color=INK)
+        rr = float(np.corrcoef(g.base, g.beta)[0, 1])
+        ax.set_xlabel("baseline % of activity at night")
+        if k == 0:
+            ax.set_ylabel("effect on % of activity at night")
+        ax.set_xlim(-8, 108)
+        ax.text(.03, .04, f"correlation {rr:+.2f}, {len(g)} species",
+                transform=ax.transAxes, fontsize=6.2, color=INK)
+        ax.set_title(f"{'abcd'[k]}   {mm}", loc="left", fontsize=8.6)
+
+    ax = axes[-1]
+    allg = s[s.measure == "pct_noct"].copy(); allg["base"] = allg.species.map(base)
+    ax.axhline(0, color=MUTED, lw=.8, ls="--")
+    for _, r in allg.iterrows():
+        ax.scatter(r.base, r.beta, s=26, c=GUILD_COLOUR[guild(r.base)], lw=.3,
+                   edgecolor="white", zorder=3, alpha=.9)
+    rr = float(np.corrcoef(allg.base, allg.beta)[0, 1])
+    ax.set_xlabel("baseline % of activity at night")
+    ax.set_xlim(-8, 108)
+    ax.text(.03, .04, f"correlation {rr:+.2f}, {len(allg)} effects\nacross all mechanisms",
+            transform=ax.transAxes, fontsize=6.2, color=INK)
+    ax.set_title(f"{'abcd'[len(cand)]}   pooled: the pattern is\nmechanism-specific, not "
+                 f"general", loc="left", fontsize=8.6)
+    fig.suptitle("Where a species already sits predicts how it responds to crowding, but not "
+                 "to the other mechanisms", fontsize=9.8, y=1.04)
+    return fig
+
+
+def peak_time_wrap(D, threshold_h=1.0):
+    """Per species: does the site-level peak-time distribution straddle the 24-hour wrap?
+
+    A linear coefficient on peak time is only readable when it does not. Returned as the
+    disagreement in hours between the linear and circular mean, plus the circular
+    concentration R (near 0 means the peak is barely defined at all).
+    """
+    rows = []
+    for sp, g in D["harmonics"].groupby("species"):
+        v = g.peak_h.dropna().values
+        if len(v) < 10:
+            continue
+        th = 2 * np.pi * v / 24.0
+        R = float(np.hypot(np.cos(th).mean(), np.sin(th).mean()))
+        cmean = float((np.arctan2(np.sin(th).mean(), np.cos(th).mean()) * 24 / (2 * np.pi)) % 24)
+        rows.append((sp, len(v), float(v.mean()), cmean, abs(float(v.mean()) - cmean), R))
+    out = pd.DataFrame(rows, columns=["species", "n", "linear_mean", "circular_mean",
+                                      "disagreement", "R"])
+    out["readable"] = out.disagreement < threshold_h
+    return out.sort_values("disagreement", ascending=False)
+
+
 # Which figures document HOW the analysis was done and which report WHAT it found. The methods
 # set exists for review and for a supplement; it is not intended for the main paper. The
 # results set is where detail belongs, so keep those panels rich even when trimming elsewhere.
@@ -1260,7 +1637,11 @@ ROLE = {
     "fig09_spatial_control": "results",
     "fig10_counting_noise": "results",
     "fig11_skill_and_maps": "results",
-    "fig12_species_responses": "results",
+    "fig13_density_dependence": "results",
+    "fig14_human_presence": "results",
+    "fig15_predator_effects": "results",
+    "fig16_effect_atlas": "results",
+    "fig17_baseline_and_response": "results",
 }
 
 FIGURES = {
@@ -1275,7 +1656,11 @@ FIGURES = {
     "fig09_spatial_control": fig09_spatial_control,
     "fig10_counting_noise": fig10_counting_noise,
     "fig11_skill_and_maps": fig11_skill_and_maps,
-    "fig12_species_responses": fig12_species_responses,
+    "fig13_density_dependence": fig13_density_dependence,
+    "fig14_human_presence": fig14_human_presence,
+    "fig15_predator_effects": fig15_predator_effects,
+    "fig16_effect_atlas": fig16_effect_atlas,
+    "fig17_baseline_and_response": fig17_baseline_and_response,
 }
 
 
