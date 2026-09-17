@@ -334,14 +334,22 @@ def _compose_side_by_side(left_png, right_png, out, gap=40):
 # Mask-construction categories, drawn in distinct colours so the figure explains
 # how the modelled area was defined rather than arguing for a choice.
 MASK_CAT = [("both", "In the IUCN range map\nand has iNaturalist records", "#2c6c9c"),
-            ("iucn_only", "IUCN range map only\n(no records: a true absence)", "#a6cee3"),
+            ("iucn_only", "IUCN range map only -- not in these fits\n(would be a true absence under a union mask)", "#a6cee3"),
             ("inat_only", "Added by iNaturalist records\n(outside the IUCN map)", "#e08214")]
 
 
 def fig_mask_construction(out="fig_mask_construction.png"):
-    """How the modelled area was defined, per species.
+    """Which cells the fits actually use, and which the union mask would add.
 
-    Each 100 km cell is shown by which source placed it in range: the IUCN range
+    IMPORTANT: the fits reported here use the PRESENCE mask -- cells with
+    iNaturalist records -- not the union. An earlier version of this figure
+    titled itself "how the modelled area was defined" and printed union cell
+    counts (bobcat 845, deer 750, moose 183) while the fits ran on 588, 655 and
+    178, which contradicted the report's own methods text. The panel titles now
+    carry the FITTED count and the union-only cells are labelled as not yet in
+    any fit.
+
+    Each 100 km cell is shown by which source places it in range: the IUCN range
     map, the iNaturalist records, or both. This is a methods figure -- it shows
     what area the models cover and where that area came from.
     """
@@ -363,18 +371,19 @@ def fig_mask_construction(out="fig_mask_construction.png"):
             if len(sub):
                 sub.plot(ax=ax, facecolor=col, edgecolor="none", zorder=2)
         counts[label] = {c: int((d.cat == c).sum()) for c, _, _ in MASK_CAT}
-        ax.set_title(f"{label}  ({len(d)} cells)", fontsize=8.6)
+        n_fit = int(d["in_presence"].sum())
+        ax.set_title(f"{label}\n{n_fit} cells fitted  |  +{len(d) - n_fit} in union",
+                     fontsize=8.2)
         ax.set_axis_off()
         ax.set_xlim(*st.total_bounds[[0, 2]]); ax.set_ylim(*st.total_bounds[[1, 3]])
 
     handles = [Patch(facecolor=col, edgecolor="none", label=lab) for _, lab, col in MASK_CAT]
     fig.legend(handles=handles, loc="lower center", ncol=3, frameon=False,
                fontsize=6.8, bbox_to_anchor=(0.5, -0.16))
-    fig.suptitle("How the modelled area was defined: 100 km cells by source", fontsize=9.4, y=1.02)
+    fig.suptitle("Cells used by these fits, and what the union mask would add",
+                 fontsize=9.4, y=1.02)
     fig.text(0.5, -0.26,
-             "A cell enters the model if either source places it in range. Orange cells are real "
-             "iNaturalist observations that fall outside the IUCN\nmap; pale blue cells are inside "
-             "the map with no records, and contribute genuine absence information.",
+             "These fits use the PRESENCE mask: only the dark blue and orange cells -- those with iNaturalist records -- entered the model.\nPale blue cells lie inside the IUCN range map with fewer than two records. They would contribute genuine absence information\nunder a union mask, but are NOT in any fit reported here. Orange cells are records outside the IUCN map, which a\nrange-map-only mask would have excluded.",
              ha="center", va="top", fontsize=6.4, color="#5f6a73")
     fig.savefig(out, bbox_inches="tight", pad_inches=0.06, dpi=300)
     plt.close(fig)
