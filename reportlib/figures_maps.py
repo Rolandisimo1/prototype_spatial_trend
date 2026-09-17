@@ -72,6 +72,32 @@ def union_mask(species):
     return g.union_all()
 
 
+def presence_mask(species):
+    """Dissolved geometry of the PRESENCE mask -- the mask the fits actually use.
+
+    Verified against mask_comparison_final.csv's c100_pres. Use this, not
+    union_mask, for anything displaying model output: the v2b fits were run on
+    the presence mask (c50_pres = 421 moose / 1390 bobcat / 2104 deer, matching
+    their fitted cell counts), so clipping a result map to the union extent
+    would paint area the model never saw.
+    """
+    d = pd.read_csv(os.path.join(inputs.REPO, f"{species}_mask_compare_cell100.csv"))
+    keep = d[d["in_presence"]].copy()
+    published = pd.read_csv(os.path.join(inputs.REPO, "mask_comparison_final.csv")) \
+                  .set_index("species").loc[species, "c100_pres"]
+    if len(keep) != int(published):
+        raise AssertionError(
+            f"{species}: presence mask rebuilt as {len(keep)} cell100 but the "
+            f"published count is {int(published)}. Do not map an unverified mask."
+        )
+    from shapely.geometry import box
+    h = CELL100 / 2
+    g = gpd.GeoDataFrame(keep, geometry=[box(x - h, y - h, x + h, y + h)
+                                         for x, y in zip(keep.x100, keep.y100)],
+                         crs=GRID_CRS)
+    return g.union_all()
+
+
 def _cells_to_squares(df, size, crs_from=4326):
     from shapely.geometry import box
     g = gpd.GeoDataFrame(df.copy(), geometry=gpd.points_from_xy(df.lon, df.lat),
@@ -177,7 +203,7 @@ def _ecoregions():
 
 
 def fig_regional_trend(window="full", out=None):
-    """Regional trend by ecoregion, clipped to the lower 48 and the union range mask.
+    """Regional trend by ecoregion, clipped to the lower 48 and the fitted presence mask.
 
     Clipping matters: an unclipped ecoregion polygon colours ground the species
     does not occupy. One shared scale across species, since all three are in the
@@ -196,7 +222,7 @@ def fig_regional_trend(window="full", out=None):
         d = pd.read_csv(path)
         d["region_key"] = d["region_name"].str.upper()
         m = eco.merge(d, on="region_key", how="inner")
-        m["geometry"] = m.geometry.intersection(conus_geom).intersection(union_mask(key))
+        m["geometry"] = m.geometry.intersection(conus_geom).intersection(presence_mask(key))
         m = m[~m.geometry.is_empty]
         panels.append((label, m))
 
@@ -223,9 +249,9 @@ def fig_regional_trend(window="full", out=None):
     cb.set_label(f"Regional trend, {wlabel}\n(log scale; green = increasing)", fontsize=7)
     cb.ax.tick_params(labelsize=6)
     fig.text(0.5, -0.02,
-             "Clipped to the lower 48 and to each species' union range mask (IUCN polygon or "
-             "iNaturalist presence). Grey: the 95% interval overlaps zero, so no direction "
-             "is claimed.",
+             "Clipped to the lower 48 and to each species' presence mask -- grid cells where "
+             "the species has been recorded, which is the extent these models were fitted "
+             "on. Grey: the 95% interval overlaps zero, so no direction is claimed.",
              ha="center", fontsize=6.5, color="#5f6a73")
     fig.savefig(out, bbox_inches="tight", pad_inches=0.06, dpi=300)
     plt.close(fig)
@@ -251,7 +277,7 @@ def fig_agency_comparison(species, label, out=None):
     d = pd.read_csv(os.path.join(inputs.PULL if tag == "pull" else inputs.REPO, fname))
     d["region_key"] = d["region_name"].str.upper()
     m = eco.merge(d, on="region_key", how="inner")
-    m["geometry"] = m.geometry.intersection(conus_geom).intersection(union_mask(species))
+    m["geometry"] = m.geometry.intersection(conus_geom).intersection(presence_mask(species))
     m = m[~m.geometry.is_empty]
 
     vmax = float(m["abs_trend_mean"].abs().max())
@@ -274,7 +300,7 @@ def fig_agency_comparison(species, label, out=None):
     cb.set_label("18-year trend\n(log scale; green = increasing)", fontsize=6.4)
     cb.ax.tick_params(labelsize=5.6)
     fig.text(0.5, 0.02, "Grey: 95% interval overlaps zero. Clipped to the lower 48\n"
-                        "and the union range mask.",
+                        "and the fitted presence mask.",
              ha="center", va="top", fontsize=6.0, color="#5f6a73")
     fig.savefig(panel, bbox_inches="tight", pad_inches=0.05, dpi=300)
     plt.close(fig)

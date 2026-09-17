@@ -1,0 +1,35 @@
+species,det_dep,cells_occupied,naive_occupancy_in_range,rel_compute,est_days_national,tier,screen
+coyote,5947,299,0.325,1.201,2.9,A - ample camera data,3 - well inside occupancy's informative range
+northern_raccoon,6389,257,0.442,1.032,2.5,A - ample camera data,2 - expected fine; confirm fitted occupancy when the fit lands
+white-tailed_deer,9566,249,0.794,1.0,2.4,A - ample camera data,1 - check fitted occupancy before trusting the trend
+bobcat,2561,233,0.144,0.936,2.2,A - ample camera data,3 - well inside occupancy's informative range
+virginia_opossum,3545,206,0.25,0.827,2.0,A - ample camera data,3 - well inside occupancy's informative range
+striped_skunk,1394,186,0.088,0.747,1.8,A - ample camera data,3 - well inside occupancy's informative range
+eastern_gray_squirrel,5164,185,0.478,0.743,1.8,A - ample camera data,2 - expected fine; confirm fitted occupancy when the fit lands
+grey_fox,1495,158,0.118,0.635,1.5,A - ample camera data,3 - well inside occupancy's informative range
+red_fox,1433,145,0.125,0.582,1.4,A - ample camera data,3 - well inside occupancy's informative range
+american_black_bear,2006,140,0.209,0.562,1.3,A - ample camera data,3 - well inside occupancy's informative range
+eastern_fox_squirrel,1543,139,0.127,0.558,1.3,A - ample camera data,3 - well inside occupancy's informative range
+mule_deer,2363,113,0.452,0.454,1.1,A - ample camera data,2 - expected fine; confirm fitted occupancy when the fit lands
+eastern_chipmunk,1092,95,0.117,0.382,0.9,A - ample camera data,3 - well inside occupancy's informative range
+red_squirrel,883,80,0.157,0.321,0.8,A - ample camera data,3 - well inside occupancy's informative range
+nine-banded_armadillo,1153,78,0.275,0.313,0.8,A - ample camera data,3 - well inside occupancy's informative range
+black-tailed_jackrabbit,652,58,0.228,0.233,0.6,A - ample camera data,3 - well inside occupancy's informative range
+elk,779,46,0.28,0.185,0.4,A - ample camera data,3 - well inside occupancy's informative range
+american_badger,214,63,0.057,0.253,0.6,B - modest camera data,3 - well inside occupancy's informative range
+puma,417,61,0.074,0.245,0.6,B - modest camera data,3 - well inside occupancy's informative range
+north_american_porcupine,324,57,0.076,0.229,0.5,B - modest camera data,3 - well inside occupancy's informative range
+snowshoe_hare,277,52,0.09,0.209,0.5,B - modest camera data,3 - well inside occupancy's informative range
+western_gray_squirrel,437,37,0.18,0.149,0.4,B - modest camera data,3 - well inside occupancy's informative range
+fisher,243,37,0.062,0.149,0.4,B - modest camera data,3 - well inside occupancy's informative range
+moose,296,32,0.113,0.129,0.3,B - modest camera data,3 - well inside occupancy's informative range
+california_ground_squirrel,219,28,0.133,0.112,0.3,B - modest camera data,3 - well inside occupancy's informative range
+collared_peccary,243,20,0.321,0.08,0.2,B - modest camera data,3 - well inside occupancy's informative range
+groundhog,143,39,0.039,0.157,0.4,C - marginal camera data,3 - well inside occupancy's informative range
+grey_wolf,127,21,0.116,0.084,0.2,C - marginal camera data,3 - well inside occupancy's informative range
+rock_squirrel,116,20,0.127,0.08,0.2,C - marginal camera data,3 - well inside occupancy's informative range
+golden_mantled_ground_squirrel,128,18,0.119,0.072,0.2,C - marginal camera data,3 - well inside occupancy's informative range
+pronghorn,140,14,0.25,0.056,0.1,C - marginal camera data,3 - well inside occupancy's informative range
+white-tailed_antelope_squirrel,139,12,0.273,0.048,0.1,C - marginal camera data,3 - well inside occupancy's informative range
+kit_fox,86,9,0.249,0.036,0.1,C - marginal camera data,3 - well inside occupancy's informative range
+brown_bear,96,9,0.173,0.036,0.1,C - marginal camera data,3 - well inside occupancy's informative range

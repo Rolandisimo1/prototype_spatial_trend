@@ -33,9 +33,14 @@ trend extends: bobcat and deer have 16 distinct camera years, moose only 7
 
 ![Range mask construction](fig_mask_construction.png)
 
-The modelled area for each species is the union of its published range polygon
-and grid cells with iNaturalist records, which retains true-absence cells that a
-records-only mask would discard.
+The modelled area for each species is defined by a presence mask: grid cells
+are retained where the species has been recorded, rather than by a published
+range polygon. This avoids excluding documented populations that fall outside a
+static range map, at the cost of also excluding true-absence cells, where the
+species genuinely does not occur but a camera or observer was present. A union
+mask — the presence mask combined with the published range polygon, which would
+retain those true-absence cells — has been constructed for these three species
+but is not what the fits reported here use.
 
 ## 2. Why two parameterisations, and how each is set up
 
@@ -61,7 +66,7 @@ Everything else is identical between the two: the same 50 km latent abundance
 grid, the same nine occupancy covariates, the same spatially varying intercept
 and climate-response fields on the 100 km grid, the same detection model, the
 same iNaturalist negative-binomial count likelihood with its effort offset, and
-the same union range mask. Both are run as single continuous MCMC chains with no
+the same presence mask. Both are run as single continuous MCMC chains with no
 checkpoint-and-resume boundary.
 
 **Why fit both rather than choose.** The pair is a sensitivity check on the

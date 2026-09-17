@@ -40,3 +40,5 @@ geo_cache/
 # pandoc staging dirs (report .md sources live at repo root)
 build_reports/
 build_rev/
+build_fix/
+states/
