@@ -1,0 +1,47 @@
+run_dir,species,kind,chain,jobid,cell50,nsite,req_mem_gb,peak_gb,wall_h,state,source
+bobcat_v2b_ecoregion,bobcat,ecoregion,1,640945,1392,20531,110,15.94,30.33,COMPLETED,seed sacct 2026-09-19
+bobcat_v2b_ecoregion,bobcat,ecoregion,2,640946,1392,20531,110,15.94,30.07,COMPLETED,seed sacct 2026-09-19
+bobcat_v2b_ecoregion,bobcat,ecoregion,3,640947,1392,20531,110,16.04,30.33,COMPLETED,seed sacct 2026-09-19
+bobcat_v2b_national_scalar,bobcat,national_scalar,1,640942,1392,20531,110,16.23,26.84,COMPLETED,seed sacct 2026-09-19
+bobcat_v2b_national_scalar,bobcat,national_scalar,2,640943,1392,20531,110,16.23,27.59,COMPLETED,seed sacct 2026-09-19
+bobcat_v2b_national_scalar,bobcat,national_scalar,3,640944,1392,20531,110,16.23,28.74,COMPLETED,seed sacct 2026-09-19
+moose_v1fix9_ecoregion,moose,ecoregion,1,641057,382,1654,110,8.39,6.57,COMPLETED,seed sacct 2026-09-19
+moose_v1fix9_ecoregion,moose,ecoregion,2,641058,382,1654,110,8.39,6.56,COMPLETED,seed sacct 2026-09-19
+moose_v1fix9_ecoregion,moose,ecoregion,3,641059,382,1654,110,8.39,6.55,COMPLETED,seed sacct 2026-09-19
+moose_v1fix9_national_scalar,moose,national_scalar,1,641054,382,1654,110,8.42,6.44,COMPLETED,seed sacct 2026-09-19
+moose_v1fix9_national_scalar,moose,national_scalar,2,641055,382,1654,110,8.42,6.3,COMPLETED,seed sacct 2026-09-19
+moose_v1fix9_national_scalar,moose,national_scalar,3,641056,382,1654,110,8.42,6.25,COMPLETED,seed sacct 2026-09-19
+moose_v2b_ecoregion,moose,ecoregion,1,641051,422,1654,110,8.92,7.5,COMPLETED,seed sacct 2026-09-19
+moose_v2b_ecoregion,moose,ecoregion,2,641052,422,1654,110,8.92,7.47,COMPLETED,seed sacct 2026-09-19
+moose_v2b_ecoregion,moose,ecoregion,3,641053,422,1654,110,8.92,7.46,COMPLETED,seed sacct 2026-09-19
+moose_v2b_national_scalar,moose,national_scalar,1,641048,422,1654,110,8.88,8.32,COMPLETED,seed sacct 2026-09-19
+moose_v2b_national_scalar,moose,national_scalar,2,641049,422,1654,110,8.88,8.47,COMPLETED,seed sacct 2026-09-19
+moose_v2b_national_scalar,moose,national_scalar,3,641050,422,1654,110,8.88,7.07,COMPLETED,seed sacct 2026-09-19
+moose_v2u_national_scalar,moose,national_scalar,1,863987,526,3044,110,9.38,8.25,COMPLETED,seed sacct 2026-09-19
+white-tailed_deer_v2b_camcount_national_scalar,white-tailed_deer,camcount,1,856352,2104,21559,110,20.02,43.07,COMPLETED,seed sacct 2026-09-19
+white-tailed_deer_v2b_camcount_national_scalar,white-tailed_deer,camcount,2,856353,2104,21559,110,20.02,37.12,COMPLETED,seed sacct 2026-09-19
+white-tailed_deer_v2b_camcount_national_scalar,white-tailed_deer,camcount,3,856354,2104,21559,110,20.02,38.38,COMPLETED,seed sacct 2026-09-19
+white-tailed_deer_v2b_ecoregion,white-tailed_deer,ecoregion,1,641045,2104,21559,110,19.25,65.41,COMPLETED,seed sacct 2026-09-19
+white-tailed_deer_v2b_ecoregion,white-tailed_deer,ecoregion,2,641046,2104,21559,110,19.25,64.26,COMPLETED,seed sacct 2026-09-19
+white-tailed_deer_v2b_ecoregion,white-tailed_deer,ecoregion,3,641047,2104,21559,110,19.25,62.74,COMPLETED,seed sacct 2026-09-19
+white-tailed_deer_v2b_national_scalar,white-tailed_deer,national_scalar,1,641042,2104,21559,110,20.6,45.0,COMPLETED,seed sacct 2026-09-19
+white-tailed_deer_v2b_national_scalar,white-tailed_deer,national_scalar,2,641043,2104,21559,110,20.71,43.91,COMPLETED,seed sacct 2026-09-19
+white-tailed_deer_v2b_national_scalar,white-tailed_deer,national_scalar,3,641044,2104,21559,110,20.6,43.78,COMPLETED,seed sacct 2026-09-19
+bobcat_v1fix_ecoregion,bobcat,ecoregion,1,517021,3145,20531,110,30.1,,COMPLETED_CHUNK,seed sacct 2026-09-19 (chunked: peak only)
+bobcat_v1fix_ecoregion,bobcat,ecoregion,2,521756,3145,20531,110,30.54,,COMPLETED_CHUNK,seed sacct 2026-09-19 (chunked: peak only)
+bobcat_v1fix_ecoregion,bobcat,ecoregion,3,522556,3145,20531,110,30.54,,COMPLETED_CHUNK,seed sacct 2026-09-19 (chunked: peak only)
+bobcat_v1fix_national_scalar,bobcat,national_scalar,1,504670,3145,20531,110,32.45,,COMPLETED_CHUNK,seed sacct 2026-09-19 (chunked: peak only)
+bobcat_v1fix_national_scalar,bobcat,national_scalar,2,519604,3145,20531,110,32.45,,COMPLETED_CHUNK,seed sacct 2026-09-19 (chunked: peak only)
+bobcat_v1fix_national_scalar,bobcat,national_scalar,3,504735,3145,20531,110,32.45,,COMPLETED_CHUNK,seed sacct 2026-09-19 (chunked: peak only)
+moose_v1fix_ecoregion,moose,ecoregion,1,501212,382,1654,110,7.25,,COMPLETED_CHUNK,seed sacct 2026-09-19 (chunked: peak only)
+moose_v1fix_ecoregion,moose,ecoregion,2,502243,382,1654,110,7.25,,COMPLETED_CHUNK,seed sacct 2026-09-19 (chunked: peak only)
+moose_v1fix_ecoregion,moose,ecoregion,3,502259,382,1654,110,7.25,,COMPLETED_CHUNK,seed sacct 2026-09-19 (chunked: peak only)
+moose_v1fix_national_scalar,moose,national_scalar,1,501040,382,1654,110,6.75,,COMPLETED_CHUNK,seed sacct 2026-09-19 (chunked: peak only)
+moose_v1fix_national_scalar,moose,national_scalar,2,502256,382,1654,110,7.0,,COMPLETED_CHUNK,seed sacct 2026-09-19 (chunked: peak only)
+moose_v1fix_national_scalar,moose,national_scalar,3,502217,382,1654,110,7.0,,COMPLETED_CHUNK,seed sacct 2026-09-19 (chunked: peak only)
+white-tailed_deer_v1fix_ecoregion,white-tailed_deer,ecoregion,1,499947,2848,21559,110,31.12,,COMPLETED_CHUNK,seed sacct 2026-09-19 (chunked: peak only)
+white-tailed_deer_v1fix_ecoregion,white-tailed_deer,ecoregion,2,504732,2848,21559,110,31.11,,COMPLETED_CHUNK,seed sacct 2026-09-19 (chunked: peak only)
+white-tailed_deer_v1fix_ecoregion,white-tailed_deer,ecoregion,3,504733,2848,21559,110,31.12,,COMPLETED_CHUNK,seed sacct 2026-09-19 (chunked: peak only)
+white-tailed_deer_v1fix_national_scalar,white-tailed_deer,national_scalar,1,499946,2848,21559,110,31.14,,COMPLETED_CHUNK,seed sacct 2026-09-19 (chunked: peak only)
+white-tailed_deer_v1fix_national_scalar,white-tailed_deer,national_scalar,2,504730,2848,21559,110,31.14,,COMPLETED_CHUNK,seed sacct 2026-09-19 (chunked: peak only)
+white-tailed_deer_v1fix_national_scalar,white-tailed_deer,national_scalar,3,504731,2848,21559,110,31.14,,COMPLETED_CHUNK,seed sacct 2026-09-19 (chunked: peak only)
