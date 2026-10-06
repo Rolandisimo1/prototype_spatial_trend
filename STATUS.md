@@ -4,7 +4,7 @@ Live state of the primary deliverable. Update whenever a species moves from
 fitted to reportable, or a side-quest opens or closes. Read this when resuming
 after a gap rather than reconstructing project state from conversation.
 
-**Last updated:** 2026-10-06
+**Last updated:** 2026-10-05 (late)
 
 ---
 
@@ -15,19 +15,25 @@ report for Krishna and Arielle.
 
 | | Count | |
 |---|---|---|
-| **Reportable** | **4** | bobcat, coyote, moose, white-tailed deer |
-| **Fitted, not extracted** | **14** | black bear, jackrabbit, chipmunk, fox squirrel, gray squirrel, elk, grey fox, mule deer, armadillo, raccoon, red fox, red squirrel, skunk, opossum |
-| Fleet once extracted | 18 | all of Tier A plus moose |
+| **Extracted (camera trend in table)** | **18** | all Tier A plus moose — `trend_table/trend_table_v2u_national_scalar_18spp.csv` (2026-10-05) |
+| — camera direction resolved | 12 | increase 9 (deer, coyote, black bear, chipmunk, gray squirrel, elk, raccoon, red squirrel, opossum); decline 3 (jackrabbit, grey fox, mule deer) |
+| — NOT RESOLVABLE (95% CrI spans 0, wider than ±2 %/yr) | 6 | moose, bobcat, fox squirrel, armadillo, red fox, skunk (skunk +0.09 [−2.01, +2.25] is effectively a precise near-zero, at the rule's edge) |
 | Not yet fitted | 16 | Tier B (9) and Tier C (8), minus moose |
 
-**Current blocker:** extraction, not compute. All 14 have finished, converged
-`v2u_national_scalar` chains sitting on Hazel. Nothing is queued behind them.
-Requested 2026-10-06: one table matching `trend_decomp_union_vs_presence.csv`
-for all 18, with R-hat on the trend parameters in the same table.
+All 18 converged on the trend parameters (max R-hat 1.0098, gray squirrel). The 4 previously
+reported species reproduce `trend_decomp_union_vs_presence.csv` exactly.
+Streams opposite in direction with both resolved: black bear, raccoon, mule deer → report camera,
+flag iNaturalist as questioned.
 
-**Behind that:** union ecoregion fits (moose, bobcat, deer) and shared-ecoregion
-fits (deer, bobcat) are finished and also unextracted. Those carry the regional
-trends and the shared-pathway comparison.
+**Regional (ecoregion) fits extracted** — `trend_table/trend_table_ecoregion_{national,regional}.csv`:
+- shared ecoregion, deer + bobcat: converged (R-hat ≤ 1.003) — these are the usable regional trends
+- union ecoregion, moose: converged (1.011), almost every region not resolvable
+- union ecoregion, deer: marginal (1.065)
+- **union ecoregion, bobcat: NOT CONVERGED** (trend R-hat 2.48, year_region 5.57) — do not report
+- Coyote shared ecoregion: chains c1/c2 finish 10/5 night; R-hat job 1111767 queued on them; then extract.
+
+**Current blocker:** Tier B/C bundles (16 species) not built. Next deliverable step after
+the write-up of the 18.
 
 ---
 
@@ -52,8 +58,9 @@ they can be resumed deliberately rather than by whichever report lands next.
 
 | Item | State |
 |---|---|
-| Coyote `year_pop` / `year_pop_var` tier-2 test | chains finished 10/4, unextracted; leverage-concentration check requested with it |
-| Project fixed effect, 4 camera-gradient species | done for chipmunk, fox squirrel, mule deer — unreported; gray squirrel segfaulted twice (exit 139), needs rerun with more memory |
+| Coyote `year_pop` / `year_pop_var` tier-2 test | extraction + leverage job 1111765 ran 10/5, results not yet read |
+| Project fixed effect, 4 camera-gradient species | done for chipmunk, fox squirrel, mule deer — unreported; gray squirrel segfaulted a 3rd time at 128G (job 1111759, peak 2.5 GB) — NOT memory, lme4 crash in first project-FE fit; species uncovered |
+| Convergence sweep, whole-model R-hat | array 1111766 (21 runs) ran 10/5, results in `~/isdm/fleet_v2u/rhat_sweep/`, not yet read |
 | Urban-rural stream screen | ran on 16 species; camera arm resolves the gradient for only 3, so most verdicts are "not assessed" |
 | Fisher range mask | built; 4 Tennessee cells removed per domain judgement, recorded in `manual_range_overrides.csv` |
 | Tier B/C bundles | not built; fisher's override lives outside the pipeline and must be applied when Tier B is bundled |
