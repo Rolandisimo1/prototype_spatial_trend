@@ -1,0 +1,5 @@
+species,fitted_cells,median_pct_change,q25,q75,cells_increasing,cells_decreasing
+Moose,526,-11.25,-14.93,-7.07,38,488
+Bobcat,3184,-25.09,-25.86,-24.4,0,3184
+Coyote,3305,-2.39,-3.45,-1.08,440,2865
+White-tailed deer,2860,14.72,14.38,15.14,2860,0

@@ -1,0 +1,5 @@
+species,inat_gradient_all,inat_cells_all,inat_gradient_matched,inat_cells_matched,camera_gradient,camera_cells,camera_deployments,inat_mean_trend_pct,camera_mean_trend_pct,hp_sd_inat_cells,hp_sd_camera_cells
+moose,"-2.18 [-7.23, +4.50]",231,too few cells (<10),7,"-0.79 [-730.21, +29.16]",10,1094,-1.95,-3.91,0.188,0.638
+bobcat,"+0.32 [-2.61, +2.77]",477,"+7.67 [-5.67, +32.95]",58,"+1.55 [-13.69, +17.59]",104,11891,-5.04,0.89,0.382,0.328
+white-tailed_deer,"+0.35 [-0.90, +1.91]",1571,"-1.12 [-8.67, -0.48]",162,"-2.31 [-7.43, +1.83]",174,17263,0.96,1.67,0.208,0.65
+coyote,"+3.79 [+1.98, +5.40]",1016,"+6.37 [+1.40, +10.75]",117,"-1.02 [-12.43, +0.68]",179,18009,-0.44,1.37,0.314,0.674

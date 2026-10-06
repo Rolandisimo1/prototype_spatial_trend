@@ -1,0 +1,10 @@
+species,stratum,cam_deployments,cam_detecting,cam_cells,cam_years,inat_cells_with_records,inat_records,cam_gradient,cam_excludes_zero,cam_ci_width,cam_mean_trend_pct,cam_note,cam_gradient_without_top10,projects,projects_spanning_2plus_years,year_hp_spearman,median_year_urban_vs_rural,top10_share_of_deployments,inat_gradient,inat_excludes_zero,inat_ci_width,inat_mean_trend_pct,inat_note,agreement
+elk,NATIONAL,4265,725,120,2019-2025,696,21974,"DEGENERATE FIT (estimate +18.76, half-width 0.028) -- not assessed",,,,"DEGENERATE FIT (estimate +18.76, half-width 0.028) -- not assessed","+3.67 [-111.19, +118.52]",23,7,0.137,2022 vs 2022,0.288,"-2.61 [-7.95, +2.73]",FALSE,10.69,2.01,"",NOT ASSESSED (a stream lacks data)
+elk,EASTERN TEMPERATE FORESTS,444,8,10,2019-2025,20,250,NOT ASSESSED (too little camera data),,,,,,,,,,,NOT ASSESSED (too little iNat data),,,,,NOT ASSESSED (a stream lacks data)
+elk,GREAT PLAINS,391,73,9,2019-2025,96,1571,NOT ASSESSED (too little camera data),,,,,,,,,,,"+2.49 [-5.10, +10.08]",FALSE,15.18,1.84,singular fit,NOT ASSESSED (a stream lacks data)
+elk,MARINE WEST COAST FOREST,444,10,11,2019-2025,48,2642,NOT ASSESSED (too little camera data),,,,,,,,,,,NOT ASSESSED (too little iNat data),,,,,NOT ASSESSED (a stream lacks data)
+elk,MEDITERRANEAN CALIFORNIA,673,77,16,2019-2025,30,2535,NOT ASSESSED (too little camera data),,,,,,,,,,,NOT ASSESSED (too little iNat data),,,,,NOT ASSESSED (a stream lacks data)
+elk,NORTH AMERICAN DESERTS,523,127,27,2019-2025,221,3567,NOT ASSESSED (too little camera data),,,,,,,,,,,"-39.68 [-100.25, +20.89]",FALSE,121.15,-1.02,"",NOT ASSESSED (a stream lacks data)
+elk,NORTHERN FORESTS,130,0,3,2023-2025,8,317,NOT ASSESSED (too little camera data),,,,,,,,,,,NOT ASSESSED (too little iNat data),,,,,NOT ASSESSED (a stream lacks data)
+elk,NORTHWESTERN FORESTED MOUNTAINS,1611,430,43,2019-2025,271,11033,NOT ASSESSED (too little camera data),,,,,,,,,,,NOT ASSESSED (too little iNat data),,,,,NOT ASSESSED (a stream lacks data)
+elk,WATER,49,0,1,2023-2025,2,59,NOT ASSESSED (too little camera data),,,,,,,,,,,NOT ASSESSED (too little iNat data),,,,,NOT ASSESSED (a stream lacks data)

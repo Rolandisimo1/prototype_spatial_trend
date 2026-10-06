@@ -1,0 +1,156 @@
+#!/usr/bin/env Rscript
+# Regional urban-vs-rural trend contrast, camera and iNat, per species (default coyote). 2026-10-01.
+# Union (v2u) national_scalar bundle data; region map = ecoregion_of_cell100 from the v2u ecoregion
+# bundle. Reads existing data only; no refit.
+#
+# Camera: deployments -> cell50 (grid50.tif) -> cell Human_pop = mean of the model's standardised
+#   occ_covars[,"Human_pop"] over the cell's deployments. Within each region, tertile cut-points over
+#   DEPLOYMENTS' cell Human_pop; keep bottom (rural) and top (urban) tertile.
+#   One pooled binomial GLM (cloglog) on detection-occasions / valid occasions:
+#     cbind(det, occ - det) ~ yr * urban
+#   -> rural trend b_r, urban trend b_r + b_int; difference = b_int. Reported as %/yr = 100(exp(b)-1);
+#   difference as urban %/yr minus rural %/yr (pp). 95% CI: bootstrap resampling CELLS within each
+#   group (1000), refitting the pooled GLM -- deployments sharing a cell/project are not independent.
+# iNat: per cell-year counts with offset log(inat_effort) (years with effort > 0); tertiles over
+#   CELLS (cell Human_pop = mean of xdat_inat[,"Human_pop",] over sub-cell rows and years).
+#   Poisson GLM count ~ yr * urban + offset(log(eff)); same reporting and cell bootstrap.
+# NOT ASSESSED if either group has < 100 deployments, < 20 detecting deployments, or deployments in
+#   < 4 distinct years (camera); < 10 cells with records or < 50 records (iNat).
+# Year-range check: per group median / range of deployment year and share >= 2019.
+suppressMessages({library(data.table); library(terra)})
+SP <- Sys.getenv("SPECIES", "coyote")
+PROJ <- "/rsstu/users/j/jkpacifi/NSFiSDMs/Arielle_iSDM_temporal/integrated_code/Temporal_trend_final"
+H <- file.path(PROJ, "HPC"); OUT <- "/home/rwkays/isdm/fleet_v2u"
+set.seed(20261001); NB <- 1000
+pct <- function(b) 100 * (exp(b) - 1)
+fmt <- function(e, lo, hi) sprintf("%+.2f [%+.2f, %+.2f]", e, lo, hi)
+
+ns  <- readRDS(file.path(H, paste0(SP, "_v2u_national_scalar"), paste0("input_data_", SP, "_v2u_national_scalar.RDS")))
+eco <- readRDS(file.path(H, paste0(SP, "_v2u_ecoregion"), paste0("input_data_", SP, "_v2u_ecoregion.RDS")))
+E_OF <- eco$constants_list$ecoregion_of_cell100; rm(eco)
+prepped <- readRDS(file.path(PROJ, "prototype_spatial_trend", "prepped_sim_inputs.RDS"))
+cat("region table from prepped_sim_inputs:\n"); print(prepped$region_table)
+rt <- as.data.table(prepped$region_table)
+name_col <- intersect(c("region_name", "NA_L1NAME", "name", "ecoregion", "L1_name"), names(rt))
+# region_table is sorted by size; its ROW NAMES are the region IDs (not row positions)
+rid <- suppressWarnings(as.integer(rownames(prepped$region_table)))
+stopifnot(!anyNA(rid), setequal(rid, seq_len(prepped$nregion)))
+reg_name <- function(r) if (length(name_col)) as.character(rt[[name_col[1]]][match(r, rid)]) else paste("region", r)
+cl <- ns$constants_list
+c50xy <- fread(file.path(PROJ, "prototype_spatial_trend/cell50_coordinates.csv"))
+cxy <- data.table(cell50 = as.integer(rownames(ns$inat_y)), region = E_OF[cl$inat_cell100])[c50xy, on = "cell50", nomatch = 0]
+cat("\nregion ID -> name -> mean lon/lat of footprint cells (geographic check of the labels):\n")
+print(cxy[, .(name = reg_name(region[1]), n_cells = .N, mean_lon = round(mean(lon), 1), mean_lat = round(mean(lat), 1)), keyby = region])
+g50 <- rast("/rsstu/users/j/jkpacifi/NSFiSDMs/Arielle_iSDM_temporal/data/grid50.tif")
+
+# ---------------- camera deployments ----------------
+oc <- ns$real_data$occ.covs; y <- ns$real_data$y
+xy <- project(as.matrix(oc[, c("longitude", "latitude")]), from = "EPSG:4326", to = crs(g50))
+dep <- data.table(cell50 = terra::extract(g50, xy)[, 1], region = E_OF[cl$cell], year = as.integer(oc$year),
+                  det = rowSums(y > 0, na.rm = TRUE), occ = rowSums(!is.na(y)), hp = cl$occ_covars[, "Human_pop"])
+dep <- dep[!is.na(cell50) & occ > 0]
+dep[, cell_hp := mean(hp), by = cell50]
+dep[, yr := year - 2016]
+
+# ---------------- iNat cell-years ----------------
+Y <- ns$inat_y; E <- ns$inat_effort; cells <- as.integer(rownames(Y)); yrs <- as.integer(colnames(Y))
+G <- cl$ncell50; row_g <- integer(dim(cl$xdat_inat)[1])
+for (g in 1:G) row_g[cl$inat_cell50_start[g]:cl$inat_cell50_end[g]] <- g
+hp_cell <- as.vector(tapply(rowMeans(cl$xdat_inat[, "Human_pop", ]), row_g, mean))
+inat <- data.table(cell50 = rep(cells, times = length(yrs)), year = rep(yrs, each = G),
+                   cnt = as.vector(Y), eff = as.vector(E), hp = rep(hp_cell, times = length(yrs)),
+                   region = rep(E_OF[cl$inat_cell100], times = length(yrs)))
+inat <- inat[!is.na(cnt) & !is.na(eff) & eff > 0]; inat[, yr := year - 2016]
+
+# NATIONAL=1: pool every region into one (region 0) -- same estimator, no stratification.
+# Separates between-region composition from the per-cell-slope estimator (2026-10-01).
+NATIONAL <- Sys.getenv("NATIONAL") == "1"
+if (NATIONAL) {
+  dep[, region := 0L]; inat[, region := 0L]
+  reg_name0 <- reg_name; reg_name <- function(r) if (r == 0) "NATIONAL (all regions pooled)" else reg_name0(r)
+}
+
+# Continuous gradient, same units as the per-cell meta-regression (+x pp of %/yr per +1 unit of
+# standardised Human_pop, as 100 x the yr:hp coefficient): pooled GLM on ALL deployments / cells
+# of the stratum (not just the tertiles), CI by resampling cells.
+cont_grad <- function(d, fam, off) {
+  f <- if (off) cnt ~ yr * hp + offset(log(eff)) else cbind(det, occ - det) ~ yr * hp
+  one <- function(dd) { m <- tryCatch(suppressWarnings(glm(f, family = fam, data = dd)), error = function(e) NULL)
+    if (is.null(m) || !m$converged) NA_real_ else 100 * unname(coef(m)["yr:hp"]) }
+  # own RNG stream, main stream restored: tertile bootstraps stay identical to runs without this
+  old <- .Random.seed; on.exit(assign(".Random.seed", old, envir = globalenv()))
+  set.seed(7L)
+  est <- one(d); cs <- unique(d$cell50); setkey(d, cell50)
+  bs <- replicate(NB, one(d[J(sample(cs, length(cs), TRUE)), allow.cartesian = TRUE])); bs <- bs[!is.na(bs)]
+  fmt(est, quantile(bs, .025), quantile(bs, .975))
+}
+
+fit_int <- function(d, fam, off = FALSE) {
+  f <- if (off) cnt ~ yr * urban + offset(log(eff)) else cbind(det, occ - det) ~ yr * urban
+  m <- tryCatch(suppressWarnings(glm(f, family = fam, data = d)), error = function(e) NULL)
+  if (is.null(m) || !m$converged) return(rep(NA_real_, 2))
+  cf <- coef(m); c(cf["yr"], cf["yr"] + cf["yr:urban"])
+}
+boot_cells <- function(d, fam, off) {
+  cr <- unique(d[urban == 0, cell50]); cu <- unique(d[urban == 1, cell50])
+  setkey(d, cell50)
+  t(replicate(NB, {
+    s <- c(sample(cr, length(cr), TRUE), sample(cu, length(cu), TRUE))
+    fit_int(d[J(s), allow.cartesian = TRUE], fam, off)
+  }))
+}
+summ_contrast <- function(d, fam, off) {
+  est <- fit_int(d, fam, off); bs <- boot_cells(d, fam, off); bs <- bs[complete.cases(bs), , drop = FALSE]
+  q <- function(v) quantile(v, c(.025, .975))
+  r <- pct(est[1]); u <- pct(est[2]); rb <- pct(bs[, 1]); ub <- pct(bs[, 2])
+  list(rural = fmt(r, q(rb)[1], q(rb)[2]), urban = fmt(u, q(ub)[1], q(ub)[2]),
+       diff = fmt(u - r, q(ub - rb)[1], q(ub - rb)[2]), P_urban_gt_rural = round(mean(ub > rb), 3),
+       n_boot_ok = nrow(bs))
+}
+
+rows <- list()
+for (r in sort(unique(c(dep$region, inat$region)))) {
+  out <- list(region = r, region_name = reg_name(r))
+  # ---- camera ----
+  d <- dep[region == r]
+  if (nrow(d) >= 100 && sum(d$det > 0) >= 40 && uniqueN(d$year) >= 4)
+    out$cam_continuous_gradient <- cont_grad(copy(d)[, hp := cell_hp], binomial(link = "cloglog"), FALSE)
+  if (nrow(d) >= 30) {
+    cut <- quantile(d$cell_hp, c(1/3, 2/3)); d <- d[cell_hp <= cut[1] | cell_hp > cut[2]]
+    d[, urban := as.integer(cell_hp > cut[2])]
+  }
+  gs <- if (nrow(d) && "urban" %in% names(d)) d[, .(n_dep = .N, n_det_dep = sum(det > 0), det_occ = sum(det), n_cells = uniqueN(cell50),
+                        n_years = uniqueN(year), yr_med = as.numeric(median(year)), yr_min = min(year), yr_max = max(year),
+                        share_2019on = round(mean(year >= 2019), 2)), keyby = urban] else NULL
+  ok_cam <- !is.null(gs) && nrow(gs) == 2 && all(gs$n_dep >= 100 & gs$n_det_dep >= 20 & gs$n_years >= 4)
+  if (!is.null(gs) && nrow(gs) == 2) {
+    for (k in 0:1) { p <- if (k) "cam_urban_" else "cam_rural_"; g <- gs[urban == k]
+      out[[paste0(p, "deployments")]] <- g$n_dep; out[[paste0(p, "detecting_deployments")]] <- g$n_det_dep
+      out[[paste0(p, "detection_occasions")]] <- g$det_occ; out[[paste0(p, "cells")]] <- g$n_cells
+      out[[paste0(p, "years")]] <- sprintf("%d-%d (median %.0f, %d yrs, %.0f%% 2019+)", g$yr_min, g$yr_max, g$yr_med, g$n_years, 100 * g$share_2019on) }
+    out$cam_year_flag <- if (abs(gs$yr_med[2] - gs$yr_med[1]) >= 2 || abs(gs$share_2019on[2] - gs$share_2019on[1]) >= 0.25)
+      "UNEVEN year coverage urban vs rural" else "comparable"
+  }
+  if (ok_cam) { s <- summ_contrast(d, binomial(link = "cloglog"), FALSE)
+    out$cam_rural_trend <- s$rural; out$cam_urban_trend <- s$urban; out$cam_urban_minus_rural <- s$diff; out$cam_P_urban_gt_rural <- s$P_urban_gt_rural
+  } else out$cam_urban_minus_rural <- "NOT ASSESSED (too little camera data for the split)"
+  # ---- iNat ----
+  di <- inat[region == r]
+  if (uniqueN(di[cnt > 0, cell50]) >= 20) out$inat_continuous_gradient <- cont_grad(copy(di), poisson, TRUE)
+  if (uniqueN(di$cell50) >= 20) {
+    ch <- unique(di[, .(cell50, hp)]); cut <- quantile(ch$hp, c(1/3, 2/3))
+    di <- di[hp <= cut[1] | hp > cut[2]]; di[, urban := as.integer(hp > cut[2])]
+    gi <- di[, .(n_cells = uniqueN(cell50[cnt > 0]), n_rec = sum(cnt)), keyby = urban]
+    ok_i <- nrow(gi) == 2 && all(gi$n_cells >= 10 & gi$n_rec >= 50)
+    out$inat_rural_cells <- gi[urban == 0, n_cells]; out$inat_urban_cells <- gi[urban == 1, n_cells]
+    out$inat_rural_records <- gi[urban == 0, n_rec]; out$inat_urban_records <- gi[urban == 1, n_rec]
+  } else ok_i <- FALSE
+  if (ok_i) { s <- summ_contrast(di, poisson, TRUE)
+    out$inat_rural_trend <- s$rural; out$inat_urban_trend <- s$urban; out$inat_urban_minus_rural <- s$diff; out$inat_P_urban_gt_rural <- s$P_urban_gt_rural
+  } else out$inat_urban_minus_rural <- "NOT ASSESSED (too little iNat data for the split)"
+  rows[[length(rows) + 1]] <- as.data.table(out)
+  cat("\n==== region", r, reg_name(r), "\n"); print(t(as.data.frame(out)))
+}
+res <- rbindlist(rows, fill = TRUE)
+fwrite(res, file.path(OUT, sprintf("%s_urban_rural_%s.csv", if (NATIONAL) "national" else "regional", SP)))
+cat("\nREGIONAL DONE\n")

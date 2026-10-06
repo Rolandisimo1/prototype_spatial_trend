@@ -1,0 +1,5 @@
+species,cells,cells_estimated,pooled_growth_pct,median_cell_growth_pct,iqr_cell_growth,rho_growth_humanpop,p_humanpop,rho_growth_camsites,p_camsites,growth_Q1_pop,growth_Q4_pop,growth_cells_with_cameras,growth_cells_without,site_cell_agreement
+moose,526,460,29,30,24.9 to 34.6,0.108,0.02,-0.054,0.25,28.8,30.8,29.4,30.3,1
+bobcat,3184,2440,30.2,29.8,24.4 to 35.7,0.21,7.8e-26,0.053,0.0092,27.1,32.5,30.4,29.7,1
+white-tailed_deer,2860,2230,31,30.2,24.8 to 36.0,0.224,7.5e-27,0.075,0.00042,27.4,32.8,31.2,29.9,1
+coyote,3305,2547,30.3,30,24.6 to 35.8,0.215,4.2e-28,0.052,0.009,27.2,32.5,30.5,29.8,1

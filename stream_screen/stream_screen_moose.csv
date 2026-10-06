@@ -1,0 +1,8 @@
+species,stratum,cam_deployments,cam_detecting,cam_cells,cam_years,inat_cells_with_records,inat_records,cam_gradient,cam_excludes_zero,cam_ci_width,cam_mean_trend_pct,cam_note,cam_gradient_without_top10,projects,projects_spanning_2plus_years,year_hp_spearman,median_year_urban_vs_rural,top10_share_of_deployments,inat_gradient,inat_excludes_zero,inat_ci_width,inat_mean_trend_pct,inat_note,agreement,gradient_difference_inat_minus_cam
+moose,NATIONAL,3044,282,74,2011-2025,422,11582,"-23.52 [-97.83, +50.78]",FALSE,148.6,-4.4,"","-19.67 [-55.75, +16.41]",14,2,0.03,2022 vs 2022,0.469,"+3.02 [-2.01, +8.05]",FALSE,10.07,-3.32,"",NOT ASSESSED (comparison underpowered),"+26.55 [-47.93, +101.02]"
+moose,EASTERN TEMPERATE FORESTS,316,0,7,2019-2025,36,317,NOT ASSESSED (too little camera data),,,,,,,,,,,NOT ASSESSED (too little iNat data),,,,,NOT ASSESSED (a stream lacks data),
+moose,GREAT PLAINS,159,12,4,2019-2025,55,1270,NOT ASSESSED (too little camera data),,,,,,,,,,,NOT ASSESSED (too little iNat data),,,,,NOT ASSESSED (a stream lacks data),
+moose,NORTH AMERICAN DESERTS,43,0,1,2019-2021,62,451,NOT ASSESSED (too little camera data),,,,,,,,,,,NOT ASSESSED (too little iNat data),,,,,NOT ASSESSED (a stream lacks data),
+moose,NORTHERN FORESTS,1334,87,34,2011-2025,95,2374,NOT ASSESSED (too little camera data),,,,,,,,,,,"-3.04 [-13.20, +7.13]",FALSE,20.33,-3.39,"",NOT ASSESSED (a stream lacks data),
+moose,NORTHWESTERN FORESTED MOUNTAINS,1162,183,26,2019-2025,161,6853,NOT ASSESSED (too little camera data),,,,,,,,,,,"+7.90 [-9.08, +24.88]",FALSE,33.96,-2.48,"",NOT ASSESSED (a stream lacks data),
+moose,WATER,30,0,2,2019-2025,13,317,NOT ASSESSED (too little camera data),,,,,,,,,,,NOT ASSESSED (too little iNat data),,,,,NOT ASSESSED (a stream lacks data),
