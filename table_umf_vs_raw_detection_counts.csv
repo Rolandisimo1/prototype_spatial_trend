@@ -1,0 +1,26 @@
+species,wi_name,n_wi_detecting,cn,raw_detecting_deployments,ratio_her_to_raw
+coyote,Canis latrans,8209,coyote,9172.0,0.895
+white-tailed_deer,Odocoileus virginianus,17936,white-tailed deer,19059.0,0.941
+bobcat,Lynx rufus,3205,bobcat,3548.0,0.903
+virginia_opossum,Didelphis virginiana,5315,virginia opossum,5889.0,0.903
+striped_skunk,Mephitis mephitis,1632,striped skunk,1812.0,0.901
+eastern_gray_squirrel,Sciurus carolinensis,9472,eastern gray squirrel,10261.0,0.923
+grey_fox,Urocyon cinereoargenteus,2166,gray fox,2506.0,0.864
+red_fox,Vulpes vulpes,2312,red fox,2614.0,0.884
+american_black_bear,Ursus americanus,3287,american black bear,3702.0,0.888
+eastern_fox_squirrel,Sciurus niger,2100,eastern fox squirrel,2138.0,0.982
+mule_deer,Odocoileus hemionus,2627,mule deer,2963.0,0.887
+eastern_chipmunk,Tamias striatus,1504,eastern chipmunk,1638.0,0.918
+red_squirrel,Tamiasciurus hudsonicus,1028,red squirrel,1090.0,0.943
+nine-banded_armadillo,Dasypus novemcinctus,1579,nine-banded armadillo,1718.0,0.919
+black-tailed_jackrabbit,Lepus californicus,687,black-tailed jackrabbit,749.0,0.917
+elk,Cervus canadensis,755,elk,913.0,0.827
+american_badger,Taxidea taxus,218,american badger,259.0,0.842
+puma,Puma concolor,418,puma,482.0,0.867
+north_american_porcupine,Erethizon dorsatum,344,north american porcupine,397.0,0.866
+snowshoe_hare,Lepus americanus,353,snowshoe hare,391.0,0.903
+western_gray_squirrel,Sciurus griseus,482,western gray squirrel,503.0,0.958
+fisher,Pekania pennanti,275,fisher,319.0,0.862
+moose,Alces alces,285,moose,338.0,0.843
+california_ground_squirrel,Otospermophilus beecheyi,232,california ground squirrel,247.0,0.939
+collared_peccary,Pecari tajacu,140,collared peccary,274.0,0.511
