@@ -4,7 +4,7 @@ Live state of the primary deliverable. Update whenever a species moves from
 fitted to reportable, or a side-quest opens or closes. Read this when resuming
 after a gap rather than reconstructing project state from conversation.
 
-**Last updated:** 2026-10-05 (late)
+**Last updated:** 2026-10-08
 
 ---
 
@@ -15,27 +15,37 @@ report for Krishna and Arielle.
 
 | | Count | |
 |---|---|---|
-| **Extracted (camera trend in table)** | **18** | all Tier A plus moose — `trend_table/trend_table_v2u_national_scalar_18spp.csv` (2026-10-05) |
-| — camera direction resolved | 12 | increase 9 (deer, coyote, black bear, chipmunk, gray squirrel, elk, raccoon, red squirrel, opossum); decline 3 (jackrabbit, grey fox, mule deer) |
-| — NOT RESOLVABLE (95% CrI spans 0, wider than ±2 %/yr) | 6 | moose, bobcat, fox squirrel, armadillo, red fox, skunk (skunk +0.09 [−2.01, +2.25] is effectively a precise near-zero, at the rule's edge) |
-| Not yet fitted | 16 | Tier B (9) and Tier C (8), minus moose |
+| **Reportable** | **18** | all Tier A plus moose — `trend_table/trend_table_v2u_national_scalar_18spp.csv` |
+| — increasing | 9 | gray squirrel, red squirrel, elk, black bear, opossum, raccoon, deer, chipmunk, coyote |
+| — declining | 3 | jackrabbit, mule deer, grey fox |
+| — no change detected (tight interval spanning zero) | 5 | armadillo, fox squirrel, red fox, bobcat, skunk |
+| — not resolvable (interval too wide to state anything) | 1 | moose |
+| **Fitted, awaiting R-hat + extraction** | **7** | badger, puma, porcupine, snowshoe hare, fisher*, western gray squirrel, California ground squirrel, collared peccary |
+| Fleet once extracted | **26** | |
+| Held | 8 | Tier C — none projects a usable trend interval |
 
-All 18 converged on the trend parameters (max R-hat 1.0098, gray squirrel). The 4 previously
-reported species reproduce `trend_decomp_union_vs_presence.csv` exactly.
-Streams opposite in direction with both resolved: black bear, raccoon, mule deer → report camera,
-flag iNaturalist as questioned.
+All 18 converged; worst trend R-hat 1.010 (gray squirrel).
 
-**Regional (ecoregion) fits extracted** — `trend_table/trend_table_ecoregion_{national,regional}.csv`:
-- shared ecoregion, deer + bobcat: converged (R-hat ≤ 1.003) — these are the usable regional trends
-- union ecoregion, moose: converged (1.011), almost every region not resolvable
-- union ecoregion, deer: marginal (1.065)
-- **union ecoregion, bobcat: NOT CONVERGED** (trend R-hat 2.48, year_region 5.57) — do not report
-- Coyote shared ecoregion: chains c1/c2 finish 10/5 night; R-hat job 1111767 queued on them; then extract.
+**Current blocker:** extraction of the 7 finished Tier B species, requested
+2026-10-08 along with their R-hat. *Fisher launching separately (bundle built
+late, flag accepted 10/8) — 3 chains, ~12 h each.
 
-**Current blocker:** Tier B/C bundles (16 species) not built. Next deliverable step after
-the write-up of the 18.
+**Headline method finding, only visible at fleet scale.** Regressing the
+iNaturalist trend on the camera trend across the 18 gives a slope of
+**0.28 [0.04, 0.62]** — iNaturalist recovers about a quarter of the
+camera-measured trend and compresses six species past zero into the wrong sign
+(black bear, raccoon, coyote, red fox, bobcat, mule deer). This is not
+regression dilution: an errors-in-variables (Deming) fit using the posterior
+intervals moves OLS 0.271 to only 0.285. It dissolves the bobcat "divergence"
+puzzle — bobcat is one point on this line, not an anomaly. Mechanism test
+requested: `theta1` attenuation vs `sigma_year_var` shrinkage vs already
+present in raw records per unit effort. The raw-counts version is decisive.
 
----
+**Regional trends:** use the shared-ecoregion fits (deer, bobcat converged at
+R-hat <= 1.003). **Do not report union ecoregion bobcat** — R-hat 2.48 on the
+trend, 5.57 on `year_region`, regional values to +27%/yr; the centred
+`year_region` prior reproduces the deer funnel. Coyote shared ecoregion still
+awaiting extraction.
 
 ## Settled, and not to be reopened
 
@@ -59,11 +69,12 @@ they can be resumed deliberately rather than by whichever report lands next.
 | Item | State |
 |---|---|
 | Coyote `year_pop` / `year_pop_var` tier-2 test | extraction + leverage job 1111765 ran 10/5, results not yet read |
-| Project fixed effect, 4 camera-gradient species | done for chipmunk, fox squirrel, mule deer — unreported; gray squirrel segfaulted a 3rd time at 128G (job 1111759, peak 2.5 GB) — NOT memory, lme4 crash in first project-FE fit; species uncovered |
+| Project fixed effect, 4 camera-gradient species | CLOSED: chipmunk, fox squirrel, mule deer done; gray squirrel UNCOVERED (3 lme4 segfaults at 2.5 GB peak, not memory) — no further action |
 | Convergence sweep, whole-model R-hat | array 1111766 (21 runs) ran 10/5, results in `~/isdm/fleet_v2u/rhat_sweep/`, not yet read |
 | Urban-rural stream screen | ran on 16 species; camera arm resolves the gradient for only 3, so most verdicts are "not assessed" |
-| Fisher range mask | built; 4 Tennessee cells removed per domain judgement, recorded in `manual_range_overrides.csv` |
-| Tier B/C bundles | not built; fisher's override lives outside the pipeline and must be applied when Tier B is bundled |
+| Fisher range mask | built; 4 Tennessee cells removed per domain judgement (failed introduction), recorded in `manual_range_overrides.csv`; override now applied IN-pipeline by `build_union_grid_fleet.R` via `RANGE_OVERRIDES`. **Verified on disk 2026-10-08** — 176 cells, zero in TN/NC/KY, the 5 VA/WV reintroduction cells retained. The dropped cells held 246 camera site-years (177 after the covariate filter) with 0 fisher detections, but **208 of the 246 are from 2013 alone**, the other 38 from 2022–2025, median 2 occasions per site. So the camera record is *consistent with* the introduction having failed and does **not** independently confirm it — the override rests on domain judgement, not on the cameras. |
+| Camera taxonomy splits | **FOUND 2026-10-08.** One common name carrying two scientific names, in the camera data: peccary (*Pecari*→*Dicotyles tajacu*, clean break 2023/24, 47.9% of the record lost if keyed to the old name — **this is the −54%/yr**), long-tailed weasel (same pattern, 50.3%), fisher, domestic pig — all one MDD id, union the names. **Elk is two accepted species** (*elaphus* 1006313 / *canadensis* 1006312); 855 NA records reassigned to *canadensis* per domain judgement, recorded in `fleet_union_prep/manual_taxonomy_decisions.csv`. Elk's +6.59%/yr needs rechecking after reassignment. Crosswalk cause: one name slot per source cannot hold a mid-series rename, and `mdd_binomial` was never validated against the MDD accepted list (peccary's was a synonym). |
+| Tier C bundles | not built; held deliberately — none of the 8 projects a usable trend interval, see the deliverable table above. Fisher's override is now applied IN-pipeline by `build_union_grid_fleet.R` via `RANGE_OVERRIDES` (default `fleet34_isdm/manual_range_overrides.csv`), so it no longer needs applying by hand. |
 
 ---
 

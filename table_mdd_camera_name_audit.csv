@@ -1,0 +1,11 @@
+cn,names,n_names,n_mdd_ids,n_unresolved,treatment,decision,mdd_version
+botta's pocket gopher,Thomomys bottae,1,0,1,UNRESOLVED - resolve before use,,v2.5
+collared peccary,Dicotyles tajacu | Pecari tajacu,2,1,0,rename - union the names,,v2.5
+domestic goat,Capra aegagrus hircus,1,0,1,UNRESOLVED - resolve before use,,v2.5
+domestic mule,Equus mulus,1,0,1,UNRESOLVED - resolve before use,,v2.5
+domestic pig,Sus scrofa | Sus scrofa scrofa,2,1,0,rename - union the names,,v2.5
+eastern gray/fox squirrel,Sciurus carolinensis or niger,1,0,1,UNRESOLVED - resolve before use,,v2.5
+elk,Cervus canadensis | Cervus elaphus,2,2,0,DISTINCT SPECIES - resolved by recorded decision,"Cervus elaphus -> Cervus canadensis (id 1006312); Roland Kays, domain judgement, 2026-10-08",v2.5
+fisher,Martes pennanti | Pekania pennanti,2,1,0,rename - union the names,,v2.5
+grizzly bear,Ursus U. arctos,1,0,1,UNRESOLVED - resolve before use,,v2.5
+long-tailed weasel,Mustela frenata | Neogale frenata,2,1,0,rename - union the names,,v2.5

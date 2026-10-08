@@ -1,0 +1,5 @@
+species,older_name,newer_name,n_older,n_newer,older_years,newer_years,clean_break,pct_lost_if_keyed_older,pct_lost_if_keyed_newer
+collared peccary,Pecari tajacu,Dicotyles tajacu,1640,1510,2015-2023,2024-2025,True,47.9,52.1
+long-tailed weasel,Mustela frenata,Neogale frenata,184,186,2012-2023,2024-2025,True,50.3,49.7
+elk,Cervus elaphus,Cervus canadensis,855,11515,2017-2021,2019-2025,False,93.1,6.9
+fisher,Martes pennanti,Pekania pennanti,2,545,2013-2013,2011-2025,False,99.6,0.4
