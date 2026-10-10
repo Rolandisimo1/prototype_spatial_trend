@@ -16,6 +16,10 @@
 # =============================================================================
 suppressPackageStartupMessages({ library(data.table); library(terra); library(sf) })
 W <- "/home/rwkays/isdm/fleet_v2u"
+# 2026-10-08: mdd_binomial is RESOLVED against MDD (mdd_lib.R), not copied from the fleet34 layer binomial --
+# the layer held "Pecari tajacu", an MDD v2.5 synonym of Dicotyles tajacu. Stage 2 (crosswalk_camera_names.R)
+# asserts every mdd_binomial is accepted and adds the multi-name wi_names column; run it after this script.
+source(file.path(W, "mdd_lib.R")); mdd <- load_mdd()
 tk <- fread("/rsstu/users/j/jkpacifi/NSFiSDMs/context_dependence_everything/data/target_species.csv")
 tk[, species := gsub("[ -']", "_", tolower(common_name))]
 plan <- fread(file.path(W, "table_fleet_launch_plan.csv"))
@@ -30,6 +34,10 @@ inat_n <- inat[Year >= 2008 & Year <= 2025, .N, by = taxon_species_name]
 
 um <- readRDS("/rsstu/users/j/jkpacifi/NSFiSDMs/Arielle_iSDM_temporal/data/umflist.RDS")
 
+mdd_accepted <- function(binomial, sp) { r <- mdd_resolve(binomial, mdd)
+  if (is.na(r$resolved)) stop("MDD cannot resolve ", binomial, " for ", sp, " -- needs a human")
+  if (r$resolved != binomial) cat(sprintf("  MDD %s: %s -> %s (%s)\n", mdd$version, binomial, r$resolved, r$match_type))
+  r$resolved }
 cw <- rbindlist(lapply(plan$species, function(sp) {
   sci <- tk[species == sp, sci_name]
   if (length(sci) != 1) stop("no unique target_species row for ", sp)
@@ -53,7 +61,7 @@ cw <- rbindlist(lapply(plan$species, function(sp) {
   if (!sci %in% names(um)) stop("umflist has no detection histories under '", sci, "' for ", sp)
   y <- attr(um[[sci]], "y")
   data.table(species = sp, inat_name = inat_name, iucn_name = iucn_name, wi_name = sci,
-             mdd_binomial = f$binomial, n_inat_records = n_inat,
+             mdd_binomial = mdd_accepted(f$binomial, sp), n_inat_records = n_inat,
              n_wi_detecting = sum(rowSums(y, na.rm = TRUE) > 0),
              note = paste(note, collapse = "; "))
 }))

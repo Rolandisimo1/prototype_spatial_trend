@@ -67,9 +67,28 @@ prep_camera_sites <- function(species, range_mode, union_grid = NULL, tag = rang
   data_outfile <- file.path(out_dir, paste0(species, "_4SPO.RDS"))
   if (file.exists(data_outfile)) stop("refusing to overwrite ", data_outfile)
 
-  umflist <- readRDS(file.path(CAM_DATA, "umflist.RDS"))
+  # 2026-10-08: camera record = umflist_v2.RDS (rebuild_detections.R), which unions every camera name the
+  # crosswalk lists for a species (wi_names). Her umflist.RDS kept one name per species and lost 47.9% of the
+  # peccary record. Override with UMFLIST=<path> only for validation.
+  umf_path <- Sys.getenv("UMFLIST", file.path(CAM_DATA, "umflist_v2.RDS"))
+  umflist <- readRDS(umf_path)
   dat <- umflist[[nm$wi_name]]
   if (is.null(dat)) stop("umflist has no entry '", nm$wi_name, "'")
+  # MULTI-NAME BUILD CHECK: a species whose camera names are more than one must use a record built from all of them,
+  # unless a recorded decision (manual_taxonomy_decisions.csv, action accept_single_name) says otherwise.
+  wn <- if ("wi_names" %in% names(nm)) trimws(sub("\\[.*$", "", strsplit(nm$wi_names, ";")[[1]])) else nm$wi_name
+  if (length(wn) > 1) {
+    used <- attr(umflist, "wi_names_used")[[nm$wi_name]]
+    dec  <- fread(Sys.getenv("TAXONOMY_DECISIONS", "/home/rwkays/isdm/fleet_v2u/manual_taxonomy_decisions.csv"))
+    ok_single <- nrow(dec[common_name == species & action == "accept_single_name"]) > 0
+    missing <- setdiff(wn, used)
+    if (length(missing) && !ok_single)
+      stop("MULTI-NAME CHECK FAILED for ", species, ": camera record ", umf_path, " lacks ",
+           paste(missing, collapse = ", "), " (crosswalk wi_names: ", nm$wi_names, ")")
+    cat("  camera names for", species, ":", paste(wn, collapse = " | "), "-> record built from",
+        if (is.null(used)) nm$wi_name else paste(used, collapse = " | "),
+        if (length(missing)) "(accepted single name by recorded decision)" else "", "\n")
+  }
 
   reshape_to_3d_array <- function(x, y) {
     nrow_y <- nrow(y); ncol_y <- ncol(y)

@@ -1,0 +1,38 @@
+species,mdd_id,sciname,n_sequences,n_deployments,first_year,last_year,match_type,basis,mdd_version
+coyote,1005941,Canis latrans,49640,9261,,,accepted_exact,accepted name,v2.5
+northern_raccoon,1005892,Procyon lotor,155223,11569,,,accepted_exact,accepted name,v2.5
+white-tailed_deer,1006302,Odocoileus virginianus,581083,19280,,,accepted_exact,accepted name,v2.5
+bobcat,1006009,Lynx rufus,10462,3590,2012,2025,accepted_exact,accepted name,v2.5
+virginia_opossum,1000023,Didelphis virginiana,38503,5925,,,accepted_exact,accepted name,v2.5
+striped_skunk,1005808,Mephitis mephitis,8120,1822,2008,2025,accepted_exact,accepted name,v2.5
+eastern_gray_squirrel,1001680,Sciurus carolinensis,374166,10317,,,accepted_exact,accepted name,v2.5
+grey_fox,1005965,Urocyon cinereoargenteus,14513,2510,,,accepted_exact,accepted name,v2.5
+red_fox,1005977,Vulpes vulpes,17864,2624,2010,2025,accepted_exact,accepted name,v2.5
+american_black_bear,1005934,Ursus americanus,17697,3712,,,accepted_exact,accepted name,v2.5
+eastern_fox_squirrel,1001692,Sciurus niger,72403,2266,,,accepted_exact,accepted name,v2.5
+mule_deer,1006300,Odocoileus hemionus,44117,2976,,,accepted_exact,accepted name,v2.5
+eastern_chipmunk,1001785,Tamias striatus,31492,1642,2011,2025,accepted_exact,accepted name,v2.5
+red_squirrel,1001706,Tamiasciurus hudsonicus,24133,1124,2011,2025,accepted_exact,accepted name,v2.5
+nine-banded_armadillo,1006877,Dasypus novemcinctus,10047,1740,2014,2025,accepted_exact,"REASSIGNED by decision (Roland Kays, domain judgement, 2026-10-08)",v2.5
+black-tailed_jackrabbit,1001083,Lepus californicus,9593,749,2019,2025,accepted_exact,accepted name,v2.5
+elk,1006312,Cervus elaphus,855,66,2017,2021,accepted_exact,"REASSIGNED by decision (Roland Kays, domain judgement, 2026-10-08)",v2.5
+elk,1006312,Cervus canadensis,11540,883,2019,2025,accepted_exact,accepted name,v2.5
+american_badger,1005880,Taxidea taxus,430,259,2019,2025,accepted_exact,accepted name,v2.5
+puma,1006017,Puma concolor,935,482,2015,2025,accepted_exact,accepted name,v2.5
+north_american_porcupine,1001254,Erethizon dorsatum,1304,398,2011,2025,accepted_exact,accepted name,v2.5
+snowshoe_hare,1001080,Lepus americanus,2803,393,2011,2025,accepted_exact,accepted name,v2.5
+western_gray_squirrel,1001686,Sciurus griseus,5291,503,2019,2025,accepted_exact,accepted name,v2.5
+fisher,1005825,Pekania pennanti,545,319,2011,2025,accepted_exact,accepted name,v2.5
+fisher,1005825,Martes pennanti,2,2,2013,2013,synonym,MDD synonym (rename),v2.5
+moose,1006285,Alces alces,1510,339,2019,2025,accepted_exact,accepted name,v2.5
+california_ground_squirrel,1001765,Otospermophilus beecheyi,7061,247,2020,2025,accepted_exact,accepted name,v2.5
+collared_peccary,1006380,Pecari tajacu,1640,151,2015,2023,synonym,MDD synonym (rename),v2.5
+collared_peccary,1006380,Dicotyles tajacu,1510,123,2024,2025,accepted_exact,accepted name,v2.5
+groundhog,1001734,Marmota monax,2531,434,2012,2025,accepted_exact,accepted name,v2.5
+grey_wolf,1005943,Canis lupus,403,165,2019,2025,accepted_exact,accepted name,v2.5
+rock_squirrel,1001766,Otospermophilus variegatus,893,123,2019,2025,accepted_exact,accepted name,v2.5
+golden_mantled_ground_squirrel,1001711,Callospermophilus lateralis,1422,143,2019,2025,accepted_exact,accepted name,v2.5
+pronghorn,1006129,Antilocapra americana,1500,224,2019,2025,accepted_exact,accepted name,v2.5
+white-tailed_antelope_squirrel,1001709,Ammospermophilus leucurus,1410,154,2019,2025,accepted_exact,accepted name,v2.5
+kit_fox,1005973,Vulpes macrotis,1146,102,2019,2025,accepted_exact,accepted name,v2.5
+brown_bear,1005935,Ursus arctos,972,103,2019,2025,accepted_exact,accepted name,v2.5

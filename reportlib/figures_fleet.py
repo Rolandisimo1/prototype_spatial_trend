@@ -3,7 +3,8 @@
 fig_fleet_trends is figure 1 of the report. fig_stream_compression is the
 method finding that falls out of having 18 species rather than 4.
 
-Both read trend_table/trend_table_v2u_national_scalar_18spp.csv, the extracted
+Both read the current trend_table/trend_table_v2u_national_scalar_<n>spp.csv,
+resolved by pattern since the extractor names it by row count. The extracted
 camera-anchored trends. Nothing here re-derives a trend.
 """
 import os
@@ -16,8 +17,29 @@ import matplotlib.pyplot as plt
 from . import style
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TABLE = os.path.join(HERE, "trend_table",
-                     "trend_table_v2u_national_scalar_18spp.csv")
+def _resolve_table():
+    """Pick the current national-scalar trend table by pattern, not by species count.
+
+    The extractor names the file by its row count, so it was 18spp, then 25spp,
+    then 26spp as species landed. Hardcoding a count silently breaks on every
+    rename, so resolve by glob and take the highest count present. Fails loudly
+    naming the pattern and the directory rather than returning a stale file.
+    """
+    import glob
+    d = os.path.join(HERE, "trend_table")
+    pat = os.path.join(d, "trend_table_v2u_national_scalar_*spp.csv")
+    hits = glob.glob(pat)
+    if not hits:
+        raise FileNotFoundError(
+            f"no national-scalar trend table matching {pat!r}; "
+            f"directory holds {sorted(os.listdir(d)) if os.path.isdir(d) else 'nothing'}")
+    def _n(p):
+        m = re.search(r"_(\d+)spp\.csv$", p)
+        return int(m.group(1)) if m else -1
+    return max(hits, key=_n)
+
+
+TABLE = _resolve_table()
 
 UP, DOWN, FLAT, VAGUE = "#2d7a3e", "#b2182b", "#8d969c", "#c8cfd5"
 # A camera interval wider than this cannot support "no change detected" either;
