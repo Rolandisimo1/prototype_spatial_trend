@@ -1,0 +1,105 @@
+deployment_id,project_id,year,survey_nights,latitude,longitude
+CAM_1 - Location 3,2003235,2021.0,0.0,36.44726,-115.41371
+CAM_23 - Location 3,2003235,2021.0,0.0,36.39083,-115.34051
+MT_Grassland_Riparian_Shamon_21_dep_063,2003286,2021.0,0.0,47.74808114,-107.6643464
+MT_Grassland_Riparian_Shamon_21_dep_078,2003286,2021.0,0.0,47.75726523,-107.6645456
+MT_Grassland_Riparian_Shamon_21_dep_093,2003286,2021.0,0.0,47.76634981,-107.6654538
+MT_Grassland_Riparian_Shamon_21_dep_76,2003286,2021.0,0.0,47.75639419,-107.6911367
+OK_Prairie_Selman_21_dep_02 08/28/2021,2003286,2021.0,0.0,36.683314,-99.286528
+Telos_snap3 08/26/2021,2003286,2021.0,0.0,46.18702,-69.18774
+MT_Grassland_Riparian_Shamon_21_dep_104,2003286,2021.0,0.0,47.77573344,-107.6696186
+ND_grassland_oakville_prairie_dep2,2003286,2021.0,0.0,47.89599,-97.31435
+ND_grassland_oakville_prairie_dep3,2003286,2021.0,0.0,47.90147,-97.32291
+SD_Grassland_OakLakeFS_21_OL14 09/12/2021,2003286,2021.0,0.0,44.51628,-96.53945
+TX_Grassland_GeneHowe_21_dep01_loc04 09/14/2021,2003286,2021.0,0.0,35.92725,-100.23311
+TX_Grassland_GeneHowe_21_dep01_loc06 10/21/2021,2003286,2021.0,0.0,35.90649,-100.30776
+KS_Forest_Ahlers_K2A-11,2004415,2022.0,0.0,39.097237,-96.5635089
+KS_Forest_Ahlers_R20-A7,2004415,2022.0,0.0,39.0728515,-96.60704411
+KS_Grassland_Fort_Hays_Far West (deerstand)_F2022,2004415,2022.0,0.0,38.8679,-101.01101
+NJ_Forest_Rutgers_Cam2 09/20/2022,2004415,2022.0,0.0,40.511874,-74.4373
+NV_Desert_Wild_CAM_8 - Location 8,2004415,2022.0,0.0,36.423863,-115.402039
+UT_Anthropogenic_Urban_SLC_22_dep_07,2004415,2022.0,0.0,40.7426,-111.9176
+VT_Forest_Watershed_22_loc11 09/24/2022,2004415,2022.0,0.0,44.1566841,-73.1382431
+WA_Forest_McGarry_VNC Cam1_Station 22_2022,2004415,2022.0,0.0,47.37338,-122.49998
+CA_Forest_Redwoods_07_01,2004415,2022.0,0.0,40.700387,-124.190672
+KS_Forest_Ahlers_SPA-1,2004415,2022.0,0.0,39.0753043,-96.5897042
+NH_Forest_Bartlett_dep_22_29,2004415,2022.0,0.0,44.0470556,-71.28425
+NY_Anthropogenic_NYC_22_loc09 09/15/2022,2004415,2022.0,0.0,40.865285,-73.805233
+IL_Forest_Deshwal_JubileeStatePark_BA11 07/01/2023,2006496,2023.0,0.0,40.84878,-89.81779
+MT_Grassland_BandyRanch_WILD8,2006496,2023.0,0.0,47.06261,-113.2552
+OR_McMinnville_QuailTreeWest_SS23_Cam3 08/27/2023,2006496,2023.0,0.0,45.22109,-123.25154
+VT_Forest_Watershed_Loc14 09/17/2023,2006496,2023.0,0.0,44.158227,-73.136568
+CA_Beach_PointReyes_Loc05_Dep01,2006496,2023.0,0.0,38.0310886,-122.9511409
+CA_Forest_Redwoods_CR_06_23_D1,2006496,2023.0,0.0,40.699884,-124.190672
+CA_Forest_Redwoods_CR_07_23_D1,2006496,2023.0,0.0,40.700387,-124.190672
+CA_Forest_Suburban_DaleyRanch_23_DR2308_Deploy2,2006496,2023.0,0.0,33.19482,-117.04924
+GA_Anthropogenic_Weigel_23_loc07B_dep01,2006496,2023.0,0.0,33.77975,-84.40171
+GA_Anthropogenic_Weigel_23_loc18_dep02,2006496,2023.0,0.0,33.78716,-84.37187
+GA_Forest_JonesCenter_016 09/08/2023,2006496,2023.0,0.0,31.24046667,-84.37596944
+NM_Grassland_Rural_ENMU_loc6,2006496,2023.0,0.0,34.253892,-103.24186
+SD_Grassland_Suburban_Brookings_23_C05,2006496,2023.0,0.0,44.33339,-96.79601
+TX_Forest_Rural_Angelina_23_loc22_dep22,2006496,2023.0,0.0,31.50011,-94.77679
+UT_Grassland_SwanerPreserve_Camera4_D,2006496,2023.0,0.0,40.71016,-111.53745
+WIS-S09-C59,CA_2002689,2021.0,0.0,37.013052,-119.0677039
+AD4R_2528_d27931,NS_2003860,2011.0,0.0,42.84073,-73.91948
+pb2b_2350_d28009,NS_2003860,2011.0,0.0,42.71373,-73.85752
+pb3b_2369_d28011,NS_2003860,2011.0,0.0,42.71398,-73.86016
+pb6b_2419_d28014,NS_2003860,2011.0,0.0,42.71587,-73.85641
+pb7c_2340_d28017,NS_2003860,2011.0,0.0,42.71633,-73.86092
+W-Flam5_2483_d28064,NS_2003860,2011.0,0.0,42.72569,-73.44321
+W2_2323_d28070,NS_2003860,2011.0,0.0,42.78718,-73.42978
+W9_2325_d29565,NS_2003860,2011.0,0.0,42.79519,-73.43551
+wild2_2294_d28077,NS_2003860,2011.0,0.0,42.78609,-73.43071
+wild5_2297_d28081,NS_2003860,2011.0,0.0,42.78177,-73.46217
+wild6_2298_d28082,NS_2003860,2011.0,0.0,42.75209,-73.47725
+wild7_2299_d28083,NS_2003860,2011.0,0.0,42.81874,-73.44438
+ADN7_2767_d27940,NS_2003860,2012.0,0.0,42.7211,-73.81214
+SQ183_Cam552_d15802,NS_2004287,2015.0,0.0,30.89583,-86.8199
+SQ183_Cam553_d15803,NS_2004287,2015.0,0.0,30.89337,-86.8156
+SQ49_Cam18_d15994,NS_2004287,2015.0,0.0,30.52415,-86.9131
+VWL Davidson Lg 1_17_d26331,NS_2004302,2017.0,0.0,38.77072,-77.85108
+Cool Comfort Farm 2_18_d46055,NS_2004302,2018.0,0.0,38.35857,-78.4272
+South River 2_18_d43851,NS_2004302,2018.0,0.0,38.29976,-78.39423
+Hickory Hollow 6_19_d59843,NS_2004302,2019.0,0.0,37.77232,-76.44693
+Shingle_11_2497_d27872,NS_2004780,2011.0,0.0,43.91571,-74.77462
+Shingle_21_2581_d27883,NS_2004780,2011.0,0.0,43.96032,-74.76939
+Shingle_23_2586_d27870,NS_2004780,2011.0,0.0,43.89103,-74.75265
+Shingle_5_2488_d27884,NS_2004780,2011.0,0.0,43.96099,-74.77049
+NH5_d73562,NS_NA,2021.0,0.0,44.03518,-71.28253
+UNDERC32_d73034,NS_NA,2021.0,0.0,46.24702,-89.49539
+Cato/Cunn 6C,NS_Recreation Effects on Wildlife Project,2012.0,0.0,39.67124,-77.48619
+Fall Creek Falls 18c,NS_Recreation Effects on Wildlife Project,2013.0,0.0,35.65535,-85.34454
+Lone Mountain 23c,NS_Recreation Effects on Wildlife Project,2013.0,0.0,36.05101,-84.57729
+S. Shenandoah 63C,NS_Recreation Effects on Wildlife Project,2013.0,0.0,38.30199,-78.66785
+Cato/Cunn 17A,NS_Recreation Effects on Wildlife Project,,,39.63334,-77.46646
+Frozen Head Unhunted 1b,NS_Recreation Effects on Wildlife Project,,,36.14864,-84.47772
+South Mountains Gameland 10 200m off,NS_Recreation Effects on Wildlife Project,,,35.55336,-81.72259
+Thurmond Chatham 11 200m off,NS_Recreation Effects on Wildlife Project,,,36.3723,-81.20645
+Thurmond Chatham 11 50m off,NS_Recreation Effects on Wildlife Project,,,36.37369,-81.20634
+Thurmond Chatham 11 on trail,NS_Recreation Effects on Wildlife Project,,,36.37415,-81.20634
+Thurmond Chatham 12 200m off,NS_Recreation Effects on Wildlife Project,,,36.37584,-81.20997
+Thurmond Chatham 12 on trail,NS_Recreation Effects on Wildlife Project,,,36.37393,-81.20939
+Thurmond Chatham 15 50m off,NS_Recreation Effects on Wildlife Project,,,36.35892,-81.20853
+Thurmond Chatham 15 on trail,NS_Recreation Effects on Wildlife Project,,,36.359,-81.208
+Thurmond Chatham 20 200m off,NS_Recreation Effects on Wildlife Project,,,36.36941,-81.21744
+Thurmond Chatham 20 50m off,NS_Recreation Effects on Wildlife Project,,,36.36959,-81.21918
+Thurmond Chatham 20 on trail,NS_Recreation Effects on Wildlife Project,,,36.36961,-81.21977
+Thurmond Chatham 6 200m off,NS_Recreation Effects on Wildlife Project,,,36.37978,-81.18394
+Thurmond Chatham 6 50m off,NS_Recreation Effects on Wildlife Project,,,36.37771,-81.18406
+Thurmond Chatham 6 on trail,NS_Recreation Effects on Wildlife Project,,,36.37726,-81.18406
+Thurmond Chatham 7 200m off,NS_Recreation Effects on Wildlife Project,,,36.37321,-81.17957
+Thurmond Chatham 7 50m off,NS_Recreation Effects on Wildlife Project,,,36.37409,-81.17811
+Thurmond Chatham 7 on trail,NS_Recreation Effects on Wildlife Project,,,36.37447,-81.17754
+NC_SandhillsGL_Forest_10_Fall19,North Carolina's Candid Critters,2019.0,0.0,35.09877,-79.54109
+NC_SandhillsGL_Forest_20_Fall19,North Carolina's Candid Critters,2019.0,0.0,35.14789,-79.55446
+VA_Forest_19_SCBI_1km_20,Smithsonian Environmental Research Center ForestGEO,2019.0,0.0,38.89537,-78.14076
+MT_autumn_CC_Cattle_Cam2,Smithsonian Grassland Ecology Program,2019.0,0.0,47.76006,-107.86996
+MT_autumn_PN_Grass05_Cam3,Smithsonian Grassland Ecology Program,2019.0,0.0,47.64748,-109.77483
+MT_autumn_SunPrairie_4458_Cam2,Smithsonian Grassland Ecology Program,2019.0,0.0,47.7749,-107.74018
+MT_autumn_SunPrairie_4660_Cam2,Smithsonian Grassland Ecology Program,2019.0,0.0,47.75659,-107.83472
+MT_autumn_SunPrairie_4767_Cam1,Smithsonian Grassland Ecology Program,2019.0,0.0,47.75242,-107.81944
+MT_autumn_WhiteRock_PD22_Cam1,Smithsonian Grassland Ecology Program,2019.0,0.0,47.99621,-108.01803
+PA_Forest_State_Games_Lands_026_11,Snapshot USA 2019,2019.0,0.0,40.31515,-78.63551
+MT_Grassland_SCBI_20_100,Snapshot USA 2020,2020.0,0.0,47.77443,-107.71928
+ND_Grassland_Oakville_Prairie_20_03,Snapshot USA 2020,2020.0,0.0,47.90147,-97.32291
+ND_Grassland_Oakville_Prairie_20_04,Snapshot USA 2020,2020.0,0.0,47.90523,-97.32466

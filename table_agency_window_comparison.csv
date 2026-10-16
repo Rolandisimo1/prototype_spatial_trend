@@ -1,0 +1,5 @@
+species,window,n_scored,increasing,stable_or_mixed,decreasing,mean_score
+pronghorn,10yr,9,5,3,1,0.444
+pronghorn,5yr,12,2,5,5,-0.25
+grey wolf,10yr,8,5,2,1,0.5
+grey wolf,5yr,9,4,1,4,0.0

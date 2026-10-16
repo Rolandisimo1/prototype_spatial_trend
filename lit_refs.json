@@ -1,0 +1,539 @@
+{
+ "rosenberg19": {
+  "title": "Decline of the North American avifauna",
+  "doi": "10.1126/science.aaw1313",
+  "year": 2019,
+  "cites": 2106,
+  "author": "Kenneth V. Rosenberg",
+  "venue": "Science"
+ },
+ "fink19": {
+  "title": "Modeling avian full annual cycle distribution and population trends with citizen science data",
+  "doi": "10.1002/eap.2056",
+  "year": 2019,
+  "cites": 246,
+  "author": "Daniel Fink",
+  "venue": "Ecological Applications"
+ },
+ "johnston25": {
+  "title": "North American bird declines are greatest where species are most abundant",
+  "doi": "10.1126/science.adn4381",
+  "year": 2025,
+  "cites": 62,
+  "author": "Alison Johnston",
+  "venue": "Science"
+ },
+ "feng21": {
+  "title": "Comparing the reliability of relative bird abundance indices from standardized surveys and community science data at finer resolutions",
+  "doi": "10.1371/journal.pone.0257226",
+  "year": 2021,
+  "cites": 26,
+  "author": "Mei-Ling E. Feng",
+  "venue": "PLoS ONE"
+ },
+ "boersch19": {
+  "title": "Robustness of simple avian population trend models for semi-structured citizen science data is species-dependent",
+  "doi": "10.1016/j.biocon.2019.108286",
+  "year": 2019,
+  "cites": 60,
+  "author": "Philipp H. Boersch\u2010Supan",
+  "venue": "Biological Conservation"
+ },
+ "zipkin17": {
+  "title": "Integrating count and detection\u2013nondetection data to model population dynamics",
+  "doi": "10.1002/ecy.1831",
+  "year": 2017,
+  "cites": 68,
+  "author": "Elise F. Zipkin",
+  "venue": "Ecology"
+ },
+ "pagel14": {
+  "title": "Quantifying range\u2010wide variation in population trends from local abundance surveys and widespread opportunistic occurrence records",
+  "doi": "10.1111/2041-210x.12221",
+  "year": 2014,
+  "cites": 66,
+  "author": "J\u00f6rn Pagel",
+  "venue": "Methods in Ecology and Evolution"
+ },
+ "doser22": {
+  "title": "Integrated community occupancy models: A framework to assess occurrence and biodiversity dynamics using multiple data sources",
+  "doi": "10.1111/2041-210x.13811",
+  "year": 2022,
+  "cites": 42,
+  "author": "Jeffrey W. Doser",
+  "venue": "Methods in Ecology and Evolution"
+ },
+ "dennis17": {
+  "title": "Using citizen science butterfly counts to predict species population trends",
+  "doi": "10.1111/cobi.12956",
+  "year": 2017,
+  "cites": 108,
+  "author": "Emily B. Dennis",
+  "venue": "Conservation Biology"
+ },
+ "wepprich19": {
+  "title": "Butterfly abundance declines over 20 years of systematic monitoring in Ohio, USA",
+  "doi": "10.1371/journal.pone.0216270",
+  "year": 2019,
+  "cites": 244,
+  "author": "Tyson Wepprich",
+  "venue": "PLoS ONE"
+ },
+ "warren21": {
+  "title": "The decline of butterflies in Europe: Problems, significance, and possible solutions",
+  "doi": "10.1073/pnas.2002551117",
+  "year": 2021,
+  "cites": 439,
+  "author": "M. S. Warren",
+  "venue": "Proceedings of the National Academy of Sciences"
+ },
+ "steenweg16": {
+  "title": "Scaling\u2010up camera traps: monitoring the planet's biodiversity with networks of remote sensors",
+  "doi": "10.1002/fee.1448",
+  "year": 2016,
+  "cites": 451,
+  "author": "Robin W. Steenweg",
+  "venue": "Frontiers in Ecology and the Environment"
+ },
+ "burton15": {
+  "title": "REVIEW: Wildlife camera trapping: a review and recommendations for linking surveys to ecological processes",
+  "doi": "10.1111/1365-2664.12432",
+  "year": 2015,
+  "cites": 1270,
+  "author": "A. Cole Burton",
+  "venue": "Journal of Applied Ecology"
+ },
+ "sollmann13": {
+  "title": "Risky business or simple solution \u2013 Relative abundance indices from camera-trapping",
+  "doi": "10.1016/j.biocon.2012.12.025",
+  "year": 2013,
+  "cites": 396,
+  "author": "Rahel Sollmann",
+  "venue": "Biological Conservation"
+ },
+ "ahumada19": {
+  "title": "Wildlife Insights: A Platform to Maximize the Potential of Camera Trap and Other Passive Sensor Wildlife Data for the Planet",
+  "doi": "10.1017/s0376892919000298",
+  "year": 2019,
+  "cites": 209,
+  "author": "Jorge Ahumada",
+  "venue": "Environmental Conservation"
+ },
+ "rich17": {
+  "title": "Assessing global patterns in mammalian carnivore occupancy and richness by integrating local camera trap surveys",
+  "doi": "10.1111/geb.12600",
+  "year": 2017,
+  "cites": 139,
+  "author": "Lindsey N. Rich",
+  "venue": "Global Ecology and Biogeography"
+ },
+ "chandler13": {
+  "title": "Spatially explicit models for inference about density in unmarked or partially marked populations",
+  "doi": "10.1214/12-aoas610",
+  "year": 2013,
+  "cites": 280,
+  "author": "Richard B. Chandler",
+  "venue": "The Annals of Applied Statistics"
+ },
+ "jachowski21": {
+  "title": "Tracking the decline of weasels in North America",
+  "doi": "10.1371/journal.pone.0254387",
+  "year": 2021,
+  "cites": 31,
+  "author": "David Scott Jachowski",
+  "venue": "PLoS ONE"
+ },
+ "taylor19": {
+  "title": "Opportunistically collected photographs can be used to estimate large-scale phenological trends",
+  "doi": "10.1101/794396",
+  "year": 2019,
+  "cites": 6,
+  "author": "Shawn David Taylor",
+  "venue": "bioRxiv (Cold Spring Harbor Laboratory)"
+ },
+ "mason25": {
+  "title": "iNaturalist accelerates biodiversity research",
+  "doi": "10.1093/biosci/biaf104",
+  "year": 2025,
+  "cites": 96,
+  "author": "Brittany M. Mason",
+  "venue": "BioScience"
+ },
+ "feldman21": {
+  "title": "Trends and gaps in the use of citizen science derived data as input for species distribution models: A quantitative review",
+  "doi": "10.1371/journal.pone.0234587",
+  "year": 2021,
+  "cites": 185,
+  "author": "Mariano J. Feldman",
+  "venue": "PLoS ONE"
+ },
+ "maes15": {
+  "title": "The use of opportunistic data for IUCN Red List assessments",
+  "doi": "10.1111/bij.12530",
+  "year": 2015,
+  "cites": 156,
+  "author": "Dirk Maes",
+  "venue": "Biological Journal of the Linnean Society"
+ },
+ "scheele19": {
+  "title": "Continental-scale assessment reveals inadequate monitoring for threatened vertebrates in a megadiverse country",
+  "doi": "10.1016/j.biocon.2019.04.023",
+  "year": 2019,
+  "cites": 98,
+  "author": "Ben C. Scheele",
+  "venue": "Biological Conservation"
+ },
+ "sauer17": {
+  "title": "The North American Breeding Bird Survey, Results and Analysis 1966 - 2015. Version 12.23.2015",
+  "doi": "10.5066/f7c24tnp",
+  "year": 2017,
+  "cites": 954,
+  "author": "Fallon, Jane E.",
+  "venue": "USGS DOI Tool Production Environment"
+ },
+ "gruss19": {
+  "title": "Developing spatio-temporal models using multiple data types for evaluating population trends and habitat usage",
+  "doi": "10.1093/icesjms/fsz075",
+  "year": 2019,
+  "cites": 72,
+  "author": "Arnaud Gr\u00fcss",
+  "venue": "ICES Journal of Marine Science"
+ },
+ "isaac20": {
+  "title": "Data Integration for Large-Scale Models of Species Distributions",
+  "doi": "10.1016/j.tree.2019.08.006",
+  "year": 2019,
+  "cites": 385,
+  "author": "Nick J. B. Isaac",
+  "venue": "Trends in Ecology & Evolution"
+ },
+ "fletcher19": {
+  "title": "A practical guide for combining data to model species distributions",
+  "doi": "10.1002/ecy.2710",
+  "year": 2019,
+  "cites": 289,
+  "author": "Robert J. Fletcher",
+  "venue": "Ecology"
+ },
+ "miller19": {
+  "title": "The recent past and promising future for data integration methods to estimate species\u2019 distributions",
+  "doi": "10.1111/2041-210x.13110",
+  "year": 2019,
+  "cites": 287,
+  "author": "David A W Miller",
+  "venue": "Methods in Ecology and Evolution"
+ },
+ "zipkin21": {
+  "title": "Addressing data integration challenges to link ecological processes across scales",
+  "doi": "10.1002/fee.2290",
+  "year": 2021,
+  "cites": 156,
+  "author": "Elise F. Zipkin",
+  "venue": "Frontiers in Ecology and the Environment"
+ },
+ "dicecco21": {
+  "title": "Observing the Observers: How Participants Contribute Data to iNaturalist and Implications for Biodiversity Science",
+  "doi": "10.1093/biosci/biab093",
+  "year": 2021,
+  "cites": 324,
+  "author": "Grace J. Di Cecco",
+  "venue": "BioScience"
+ },
+ "callaghan21": {
+  "title": "Large-bodied birds are over-represented in unstructured citizen science data",
+  "doi": "10.1038/s41598-021-98584-7",
+  "year": 2021,
+  "cites": 148,
+  "author": "Corey T. Callaghan",
+  "venue": "Scientific Reports"
+ },
+ "isaac14": {
+  "title": "Statistics for citizen science: extracting signals of change from noisy ecological data",
+  "doi": "10.1111/2041-210x.12254",
+  "year": 2014,
+  "cites": 569,
+  "author": "Nick J. B. Isaac",
+  "venue": "Methods in Ecology and Evolution"
+ },
+ "mesaglio21": {
+  "title": "An overview of the history, current contributions and future outlook of iNaturalist in Australia",
+  "doi": "10.1071/wr20154",
+  "year": 2021,
+  "cites": 160,
+  "author": "Thomas Mesaglio",
+  "venue": "Wildlife Research"
+ },
+ "soberon26": {
+  "title": "On using iNaturalist data to estimate trends",
+  "doi": "10.17161/bi.v20i1.24266",
+  "year": 2026,
+  "cites": 5,
+  "author": "Jorge Sober\u00f3n",
+  "venue": "Biodiversity Informatics"
+ },
+ "jensen26": {
+  "title": "A global tour of iNaturalist mammal data: status, trends, and outlook for macroecology and conservation",
+  "doi": "10.1093/jmammal/gyag025",
+  "year": 2026,
+  "cites": 0,
+  "author": "Alex J. Jensen",
+  "venue": "Journal of Mammalogy"
+ },
+ "cove21": {
+  "title": "SNAPSHOT USA 2019: a coordinated national camera trap survey of the United States",
+  "doi": "10.1002/ecy.3353",
+  "year": 2021,
+  "cites": 88,
+  "author": "Michael V. Cove",
+  "venue": "Ecology"
+ },
+ "kays22": {
+  "title": "SNAPSHOT USA 2020: A second coordinated national camera trap survey of the United States during the COVID \u201019 pandemic",
+  "doi": "10.1002/ecy.3775",
+  "year": 2022,
+  "cites": 36,
+  "author": "Roland Kays",
+  "venue": "Ecology"
+ },
+ "vanstrien13": {
+  "title": "Opportunistic citizen science data of animal species produce reliable estimates of distribution trends if analysed with occupancy models",
+  "doi": "10.1111/1365-2664.12158",
+  "year": 2013,
+  "cites": 425,
+  "author": "Arco J. Van Strien",
+  "venue": "Journal of Applied Ecology",
+  "surname": "van Strien"
+ },
+ "pacifici17": {
+  "title": "Integrating multiple data sources in species distribution modeling: a framework for data fusion",
+  "doi": "10.1002/ecy.1710",
+  "year": 2016,
+  "cites": 286,
+  "author": "Krishna Pacifici",
+  "venue": "Ecology"
+ },
+ "beaudrot16": {
+  "title": "Standardized Assessment of Biodiversity Trends in Tropical Forest Protected Areas: The End Is Not in Sight",
+  "doi": "10.1371/journal.pbio.1002357",
+  "year": 2016,
+  "cites": 226,
+  "author": "Lydia H. Beaudrot",
+  "venue": "PLoS Biology"
+ },
+ "royle03": {
+  "title": "ESTIMATING ABUNDANCE FROM REPEATED PRESENCE\u2013ABSENCE DATA OR POINT COUNTS",
+  "doi": "10.1890/0012-9658(2003)084[0777:eafrpa]2.0.co;2",
+  "year": 2003,
+  "cites": 1372,
+  "author": "Jeffrey Andrew Royle",
+  "venue": "Ecology"
+ },
+ "mackenzie02": {
+  "title": "ESTIMATING SITE OCCUPANCY RATES WHEN DETECTION PROBABILITIES ARE LESS THAN ONE",
+  "doi": "10.1890/0012-9658(2002)083[2248:esorwd]2.0.co;2",
+  "year": 2002,
+  "cites": 4461,
+  "author": "Darryl I. MacKenzie",
+  "venue": "Ecology"
+ },
+ "johnston21": {
+  "title": "Analytical guidelines to increase the value of community science data: An example using eBird data to estimate species distributions",
+  "doi": "10.1111/ddi.13271",
+  "year": 2021,
+  "cites": 404,
+  "author": "Alison Johnston",
+  "venue": "Diversity and Distributions"
+ },
+ "sullivan14": {
+  "title": "The eBird enterprise: An integrated approach to development and application of citizen science",
+  "doi": "10.1016/j.biocon.2013.11.003",
+  "year": 2013,
+  "cites": 1165,
+  "author": "Brian L. Sullivan",
+  "venue": "Biological Conservation"
+ },
+ "schipper08": {
+  "title": "The Status of the World's Land and Marine Mammals: Diversity, Threat, and Knowledge",
+  "doi": "10.1126/science.1165115",
+  "year": 2008,
+  "cites": 1535,
+  "author": "Jan Schipper",
+  "venue": "Science"
+ },
+ "fithian15": {
+  "title": "Bias correction in species distribution models: pooling survey and collection data for multiple species",
+  "doi": "10.1111/2041-210x.12242",
+  "year": 2014,
+  "cites": 456,
+  "author": "William Fithian",
+  "venue": "Methods in Ecology and Evolution"
+ },
+ "szabo10": {
+  "title": "Regional avian species declines estimated from volunteer\u2010collected long\u2010term data using List Length Analysis",
+  "doi": "10.1890/09-0877.1",
+  "year": 2010,
+  "cites": 137,
+  "author": "Judit K. Szabo",
+  "venue": "Ecological Applications"
+ },
+ "burton24": {
+  "title": "Mammal responses to global changes in human activity vary by trophic group and landscape",
+  "doi": "10.1038/s41559-024-02363-2",
+  "year": 2024,
+  "cites": 110,
+  "author": "A. Cole Burton",
+  "venue": "Nature Ecology & Evolution"
+ },
+ "schaub11": {
+  "title": "Integrated population models: a novel analysis framework for deeper insights into population dynamics",
+  "doi": "10.1007/s10336-010-0632-7",
+  "year": 2010,
+  "cites": 565,
+  "author": "Michael Schaub",
+  "venue": "Journal f\u00fcr Ornithologie"
+ },
+ "ceballos17": {
+  "title": "Biological annihilation via the ongoing sixth mass extinction signaled by vertebrate population losses and declines",
+  "doi": "10.1073/pnas.1704949114",
+  "year": 2017,
+  "cites": 2641,
+  "author": "Gerardo Ceballos",
+  "venue": "Proceedings of the National Academy of Sciences"
+ },
+ "goldstein25": {
+  "title": "Mammal niches are not conserved over continental scales",
+  "doi": "10.1101/2025.01.17.633640",
+  "year": 2025,
+  "cites": 2,
+  "author": "Benjamin R. Goldstein",
+  "venue": "bioRxiv (Cold Spring Harbor Laboratory)"
+ },
+ "simmonds20": {
+  "title": "Is more data always better? A simulation study of benefits and limitations of integrated distribution models",
+  "doi": "10.1111/ecog.05146",
+  "year": 2020,
+  "cites": 111,
+  "author": "Emily G. Simmonds",
+  "venue": "Ecography"
+ },
+ "callaghan26": {
+  "title": "Guidelines and best practices for the scientific use of global iNaturalist data",
+  "doi": "10.1093/biosci/biag135",
+  "year": 2026,
+  "cites": 0,
+  "author": "Corey T. Callaghan",
+  "venue": "BioScience"
+ },
+ "norman26": {
+  "title": "Robust and realistic power analysis for cost-effective monitoring of occupancy trends",
+  "doi": "10.32942/x28x0d",
+  "year": 2026,
+  "cites": 0,
+  "author": "Kari Norman",
+  "venue": "preprint"
+ },
+ "alyetama26": {
+  "title": "iNaturalist mammal observations classified by evidence type",
+  "doi": "10.1371/journal.pone.0353282",
+  "year": 2026,
+  "cites": 1,
+  "author": "Mohammad Alyetama",
+  "venue": "PLoS ONE"
+ },
+ "nichols06": {
+  "title": "Monitoring for conservation",
+  "doi": "10.1016/j.tree.2006.08.007",
+  "year": 2006,
+  "cites": 1312,
+  "author": "James D. Nichols",
+  "venue": "Trends in Ecology & Evolution"
+ },
+ "yoccoz01": {
+  "title": "Monitoring of biological diversity in space and time",
+  "doi": "10.1016/s0169-5347(01)02205-4",
+  "year": 2001,
+  "cites": 1448,
+  "author": "Nigel G. Yoccoz",
+  "venue": "Trends in Ecology & Evolution"
+ },
+ "lindenmayer10": {
+  "title": "Effective Ecological Monitoring",
+  "doi": "10.1071/9781486308934",
+  "year": 2018,
+  "cites": 175,
+  "author": "David B. Lindenmayer",
+  "venue": "CSIRO Publishing eBooks"
+ },
+ "legg06": {
+  "title": "Why most conservation monitoring is, but need not be, a waste of time",
+  "doi": "10.1016/j.jenvman.2005.04.016",
+  "year": 2005,
+  "cites": 491,
+  "author": "Colin J. Legg",
+  "venue": "Journal of Environmental Management"
+ },
+ "dirzo14": {
+  "title": "Defaunation in the Anthropocene",
+  "doi": "10.1126/science.1251817",
+  "year": 2014,
+  "cites": 4216,
+  "author": "Rodolfo Dirzo",
+  "venue": "Science"
+ },
+ "dickinson10": {
+  "title": "Citizen Science as an Ecological Research Tool: Challenges and Benefits",
+  "doi": "10.1146/annurev-ecolsys-102209-144636",
+  "year": 2010,
+  "cites": 1924,
+  "author": "Janis L. Dickinson",
+  "venue": "Annual Review of Ecology Evolution and Systematics"
+ },
+ "bonney09": {
+  "title": "Citizen Science: A Developing Tool for Expanding Science Knowledge and Scientific Literacy",
+  "doi": "10.1525/bio.2009.59.11.9",
+  "year": 2009,
+  "cites": 2542,
+  "author": "Rick E. Bonney",
+  "venue": "BioScience"
+ },
+ "horns18": {
+  "title": "Using opportunistic citizen science data to estimate avian population trends",
+  "doi": "10.1016/j.biocon.2018.02.027",
+  "year": 2018,
+  "cites": 176,
+  "author": "Joshua John Horns",
+  "venue": "Biological Conservation"
+ },
+ "walker17": {
+  "title": "Using eBird data to model population change of migratory bird species",
+  "doi": "10.5751/ace-00960-120104",
+  "year": 2017,
+  "cites": 102,
+  "author": "Jacob Walker",
+  "venue": "Avian Conservation and Ecology"
+ },
+ "hochachka12": {
+  "title": "Data-intensive science applied to broad-scale citizen science",
+  "doi": "10.1016/j.tree.2011.11.006",
+  "year": 2011,
+  "cites": 412,
+  "author": "Wesley M. Hochachka",
+  "venue": "Trends in Ecology & Evolution"
+ },
+ "magurran10": {
+  "title": "Long-term datasets in biodiversity research and monitoring: assessing change in ecological communities through time",
+  "doi": "10.1016/j.tree.2010.06.016",
+  "year": 2010,
+  "cites": 941,
+  "author": "Anne E. Magurran",
+  "venue": "Trends in Ecology & Evolution"
+ },
+ "ceballos20": {
+  "title": "Vertebrates on the brink as indicators of biological annihilation and the sixth mass extinction",
+  "doi": "10.1073/pnas.1922686117",
+  "year": 2020,
+  "cites": 927,
+  "author": "Gerardo Ceballos",
+  "venue": "Proceedings of the National Academy of Sciences"
+ }
+}

@@ -1,0 +1,15 @@
+covariate,role,spatial_scale,temporal_resolution,transform,source_dataset,reference,status
+Human_pop,intensity + occupancy,cell50 (50 km),annual,standardised,,,SOURCE NEEDED
+NDVI_mean,intensity + occupancy,cell50 (50 km),annual,standardised,,,SOURCE NEEDED
+Ag,intensity + occupancy,cell50 (50 km),annual,standardised,,,SOURCE NEEDED
+Deciduous,intensity + occupancy,cell50 (50 km),annual,standardised,,,SOURCE NEEDED
+Evergreen,intensity + occupancy,cell50 (50 km),annual,standardised,,,SOURCE NEEDED
+Mixed,intensity + occupancy,cell50 (50 km),annual,standardised,,,SOURCE NEEDED
+terrain_ruggedness,intensity + occupancy,cell50 (50 km),static,standardised,,,SOURCE NEEDED
+soil_clay,intensity + occupancy,cell50 (50 km),static,standardised,,,SOURCE NEEDED
+soil_silt,intensity + occupancy,cell50 (50 km),static,standardised,,,SOURCE NEEDED
+MWMT,spatially varying coefficient,"cell100 field, cell50 data",annual,standardised,,,SOURCE NEEDED
+MCMT,spatially varying coefficient,"cell100 field, cell50 data",annual,standardised,,,SOURCE NEEDED
+yday,detection,per deployment-occasion,occasion,standardised; linear and quadratic,camera deployment metadata,derived from deployment dates,DOCUMENTED
+canopy_height,detection,per deployment,static,standardised,canopy height raster,cited for the same camera dataset by Goldstein et al. (in review),CONFIRM WITH ARIELLE
+log_roaddist,detection,per deployment,static,log then standardised,Global Roads Inventory Project (GRIP),named in rebuild_detections.R; version needed,VERSION NEEDED

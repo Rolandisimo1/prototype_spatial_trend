@@ -914,3 +914,88 @@ of a real-data refit, and its result is what should inform the choice between
 Issue 5's options 1, 2 and 3. Recommend running it before committing cluster
 time to the structural refits, and sending its result to Arielle and Ben
 alongside Issue 5.
+
+---
+
+## Addendum (2026-10-13): range size predicts loss of the camera anchor
+
+Across the 19 species with both a joint and a camera-only fit, how far the joint
+camera trend sits from the camera-only trend is predicted by **range size**, not
+by camera effort (Spearman -0.61, p=0.005). Camera cells give +0.38 (p=0.11),
+detecting deployments +0.45 (p=0.055), and camera coverage as a fraction of
+range runs the wrong way at -0.38.
+
+| Range (100 km cells) | n | Median |shift| |
+|---|---|---|
+| < 100 | 3 | 17.1 pp/yr |
+| >= 100 | 16 | 1.7 pp/yr |
+
+The three below 100 cells are the three failures: California ground squirrel
+(74 cells, -34.7 pp), brown bear (30, +17.1), western gray squirrel (79, -10.5).
+Mechanism: the CAR fields are declared on the cell100 grid
+(`link_occ_intercept[1:ncell100]`, same for MWMT/MCMT), so a 30-80 cell species
+gives the spatial field almost no structure, the iNaturalist side sets the
+surface, and the camera trend absorbs the mismatch. Range size is known before
+fitting, so it screens species in advance.
+
+Evidence: `fig_range_size_anchoring.png`, `table_anchoring_vs_range_size.csv`,
+`reportlib/figures_rangesize.py`.
+
+### Option NOT taken: refit small-range species at finer resolution
+
+Moving the CAR fields from cell100 to cell50 would quadruple the nodes and is a
+3-line change; the iNaturalist effort offset is ALREADY at cell50 (the intensity
+loop runs `for (g in 1:ncell50)` and `inat_effort` is indexed there), so a finer
+field would not disturb it. Two reasons it is parked:
+
+1. **Comparability.** Fitting only the small-range species at cell50 means they
+   run a different spatial model from the rest of the fleet, and the range-size
+   result above is itself a cross-species comparison at common resolution.
+   Fleet-wide cell50 means ~3,322 CAR nodes, near the grid size that produced
+   the earlier model-build wall.
+2. **No new information.** Brown bear's 76 detecting deployments would spread
+   across ~4x more nodes, so the field gets a finer mesh carrying the same data
+   more thinly.
+
+Preferred fix instead: the camera-side spatial deviation term (`cam_dev`), which
+keeps one model for the whole fleet and already moved western gray squirrel --
+one of these three -- from -13.2 to -1.4 %/yr, essentially its camera-only value.
+
+---
+
+## Addendum (2026-10-13): two masks, and a correction about how the second one works
+
+**Decision.** Two masks for two different questions. The union mask (IUCN polygon
+OR cells holding iNaturalist records) stays the FITTING mask, because excluding a
+documented population biases the model. A second, stricter mask defines OCCURRENCE
+for the question "should an agency be publishing a trend here", because the union
+mask is deliberately generous and inflates any monitoring-gap statistic computed
+from it.
+
+**Why it is needed.** The moose union mask places moose in Nebraska (1.69% of
+range), New Mexico (1.18%), Nevada (1.01%), Arizona and Iowa. Moose have no
+established populations in those states; the cells come from vagrant or captive
+records, or a generous polygon edge. Rendered on a map these appear as
+"occurs, no agency trend published", i.e. a monitoring gap asserted where no
+monitoring is warranted. NE + NM alone are 2.9% of mapped moose range, so the
+reported 11.0% unmonitored should be about 8.1%.
+
+**CORRECTION, recorded because I got this wrong in conversation.** I claimed the
+IUCN leg alone fixes this, "excluding the phantom states while keeping Colorado".
+It does not. Computed against fleet34_iucn_ranges_present_day.geojson, Colorado
+returns iucn_frac = 0.0000 and union_only = TRUE, **identical to Nebraska, New
+Mexico and Nevada.** The IUCN polygon drops Colorado too, which is the exact
+population the union mask was built to recover. An IUCN-only occurrence rule is
+therefore wrong, in the opposite direction.
+
+**The rule that is actually required** is a corroborated OR, not a polygon test:
+a state counts as occupied if it lies inside the IUCN polygon, OR it holds more
+than a threshold NUMBER of research-grade records, not merely one occupied cell.
+Colorado passes on record count; a state with a handful of vagrant or captive
+records fails. **Neither leg alone works.**
+
+**Not yet implemented.** The record-count leg needs per-state record counts.
+inat_raw/ holds .jsonl pulls for 19 of 34 species and **moose is not among them**,
+so the species that motivated the fix cannot be tested locally. Until this is
+built, every "no agency trend published" count and every pct_range_unmonitored
+figure is an UPPER BOUND and must be reported as such.

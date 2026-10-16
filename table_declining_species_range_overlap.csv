@@ -1,0 +1,11 @@
+species_a,species_b,cells_a,cells_b,cells_shared,pct_of_smaller_shared,both_declining_on_cameras
+pronghorn,rock_squirrel,378,175,154,88.0,True
+pronghorn,white-tailed_antelope_squirrel,378,120,99,82.5,True
+white-tailed_antelope_squirrel,kit_fox,120,167,92,76.7,True
+pronghorn,kit_fox,378,167,122,73.1,True
+rock_squirrel,kit_fox,175,167,104,62.3,True
+rock_squirrel,white-tailed_antelope_squirrel,175,120,74,61.7,True
+pronghorn,grey_wolf,378,179,88,49.2,True
+white-tailed_antelope_squirrel,grey_wolf,120,179,25,20.8,True
+kit_fox,grey_wolf,167,179,29,17.4,True
+rock_squirrel,grey_wolf,175,179,24,13.7,True

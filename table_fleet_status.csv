@@ -1,0 +1,35 @@
+species,tier,state,joint_converged,camera_only_twin,cells_occupied
+american_black_bear,A,fitted,yes,running,140
+black-tailed_jackrabbit,A,fitted,yes,queued,58
+bobcat,A,fitted,yes,done,233
+coyote,A,fitted,yes,running,299
+eastern_chipmunk,A,fitted,yes,queued,95
+eastern_fox_squirrel,A,fitted,yes,queued,139
+eastern_gray_squirrel,A,fitted,yes,queued,185
+elk,A,running,-,queued,46
+grey_fox,A,fitted,yes,queued,158
+mule_deer,A,fitted,yes,queued,113
+nine-banded_armadillo,A,fitted,yes,queued,78
+northern_raccoon,A,fitted,yes,queued,257
+red_fox,A,fitted,yes,queued,145
+red_squirrel,A,fitted,yes,queued,80
+striped_skunk,A,fitted,yes,queued,186
+virginia_opossum,A,fitted,yes,queued,206
+white-tailed_deer,A,fitted,yes,done,249
+american_badger,B,refitting (theta1 split),-,queued,63
+california_ground_squirrel,B,fitted,no,done,28
+collared_peccary,B,fitted,yes,done,20
+fisher,B,FAILED at model build,-,queued,37
+moose,B,fitted,yes,done,32
+north_american_porcupine,B,refitting (theta1 split),-,queued,57
+puma,B,fitted,yes,queued,61
+snowshoe_hare,B,fitted,yes,queued,52
+western_gray_squirrel,B,fitted,yes,done,37
+brown_bear,C,refitting (theta1 split),no,done,9
+golden_mantled_ground_squirrel,C,fitted,yes,queued,18
+grey_wolf,C,fitted,yes,queued,21
+groundhog,C,running,-,queued,39
+kit_fox,C,fitted,yes,queued,9
+pronghorn,C,running,-,queued,14
+rock_squirrel,C,fitted,yes,queued,20
+white-tailed_antelope_squirrel,C,fitted,yes,queued,12

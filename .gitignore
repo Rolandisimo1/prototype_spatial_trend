@@ -42,3 +42,6 @@ build_reports/
 build_rev/
 build_fix/
 states/
+build_lit/
+build_methods/
+build_mm/
