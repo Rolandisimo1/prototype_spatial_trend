@@ -1,0 +1,35 @@
+species,model_direction,model_camera_pct,agency_n_scored,agency_majority,pop_estimate_records,concordance
+american_badger,NOT RESOLVABLE,"+3.63 [-44.20, +93.89]",1,stable/mixed,2,model not resolvable
+american_black_bear,increase,"+5.66 [+3.52, +7.79]",10,stable/mixed,9,agency no direction
+black-tailed_jackrabbit,decline,"-12.46 [-18.21, -6.88]",1,increase,0,differ
+bobcat,NOT RESOLVABLE,"+1.02 [-0.52, +2.70]",10,stable/mixed,4,model not resolvable
+brown_bear,decline,"-24.01 [-48.93, -2.45]",2,stable/mixed,2,agency no direction
+california_ground_squirrel,decline,"-25.51 [-33.32, -17.34]",0,none,0,agency no direction
+collared_peccary,NOT RESOLVABLE,"-8.60 [-19.59, +2.34]",0,none,0,model not resolvable
+coyote,increase,"+2.25 [+1.10, +3.38]",2,stable/mixed,0,agency no direction
+eastern_chipmunk,increase,"+2.47 [+0.47, +4.54]",0,none,0,agency no direction
+eastern_fox_squirrel,NOT RESOLVABLE,"+2.04 [-0.09, +4.19]",2,stable/mixed,0,model not resolvable
+eastern_gray_squirrel,increase,"+6.68 [+5.72, +7.63]",3,stable/mixed,0,agency no direction
+elk,NOT RESOLVABLE,"+4.25 [-1.13, +10.56]",6,stable/mixed,7,model not resolvable
+fisher,no fit,,9,stable/mixed,2,no model fit
+golden_mantled_ground_squirrel,NOT RESOLVABLE,"+23.39 [-1.87, +77.72]",0,none,0,model not resolvable
+grey_fox,decline,"-6.27 [-8.15, -4.43]",6,decline,1,agree
+grey_wolf,decline,"-15.08 [-27.66, -1.29]",9,stable/mixed,9,agency no direction
+groundhog,NOT RESOLVABLE,"+2.70 [-0.56, +6.15]",1,stable/mixed,0,model not resolvable
+kit_fox,NOT RESOLVABLE,"-2.20 [-15.49, +9.80]",0,none,0,model not resolvable
+moose,NOT RESOLVABLE,"-3.60 [-10.44, +2.85]",17,stable/mixed,13,model not resolvable
+mule_deer,decline,"-7.17 [-10.57, -3.67]",21,decline,17,agree
+nine-banded_armadillo,NOT RESOLVABLE,"+2.12 [-0.93, +5.58]",3,increase,0,model not resolvable
+north_american_porcupine,NOT RESOLVABLE,"+21.66 [-8.23, +206.63]",1,increase,0,model not resolvable
+northern_raccoon,increase,"+4.15 [+3.18, +5.11]",7,stable/mixed,0,agency no direction
+pronghorn,decline,"-16.13 [-23.82, -7.83]",11,decline,12,agree
+puma,NOT RESOLVABLE,"-5.74 [-12.40, +0.49]",4,stable/mixed,7,model not resolvable
+red_fox,NOT RESOLVABLE,"+1.20 [-0.42, +3.06]",2,stable/mixed,0,model not resolvable
+red_squirrel,increase,"+6.73 [+3.13, +10.74]",1,increase,1,agree
+rock_squirrel,decline,"-14.49 [-24.62, -2.86]",0,none,0,agency no direction
+snowshoe_hare,NOT RESOLVABLE,"-4.37 [-11.40, +1.23]",1,decline,0,model not resolvable
+striped_skunk,NOT RESOLVABLE,"+0.09 [-2.01, +2.25]",3,decline,0,model not resolvable
+virginia_opossum,increase,"+5.65 [+4.43, +6.90]",5,stable/mixed,0,agency no direction
+western_gray_squirrel,decline,"-13.22 [-20.51, -5.00]",1,decline,0,agree
+white-tailed_antelope_squirrel,decline,"-11.61 [-21.33, -0.94]",0,none,0,agency no direction
+white-tailed_deer,increase,"+4.00 [+3.04, +4.97]",44,stable/mixed,9,agency no direction
