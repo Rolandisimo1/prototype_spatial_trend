@@ -1,0 +1,66 @@
+#!/usr/bin/env Rscript
+# =============================================================================
+# 02k_collect_tier1.R -- stack and summarize the Tier 1 data-volume sweep
+# (01k_run_tier1_volume.R). One summary row per design cell x effect level.
+#
+# For the reported trend (year_beta, camera-anchored) and for total_var_beta:
+#   detect_rate  share of replicates whose 95% interval excludes zero. Under an
+#                effect this is POWER; under the null it is the FALSE-POSITIVE
+#                rate (same column, read by the effect level).
+#   bias_pp      mean (posterior mean - truth), in %/yr
+#   ci_width_pp  mean 95% interval width, in %/yr
+#   coverage     share of intervals containing the truth
+# %/yr conversion is the fleet's own: 100*(exp(x * s_occ) - 1) for year_beta,
+# 100*(exp(x * s_vals) - 1) for total_var_beta (trend_table_fleet.R).
+# Every metric is reported TWICE (2026-10-17): replicate_set "all", and
+# "rhat_split<1.1" = replicates whose split-R-hat on year_beta is below 1.1
+# (one chain per replicate, halved). frac_converged and median ESS are given
+# per cell. Agreement between the two sets rules out under-convergence at
+# 8,000 iterations as the explanation for the power numbers.
+# Stops on a degenerate cell (identical estimates across replicates = the
+# missing-reseed bug) rather than summarizing it.
+# =============================================================================
+args <- commandArgs(trailingOnly = TRUE)
+dirs <- if (length(args)) args else c("tier1_out_RW", "tier1_out_VOL")
+rows <- do.call(rbind, lapply(dirs, function(d) {
+  fs <- list.files(d, "^row_\\d+\\.rds$", full.names = TRUE)
+  do.call(rbind, lapply(fs, function(f) { x <- readRDS(f); if (is.null(x$error_msg)) x$error_msg <- NA_character_; x }))
+}))
+cat("rows:", nrow(rows), " OK:", sum(rows$status == "OK"), " errored:", sum(rows$status != "OK"), "\n")
+if (any(rows$status != "OK")) print(table(rows$error_msg[rows$status != "OK"]))
+ok <- rows[rows$status == "OK", ]
+
+pct <- function(x, s) 100 * (exp(x * s) - 1)
+ok$yb_pct_mean <- pct(ok$yb_mean, ok$d_s_occ);  ok$yb_pct_lb <- pct(ok$yb_ci_lb, ok$d_s_occ)
+ok$yb_pct_ub   <- pct(ok$yb_ci_ub, ok$d_s_occ); ok$yb_pct_true <- pct(ok$yb_true, ok$d_s_occ)
+
+cellvars <- c("block", "range_cells", "window_frac", "n_site", "inat_records", "effect")
+key <- do.call(paste, c(ok[cellvars], sep = "|"))
+for (k in unique(key)) {
+  s <- ok[key == k, ]
+  if (nrow(s) > 2 && length(unique(round(s$yb_mean, 12))) == 1L)
+    stop("DEGENERATE cell ", k, ": identical yb_mean across ", nrow(s), " replicates (missing reseed)")
+}
+RHAT_MAX <- 1.1
+stopifnot("yb_rhat_split" %in% names(ok))
+ok$converged <- !is.na(ok$yb_rhat_split) & ok$yb_rhat_split < RHAT_MAX
+summ_set <- function(ok, set) do.call(rbind, lapply(split(ok, do.call(paste, c(ok[cellvars], sep = "|"))), function(s) {
+  data.frame(s[1, cellvars], replicate_set = set, n_rep = nrow(s),
+    yb_detect_rate = mean(s$yb_detected), yb_bias_pp = mean(s$yb_pct_mean - s$yb_pct_true),
+    yb_ci_width_pp = mean(s$yb_pct_ub - s$yb_pct_lb), yb_coverage = mean(s$yb_covered),
+    tvb_detect_rate = mean(s$tvb_detected), tvb_coverage = mean(s$tvb_covered),
+    sink_mean = mean(s$year_var_mean), sink_true = s$yv_true[1],
+    det_sites = median(s$r_cam_det_sites), inat_records = median(s$r_inat_records),
+    ncell50 = s$d_ncell50[1], site_pool = s$d_site_pool[1],
+    yb_rhat_med = median(s$yb_rhat_split, na.rm = TRUE), yb_ess_med = median(s$yb_ess, na.rm = TRUE),
+    elapsed_h_med = median(s$elapsed_sec) / 3600, row.names = NULL)
+}))
+sa <- summ_set(ok, "all")
+sa$frac_converged <- as.numeric(tapply(ok$converged, key, mean)[do.call(paste, c(sa[cellvars], sep = "|"))])
+sc <- summ_set(ok[ok$converged, ], paste0("rhat_split<", RHAT_MAX)); sc$frac_converged <- NA_real_
+summ <- rbind(sa, sc)
+summ <- summ[do.call(order, summ[c(cellvars, "replicate_set")]), ]
+options(width = 220); print(summ, row.names = FALSE, digits = 3)
+write.csv(ok, "tier1_rows.csv", row.names = FALSE)
+write.csv(summ, "tier1_summary.csv", row.names = FALSE)
+cat("wrote tier1_rows.csv, tier1_summary.csv\n")

@@ -1,0 +1,26 @@
+species,theta1,theta1_lo,theta1_hi,congruence_band,ci_includes_0,theta1_ci_reaches_1,records_per_doubling,cam_direction,camonly_supports,shift_pp_yr
+Northern raccoon,0.304284882524059,0.283977927228141,0.32616456271173,partial correspondence (0 < CI < 1),False,False,1.23,increase,supported,0.37
+Elk,0.30984093096321,0.240054047491528,0.385286067703663,partial correspondence (0 < CI < 1),False,False,1.24,NOT RESOLVABLE,joint not resolved,-2.61
+American badger,0.329975956801379,-0.136952875406716,1.220712018672,no spatial correspondence not excluded,True,True,1.26,NOT RESOLVABLE,joint not resolved,9.84
+Red fox,0.375067499610044,0.327295855097607,0.416028653099079,partial correspondence (0 < CI < 1),False,False,1.3,NOT RESOLVABLE,joint not resolved,0.74
+Nine-banded armadillo,0.3991448267698,0.341028767204271,0.457565981139257,partial correspondence (0 < CI < 1),False,False,1.32,NOT RESOLVABLE,joint not resolved,3.45
+Virginia opossum,0.42421446861514,0.38946671349215,0.459564562583356,partial correspondence (0 < CI < 1),False,False,1.34,increase,supported,0.97
+Eastern chipmunk,0.440506743697301,0.395051568568121,0.489607387525814,partial correspondence (0 < CI < 1),False,False,1.36,increase,supported,-3.74
+White-tailed deer,0.520540460156056,0.49046613113931,0.556134673490937,partial correspondence (0 < CI < 1),False,False,1.43,increase,supported,0.73
+Mule deer,0.522592940522209,0.478363092495497,0.565868239967485,partial correspondence (0 < CI < 1),False,False,1.44,decline,supported,0.23
+Striped skunk,0.530174539509695,0.472938637433414,0.592699266608629,partial correspondence (0 < CI < 1),False,False,1.44,NOT RESOLVABLE,joint not resolved,2.27
+Moose,0.534314031994721,0.460093071798231,0.620902848586457,partial correspondence (0 < CI < 1),False,False,1.45,NOT RESOLVABLE,joint not resolved,-0.68
+Coyote,0.536707900465975,0.494073975865144,0.583216951112062,partial correspondence (0 < CI < 1),False,False,1.45,increase,supported,-0.33
+Eastern gray squirrel,0.555606133446541,0.519245604577214,0.595376669506122,partial correspondence (0 < CI < 1),False,False,1.47,increase,supported,-0.15
+Grey fox,0.572805959367358,0.527904761685116,0.619619041594339,partial correspondence (0 < CI < 1),False,False,1.49,decline,supported,1.36
+North american porcupine,0.578730776222204,-0.337094773741201,1.02227454861954,no spatial correspondence not excluded,True,True,1.49,NOT RESOLVABLE,joint not resolved,21.83
+Collared peccary,0.619945989820059,0.460612677418601,0.796175269993518,partial correspondence (0 < CI < 1),False,False,1.54,NOT RESOLVABLE,joint not resolved,-3.37
+Red squirrel,0.627177095451917,0.579160226263119,0.678596828182648,partial correspondence (0 < CI < 1),False,False,1.54,increase,NOT supported (camera-only spans zero),4.25
+Eastern fox squirrel,0.652625437179735,0.610446489199121,0.695932728789948,partial correspondence (0 < CI < 1),False,False,1.57,NOT RESOLVABLE,joint not resolved,-3.89
+Black-tailed jackrabbit,0.690301763655526,0.612620782714166,0.780298820707287,partial correspondence (0 < CI < 1),False,False,1.61,decline,supported,-2.65
+American black bear,0.697618794194644,0.651410152458564,0.746594914784149,partial correspondence (0 < CI < 1),False,False,1.62,increase,supported,-2.79
+Snowshoe hare,0.72595793315165,0.647342694262844,0.812942243415386,partial correspondence (0 < CI < 1),False,False,1.65,NOT RESOLVABLE,joint not resolved,-0.24
+Bobcat,0.853657042965624,0.800864230339403,0.909895302419572,partial correspondence (0 < CI < 1),False,False,1.81,NOT RESOLVABLE,joint not resolved,-2.13
+Puma,0.939298877772318,0.802558976062849,1.07941388856106,proportional or over-response (CI reaches 1),False,True,1.92,NOT RESOLVABLE,joint not resolved,1.58
+Western gray squirrel,1.07418095801639,0.901427429646131,1.26907983287024,proportional or over-response (CI reaches 1),False,True,2.11,decline,NOT supported (camera-only spans zero),-10.54
+California ground squirrel,2.2408643617761,1.59586068796007,3.16201402196195,over-response (CI above 1),False,True,4.73,decline,NOT supported (camera-only spans zero),-34.69

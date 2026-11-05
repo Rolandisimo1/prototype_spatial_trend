@@ -1,0 +1,6 @@
+campaign,species,scientific_name,year_start,year_end,n_cells,cell50_list,selectivity,ci_lo,ci_hi,states,geography,end_status
+California Ground Squirrel Census,California ground squirrel,Otospermophilus beecheyi,2020,2025,3,1474;1557;1558,1.178,1.074,1.292,CA,"East Bay Regional Park District parks, Alameda and Contra Costa Counties, California",ongoing
+Twin Cities Coyote and Fox Project,Coyote,Canis latrans,2019,2025,5,691;692;769;770;848,1.662,1.325,2.085,MN,Minneapolis-St. Paul metropolitan area,ongoing
+Backyard Bobcats,Bobcat,Lynx rufus,2014,2025,47,2053;2134;2135;2136;2137;2212;2213;2214;2215;2216;2217;2218;2219;2220;2294;2295;2296;2297;2298;2299;2300;2301;2302;2374;2375;2376;2377;2378;2379;2380;2381;2451;2452;2453;2454;2455;2456;2457;2527;2528;2529;2530;2531;2532;2599;2600;2601,1.47,1.049,2.061,CA,Primarily Southern California; photographs accepted from anywhere,ongoing
+Grit City Carnivore Project,Northern raccoon,Procyon lotor,2018,2025,3,41;69;70,1.347,1.041,1.742,WA,"Tacoma and greater Pierce County, Washington",ongoing
+Coyote Sightings in the Twin Cities (MNRRA),Coyote,Canis latrans,2018,2025,4,691;692;769;770,1.882,1.399,2.531,MN,"Mississippi National River and Recreation Area and the Twin Cities metropolitan area, Minnesota",ongoing

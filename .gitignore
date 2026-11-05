@@ -45,3 +45,8 @@ states/
 build_lit/
 build_methods/
 build_mm/
+build_theta/
+build_camp/
+build_loc/
+build_cags/
+build_reg/

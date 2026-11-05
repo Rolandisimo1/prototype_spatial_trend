@@ -1,0 +1,24 @@
+species,n_cells,drift_per_yr,drift_interval_excludes_zero,rho_cellgrowth_vs_camera_abundance,p_cam,rho_cellgrowth_vs_human_population,p_pop
+Snowshoe hare,45,0.0906,True,0.0562,0.7138,0.1922,0.2059
+Elk,43,0.0666,False,0.2328,0.133,0.0779,0.6194
+Coyote,357,0.0443,True,0.0999,0.0594,0.1402,0.008
+Eastern gray squirrel,228,0.0399,False,0.1201,0.0702,0.1701,0.0101
+North american porcupine,37,0.0366,False,0.1705,0.313,0.036,0.8323
+Bobcat,221,0.0334,True,0.0409,0.5455,0.1618,0.0161
+Red fox,147,0.0305,False,0.1429,0.0843,0.108,0.193
+Virginia opossum,228,0.0288,True,0.0593,0.373,0.0825,0.2147
+Red squirrel,89,0.0263,False,0.1601,0.134,0.0323,0.7641
+White-tailed deer,302,0.0213,False,-0.0287,0.6197,0.0374,0.5174
+Northern raccoon,314,0.0201,False,0.0119,0.8341,0.1391,0.0136
+Grey fox,151,0.0193,False,0.2036,0.0122,-0.0623,0.4472
+Western gray squirrel,32,0.013,False,0.1859,0.3085,0.3468,0.0518
+Eastern fox squirrel,116,0.0082,False,0.1265,0.176,0.1019,0.2765
+Mule deer,126,0.0064,False,0.0459,0.6097,0.1497,0.0944
+Groundhog,41,0.0045,False,-0.1509,0.3464,0.0157,0.9225
+American black bear,171,-0.0022,False,-0.0019,0.9805,0.0964,0.2095
+Eastern chipmunk,126,-0.0126,False,0.112,0.2118,0.1376,0.1245
+Striped skunk,189,-0.0149,True,-0.0462,0.5275,0.079,0.2799
+Black-tailed jackrabbit,64,-0.0251,False,-0.0434,0.7334,0.1615,0.2024
+Nine-banded armadillo,77,-0.041,False,-0.0535,0.6438,0.0713,0.5376
+Puma,60,-0.0802,True,-0.2647,0.041,0.2006,0.1244
+American badger,49,-0.1195,True,-0.2661,0.0646,-0.0466,0.7504

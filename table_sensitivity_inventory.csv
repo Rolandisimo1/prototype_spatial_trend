@@ -1,0 +1,20 @@
+question,check,what_it_does,artifact,coverage,status
+Does the second stream change the answer?,Camera-only ablation,Refit every species with iNaturalist removed; compare the trend,table_fleet_progress.csv,26/34 species,complete
+Do the streams agree spatially?,theta_space congruence gate,"Exponent linking records to camera abundance, with both thresholds",table_theta1_congruence.csv,25 species,complete
+Does that agreement hold over time?,theta_time drift,"Coupling re-estimated per year, 2019-2025, plus its spatial driver",table_theta_time_drift.csv,23 species,complete
+Does the study-area definition matter?,Range-mask comparison,"IUCN polygon vs presence threshold vs union, on records and fitted cells",table_mask_comparison.csv,3 species,complete
+Does the spatial parameterisation matter?,National vs ecoregion trend,"Same bundle, scalar vs region-varying trend; interval width and resolution",table_ecoregion_value.csv,3 species,complete
+Does the camera likelihood matter?,Occupancy vs counts,"Same deer bundle, detection/non-detection vs negative binomial counts",fig_deer_camcount_comparison.png,1 species,complete
+Is occupancy saturating?,Saturation: fitted psi,Fitted psi distribution and implied per-site abundance from the fitted models,table_occupancy_saturation.csv,3 species,complete
+Is occupancy saturating?,Saturation: naive pre-screen,Naive occupancy and implied animals per site from raw detections; no fitted psi,table_fleet_estimator_screen.csv,34 species,complete
+Is the estimator choice defensible?,Simulation study,"Bias, coverage and detection rate across estimator arms and abundance levels",table_simulation_estimators.csv,12 cells,complete
+Do independent data agree?,Agency concordance,Model direction against state agency trend assessments,table_model_vs_agency_concordance.csv,34 species,complete
+Is agency agreement window-sensitive?,Agency window comparison,5-year vs 10-year agency windows scored separately,table_agency_window_comparison.csv,4 species,complete
+Are the camera inputs faithful?,Detection provenance audit,Model-input detecting deployments against the raw sequence files,table_umf_vs_raw_detection_counts.csv,25 species,complete
+Is camera effort stationary?,Effort turnover,Share of cells sampled only early or only late in the record,table_camera_effort_turnover.csv,25 species,complete
+Are degenerate records excluded?,Zero-night deployments,"Deployments with zero or missing survey nights, by species mask",table_zero_night_deployments.csv,104 deployments,complete
+Did the chains converge?,Convergence diagnostics,"R-hat by parameter family, single-shot runs",table_convergence_and_trend.csv,fleet,complete
+Where is anchoring weakest?,Range-size anchoring,Camera-only displacement against range size and camera coverage,table_anchoring_vs_range_size.csv,19 species,complete
+Do urban and rural trends differ?,Urbanisation interaction,"year_pop interaction on the iNaturalist stream, tier-2 fits",-,coyote,pending
+Is camera-side spatial structure missing?,Camera deviation term,cam_dev random field added to the camera submodel,-,2 species,pending
+Do projects differ systematically?,Project fixed effect,Project-level intercept on the camera detection model,-,-,pending

@@ -1,0 +1,134 @@
+#!/usr/bin/env python3
+"""Build variant run dirs from a fitted v2u national_scalar run dir (2026-10-08). Source dirs are READ-ONLY.
+
+usage: [SRC_TAG=v2un] build_variant_rundirs.py t1init  <species> [<species> ...]
+       build_variant_rundirs.py camonly <species> [<species> ...]
+       build_variant_rundirs.py camdev  <species> [<species> ...]
+
+t1init  : <sp>_v2u_national_scalar_t1init. Same bundle, same model code, same priors. Only the initial value of
+          theta1 changes, per chain: 0.3 / 0.6 / 0.9 (rwkays 2026-10-08; the original fits started all 3 chains at
+          theta1 = 1 from the bundle's inits_list and porcupine/badger still split between theta1 ~1 and ~0).
+          Inits are not a model change, so results stay comparable with the fitted fleet.
+camonly : <sp>_v2u_national_scalar_camonly. Same bundle; model code with the iNat intensity (mu) loop and the
+          y_inat likelihood loop REMOVED, so year_beta is identified by the camera data alone. Everything else
+          (occupancy, detection, CAR fields, all priors incl. year_beta ~ N(0, sigma_year_beta)) is unchanged.
+          theta0/theta1/overdisp_inat/year_var then sample their priors. Purpose: how much of the joint year_beta
+          is camera-identified for short-record species.
+camdev  : <sp>_v2u_national_scalar_camdev. Model block replaced VERBATIM by model_code_national_scalar_camdev
+          (rwkays): camera-side iid spatial deviation cam_dev[cell] ~ N(0, sigma_cam_dev), sigma_cam_dev ~ U(0,2),
+          absent from the iNat pathway. Monitors + sigma_cam_dev, cam_dev. Inits cam_dev = 0, sigma_cam_dev = 0.5.
+"""
+import hashlib, os, re, shutil, sys
+
+HPC = "/rsstu/users/j/jkpacifi/NSFiSDMs/Arielle_iSDM_temporal/integrated_code/Temporal_trend_final/HPC"
+FILES = ("HPC_run_model_chunks_chain1.R", "HPC_run_model_single.R", "run_single_sbatch.sh",
+         "pipeline_helper.R", "integration_helper_v2.R")
+
+T1_ANCHOR = 'input_data <- readRDS(paste0("input_data_", species, ".RDS"))\n'
+T1_PATCH = T1_ANCHOR + (
+    '# ---- t1init variant (2026-10-08): ONLY change vs the fitted run -- theta1 start value per chain ----\n'
+    'THETA1_INITS <- c(0.3, 0.6, 0.9)\n'
+    'stopifnot(!is.null(input_data$inits_list$theta1))\n'
+    'cat("theta1 init: bundle", input_data$inits_list$theta1, "-> chain", chain_id, "uses", THETA1_INITS[chain_id], "\\n")\n'
+    'input_data$inits_list$theta1 <- THETA1_INITS[chain_id]\n')
+
+CAMDEV_SRC = "/home/rwkays/isdm/fleet_v2u/model_code_national_scalar_camdev.R"   # rwkays' repo file, verbatim
+CAMDEV_MON_OLD = '  conf$addMonitors("occ_beta",\n'
+CAMDEV_MON_NEW = '  conf$addMonitors("sigma_cam_dev", "cam_dev", "occ_beta",\n'
+CAMDEV_INIT = T1_ANCHOR + (
+    '# ---- camdev variant (2026-10-08): start cam_dev at 0 (where the joint model sits) and sigma_cam_dev at 0.5;\n'
+    '# all 3 chains already share the bundle inits, so the new terms are treated the same way ----\n'
+    'input_data$inits_list$cam_dev <- rep(0, input_data$constants_list$ncell100)\n'
+    'input_data$inits_list$sigma_cam_dev <- 0.5\n')
+
+
+def nimble_block(text, name):
+    """Return (start, end) of '<name> <- nimbleCode({ ... })' by brace matching."""
+    i = text.index(name + " <- nimbleCode({")
+    j = text.index("{", i); depth = 0
+    for k in range(j, len(text)):
+        if text[k] == "{": depth += 1
+        elif text[k] == "}":
+            depth -= 1
+            if depth == 0:
+                assert text[k + 1] == ")", "expected '})' at end of nimbleCode block"
+                return i, k + 2
+    raise ValueError("unbalanced braces")
+
+
+CAM_START = "  for (g in 1:ncell50) {\n"
+CAM_END = "  #Occ detection model does not change\n"
+CAM_NOTE = ("  # ---- camonly variant (2026-10-08): iNat intensity (mu) loop and y_inat likelihood loop REMOVED. ----\n"
+            "  # year_beta is identified by the camera occupancy likelihood alone; theta0/theta1/overdisp_inat/year_var\n"
+            "  # sample their priors. All other code below is unchanged from the fitted national_scalar run.\n\n")
+
+
+def md5(p):
+    return hashlib.md5(open(p, "rb").read()).hexdigest()
+
+
+def build(kind, sp):
+    # SRC_TAG (2026-10-08): v2u (default) or v2un (multi-name camera record, umflist_v2) -- build the variant
+    # from the bundle whose fit is the one reported
+    src_tok = sp + "_" + os.environ.get("SRC_TAG", "v2u") + "_national_scalar"
+    tok = src_tok + "_" + kind
+    src, dst = os.path.join(HPC, src_tok), os.path.join(HPC, tok)
+    if os.path.exists(dst):
+        return "SKIP %s: exists" % tok
+    for f in FILES + ("input_data_%s.RDS" % src_tok,):
+        if not os.path.exists(os.path.join(src, f)):
+            return "FAIL %s: source missing %s" % (tok, f)
+    os.makedirs(dst)
+    shutil.copy2(os.path.join(src, "input_data_%s.RDS" % src_tok), os.path.join(dst, "input_data_%s.RDS" % tok))
+    for f in FILES:
+        shutil.copy2(os.path.join(src, f), os.path.join(dst, f))
+    # retarget the species token in the chunk script (the single runner reads SPECIES from the environment)
+    ck = os.path.join(dst, "HPC_run_model_chunks_chain1.R")
+    s = open(ck).read()
+    s = s.replace('"%s"' % src_tok, '"%s"' % tok)
+    if kind == "camonly":
+        i, j = s.find(CAM_START), s.find(CAM_END)
+        if i < 0 or j < 0 or j < i or s.count(CAM_START) != 1 or s.count(CAM_END) != 1:
+            shutil.rmtree(dst)
+            return "FAIL %s: camonly anchors not found exactly once" % tok
+        removed = s[i:j]
+        if "y_inat[" not in removed or "mu[g,t]" not in removed or "year_beta * year_occ" in removed:
+            shutil.rmtree(dst)
+            return "FAIL %s: removed block is not the iNat block" % tok
+        s = s[:i] + CAM_NOTE + s[j:]
+    if kind == "camdev":
+        v = open(CAMDEV_SRC).read()
+        vi, vj = nimble_block(v, "model_code_national_scalar_camdev")
+        oi, oj = nimble_block(s, "model_code_national_scalar")
+        if s.count("model_code_national_scalar <- nimbleCode({") != 1 or s.count(CAMDEV_MON_OLD) != 1:
+            shutil.rmtree(dst)
+            return "FAIL %s: camdev anchors not found exactly once" % tok
+        s = s[:oi] + v[vi:vj] + s[oj:]
+        s = s.replace(CAMDEV_MON_OLD, CAMDEV_MON_NEW)
+    open(ck, "w").write(s)
+    if kind == "camdev":
+        sg = os.path.join(dst, "HPC_run_model_single.R")
+        t = open(sg).read()
+        if t.count(T1_ANCHOR) != 1:
+            shutil.rmtree(dst)
+            return "FAIL %s: camdev init anchor not found exactly once" % tok
+        open(sg, "w").write(t.replace(T1_ANCHOR, CAMDEV_INIT))
+    if kind == "t1init":
+        sg = os.path.join(dst, "HPC_run_model_single.R")
+        t = open(sg).read()
+        if t.count(T1_ANCHOR) != 1:
+            shutil.rmtree(dst)
+            return "FAIL %s: t1init anchor not found exactly once" % tok
+        open(sg, "w").write(t.replace(T1_ANCHOR, T1_PATCH))
+    with open(os.path.join(dst, "VARIANT_README.txt"), "w") as fh:
+        fh.write("variant %s built %s from %s (read-only source)\n%s\n" % (
+            kind, __import__("datetime").datetime.now().isoformat(timespec="seconds"), src_tok, __doc__))
+    same = [f for f in FILES if md5(os.path.join(src, f)) == md5(os.path.join(dst, f))]
+    return "BUILT %s  (unchanged vs source: %s)" % (tok, ", ".join(same))
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 3 or sys.argv[1] not in ("t1init", "camonly", "camdev"):
+        print(__doc__); sys.exit(1)
+    for sp in sys.argv[2:]:
+        print(build(sys.argv[1], sp))

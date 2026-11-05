@@ -1,0 +1,13 @@
+campaign,species,start,cells,pre_n,post_n,selectivity,ci_lo,ci_hi,range_expansion,effect_class
+California Ground Squirrel Census,California ground squirrel,2020,3,741,2601,1.178,1.074,1.292,False,increase (interval above 1)
+Southern California Squirrel Survey,Eastern fox squirrel,2013,51,52,2266,2.789,2.068,3.761,True,"range expansion, set aside"
+Southern California Squirrel Survey,Western gray squirrel,2013,51,33,405,0.685,0.432,1.085,False,not distinguishable from 1
+Southern California Squirrel Survey,California ground squirrel,2013,51,139,1207,0.974,0.771,1.23,False,not distinguishable from 1
+Twin Cities Coyote and Fox Project,Coyote,2019,5,91,619,1.662,1.325,2.085,False,increase (interval above 1)
+Twin Cities Coyote and Fox Project,Red fox,2019,5,134,418,0.536,0.436,0.657,False,decrease (interval below 1)
+Utah Fox Squirrels: Tracking a New Arrival,Eastern fox squirrel,2018,8,26,1403,11.777,7.939,17.471,True,"range expansion, set aside"
+Backyard Bobcats,Bobcat,2014,47,41,470,1.47,1.049,2.061,False,increase (interval above 1)
+Grit City Carnivore Project,Northern raccoon,2018,3,75,442,1.347,1.041,1.742,False,increase (interval above 1)
+Coyote Sightings in the Twin Cities (MNRRA),Coyote,2018,4,50,694,1.882,1.399,2.531,False,increase (interval above 1)
+Coyote Sightings in the Twin Cities (MNRRA),Red fox,2018,4,49,518,1.062,0.783,1.441,False,not distinguishable from 1
+Tracking Coyotes in Marin,Coyote,2020,1,590,1278,0.903,0.81,1.006,False,not distinguishable from 1

@@ -1,0 +1,9 @@
+question,status,why,artifact,what_is_needed
+Which estimator arm to use,answered,"4 arms x 3 abundance x 2 scenario, 30 reps",estimator_sweep_n30_4arm_summary.csv,none
+False-positive rate under a flat trend,answered,null scenario corrected to zero the trend parameters,estimator_sweep_n30_nullfix_summary.csv,none
+Bias/coverage of the REPORTED trend parameter,NOT answered,"all runs score total_var_beta; only year_beta's posterior mean was retained, no interval and no separate truth value",-,re-run required: re-scoring is impossible from saved rows
+Power vs camera and iNaturalist data volume,NOT answered,data volume is held fixed in every run,-,Tier 1A of the seed design
+Smallest range size that supports a trend,NOT answered,range size held fixed; the real-data failure threshold rests on 3 species,-,Tier 1B of the seed design
+Effect of cameras covering only part of the record,NOT answered,window ratio never varied; real data is cameras 2019-2025 vs iNat 2008-2025,-,Tier 1C of the seed design
+Detection probability separated from abundance,NOT answered,abundance and detection move together by construction,-,Tier 2D of the seed design
+Does a spurious opportunistic signal contaminate the trend?,NOT answered,"both streams generated from one truth, so disagreement can only be noise",-,Tier 2E of the seed design

@@ -167,3 +167,28 @@ replicates, not argument. See `01j_collect_estimator_sweep.R` and
   Check the returned year count against the requested one.
 - **`*.RDS` is gitignored** — bundles are regenerable pipeline intermediates,
   not source. That is also precisely why step 4 going missing was costly.
+- **Camera site IDs: join on `rownames(y)`, never on `occ.covs$deployment_id`.**
+  (2026-10-17) In every bundle the real site key is `rownames(real_data$y)`, of
+  the form `<project_id>___<deployment_id>` with the Wildlife Insights text IDs
+  (e.g. `2006449___D29`). `occ.covs$deployment_id`, `$project_id` and
+  `$subproject_name` are **integer factor level codes, not IDs**:
+  `prep_camera_sites.R` runs
+  `mutate(across(everything(), ~ ifelse(is.na(.), mean(., na.rm = TRUE), .)))`
+  over all of `occ.covs`, and `ifelse()` on a factor returns its level numbers.
+  A join on them returns zero matches **with no error**. To map back to the camera
+  record, either match `rownames(y)` to `rownames(attr(umflist[[wi_name]], "y"))`,
+  or compare `as.integer()` of the record's factor `siteCovs$deployment_id` at the
+  matched row (verified row for row for fisher, raccoon and white-tailed deer:
+  `~/isdm/fleet_v2u/alignment_b2.R`). Only those three columns are factors in the
+  camera record (one schema across all 36 `umflist_v2` entries); every covariate
+  is numeric before that step, so no covariate is affected. Fix in prep only at the
+  next rebuild.
+- **NIMBLE sizes `y[i, 1:J[i]] ~ dOcc_v` from the LAST site.** (2026-10-17) If
+  `J[nsite] == 1` the range collapses to a scalar and `nimbleModel()` fails
+  checkBasics with "Dimension of 'y[i, 1:J[i]]' does not match required dimension
+  for the distribution 'dOcc_v'. Necessary dimension is 1." Fisher hit this (its
+  last 7 rows were one-night deployments). Fix the bundle with
+  `~/isdm/fleet_v2u/reorder_last_site.R <run_dir>` (moves the last J >= 2 site to
+  the end, permutes every site-indexed object, records `$site_reorder`), never by
+  editing the model code. `submit_chains.py` now refuses a bundle with J < 2 at
+  its last site.

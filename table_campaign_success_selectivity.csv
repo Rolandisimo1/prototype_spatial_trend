@@ -1,0 +1,14 @@
+campaign,scope,start,states,target_records_RR,other_mammal_records_RR,target_observers_RR,all_observers_RR,species_reported_RR,pre_target_records,selectivity
+California Ground Squirrel Census,single species,2020,CA,0.805,0.702,0.928,0.863,0.945,6253,1.147
+Southern California Squirrel Survey,genus or group,2013,CA,1.205,1.075,1.088,1.023,0.951,561,1.121
+Twin Cities Coyote and Fox Project,genus or group,2019,MN,1.137,1.069,1.338,1.046,1.103,320,1.064
+Backyard Bobcats,single species,2014,CA,1.413,1.028,1.059,0.842,1.002,173,1.375
+Grit City Carnivore Project,genus or group,2018,WA,1.54,0.937,1.222,0.91,1.112,208,1.644
+Massachusetts Carnivore and Large Mammal Survey,genus or group,2021,MA,1.084,0.845,1.155,0.965,0.926,816,1.283
+Coyote Sightings in the Twin Cities (MNRRA),genus or group,2018,MN,2.04,1.285,1.847,1.145,1.173,150,1.588
+Tracking Coyotes in Marin,single species,2020,CA,0.885,0.725,0.982,0.863,0.945,5269,1.221
+Porcupines in the Pacific Northwest,single species,2018,WA;OR;CA,0.759,0.789,0.833,0.656,0.997,57,0.962
+Fox Squirrels of the Great Plains,genus or group,2021,NE;KS;OK;MO;CO;WY,1.126,1.076,1.04,1.042,1.084,2984,1.046
+"Washington Wildlife Sightings (Bears, Ungulates, Wolves)",genus or group,2017,WA,0.772,0.896,0.684,0.822,1.146,160,0.862
+Mountain Lions of Marin,single species,2017,CA,2.171,0.774,0.933,0.594,0.98,158,2.805
+New York Mammal Survey,multi-taxon with mammal focus,2020,NY,1.168,1.531,0.937,0.994,1.115,7527,0.763

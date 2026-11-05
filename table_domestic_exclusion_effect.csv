@@ -1,0 +1,13 @@
+quantity,value,units
+domestic share of all records,2.03,%
+observers reporting >=1 domestic,7.0,% of observers
+domestic records from observers <50% domestic,76.2,%
+"median domestic share, observers with >=10 records",0.042,proportion
+observers >80% domestic with >=10 records,18.0,observers
+cell-years with zero domestic records,79.0,%
+median log-effort inflation,0.0,log units
+mean log-effort inflation,0.02025,log units
+temporal trend in inflation,0.001637,log units/yr
+implied bias in a fitted trend,0.1637,%/yr
+cells with mean inflation >5%,405.0,of 3321 cells
+cells with mean inflation >10%,154.0,of 3321 cells

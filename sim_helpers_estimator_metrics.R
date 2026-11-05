@@ -49,6 +49,14 @@ compute_estimator_metrics <- function(samples, truth, constants, cell100_geo) {
   yb       <- colm("year_beta")
   yv       <- colm("year_var")
   tvb_true <- truth$year_beta + truth$year_var
+  # yb_true is recorded on its OWN, not only inside the sum (2026-10-17). The
+  # reportable ecological trend is year_beta, the camera-anchored slope;
+  # year_var is the iNaturalist-only sink. Every run before this date scored
+  # tvb against tvb_true and kept only year_beta_mean -- no interval and no
+  # separate truth -- so year_beta bias/coverage/power cannot be recovered
+  # from those rows and needs a re-run. The tvb_* family is kept alongside so
+  # the two can be compared: the gap between them is what the sink absorbs.
+  yb_true  <- truth$year_beta
 
   tvb_mean <- mean(tvb)
   tvb_lb   <- stats::quantile(tvb, 0.025, names = FALSE)
@@ -57,6 +65,21 @@ compute_estimator_metrics <- function(samples, truth, constants, cell100_geo) {
   # "detected" = 95% CI excludes zero. Under the varying scenario, the rate of
   # this across replicates IS power; under null it is the false-positive rate.
   detected <- as.integer(tvb_lb > 0 | tvb_ub < 0)
+
+  # same four quantities for year_beta, the reported parameter
+  yb_mean <- mean(yb)
+  yb_lb   <- stats::quantile(yb, 0.025, names = FALSE)
+  yb_ub   <- stats::quantile(yb, 0.975, names = FALSE)
+  # split-R-hat on year_beta (2026-10-17). Each replicate is ONE chain, so the
+  # chain is halved and the two halves treated as two chains (BDA3 split-R-hat).
+  # It detects drift / non-stationarity within the chain; it cannot see a chain
+  # that sits stably in the wrong mode. Converged = yb_rhat_split < 1.1.
+  yb_rhat_split <- .split_rhat(yb)
+  # Effective sample size alongside it: on one chain split-R-hat is blind to
+  # slow but stationary mixing (an AR(0.99) chain of 8,000 scores ~1.004), so
+  # low ESS is the signal for that failure. Recorded, not used as a filter.
+  yb_ess <- if (requireNamespace("coda", quietly = TRUE) && all(is.finite(yb)))
+    unname(coda::effectiveSize(yb)) else NA_real_
 
   # ---- the model's own camera-corroboration check ------------------------
   # snr = year_beta / year_var; the indicator fires when the camera-anchored
@@ -83,6 +106,17 @@ compute_estimator_metrics <- function(samples, truth, constants, cell100_geo) {
     tvb_detected      = detected,
     year_beta_mean    = mean(yb),
     year_var_mean     = mean(yv),
+    # power family for year_beta (the reported, camera-anchored trend)
+    yb_true           = yb_true,
+    yb_mean           = yb_mean,
+    yb_ci_lb          = yb_lb,
+    yb_ci_ub          = yb_ub,
+    yb_bias           = yb_mean - yb_true,
+    yb_ci_width       = yb_ub - yb_lb,
+    yb_covered        = as.integer(yb_true >= yb_lb & yb_true <= yb_ub),
+    yb_detected       = as.integer(yb_lb > 0 | yb_ub < 0),
+    yb_rhat_split     = yb_rhat_split,
+    yb_ess            = yb_ess,
     # camera corroboration
     tri_mean          = mean(tri),
     tri_fires         = as.integer(mean(tri) > 0.5),
@@ -92,6 +126,21 @@ compute_estimator_metrics <- function(samples, truth, constants, cell100_geo) {
     disc_rmse         = disc$rmse,
     stringsAsFactors = FALSE
   )
+}
+
+#' @name .split_rhat
+#' @description Split-R-hat (Gelman et al. BDA3 eq. 11.4) of one chain: the
+#'   chain is cut into two equal halves treated as separate chains.
+#' @param x Numeric vector of post-burnin draws.
+#' @return R-hat, or NA if the chain is constant, too short or not finite.
+.split_rhat <- function(x) {
+  x <- x[is.finite(x)]; n <- floor(length(x) / 2)
+  if (n < 2) return(NA_real_)
+  h <- cbind(x[1:n], x[(n + 1):(2 * n)])
+  W <- mean(apply(h, 2, stats::var))
+  if (!is.finite(W) || W <= 0) return(NA_real_)
+  B <- n * stats::var(colMeans(h))
+  sqrt(((n - 1) / n * W + B / n) / W)
 }
 
 #' @name .spatial_discrimination
@@ -146,12 +195,32 @@ compute_estimator_metrics <- function(samples, truth, constants, cell100_geo) {
 #'   per-replicate reseed), making an n=1 result look like n=30. Rates and
 #'   coverages from such a run are meaningless. This function STOPS rather than
 #'   producing a plausible-looking summary from degenerate input.
-summarize_estimator_sweep <- function(rows) {
+summarize_estimator_sweep <- function(rows, rhat_max = 1.1) {
   ok <- rows[rows$status == "OK", , drop = FALSE]
   if (nrow(ok) == 0) stop("no successful replicates to summarize")
+  # Every metric is reported twice (2026-10-17): over all replicates, and over
+  # replicates with split-R-hat(year_beta) < rhat_max. If the two agree,
+  # under-convergence does not explain the power numbers; if they diverge,
+  # that is the result. Runs scored before 2026-10-17 have no yb_rhat_split
+  # and get the all-replicate set only.
+  all_s <- .summarize_set(ok)
+  all_s$replicate_set <- "all"
+  if (!"yb_rhat_split" %in% names(ok)) return(all_s)
+  conv <- ok[!is.na(ok$yb_rhat_split) & ok$yb_rhat_split < rhat_max, , drop = FALSE]
+  frac <- tapply(!is.na(ok$yb_rhat_split) & ok$yb_rhat_split < rhat_max,
+                 paste(ok$estimator, ok$abundance, ok$scenario, sep = "|"), mean)
+  all_s$frac_converged <- as.numeric(frac[paste(all_s$estimator, all_s$abundance, all_s$scenario, sep = "|")])
+  if (nrow(conv) == 0) return(all_s)
+  conv_s <- .summarize_set(conv, guard = FALSE)
+  conv_s$replicate_set <- paste0("rhat_split<", rhat_max)
+  conv_s$frac_converged <- NA_real_
+  rbind(all_s, conv_s)
+}
+
+.summarize_set <- function(ok, guard = TRUE) {
 
   key <- paste(ok$estimator, ok$abundance, ok$scenario, sep = "|")
-  for (k in unique(key)) {
+  for (k in if (guard) unique(key) else character(0)) {
     sub <- ok[key == k, , drop = FALSE]
     if (nrow(sub) > 2 && length(unique(round(sub$tvb_mean, 12))) == 1L) {
       stop(sprintf(
@@ -177,6 +246,13 @@ summarize_estimator_sweep <- function(rows) {
     bias        = as.numeric(agg(mean, "tvb_bias")),
     ci_width    = as.numeric(agg(mean, "tvb_ci_width")),
     coverage    = as.numeric(agg(mean, "tvb_covered")),
+    # year_beta family; NA for runs scored before 2026-10-17 (no yb_* columns)
+    yb_detect_rate = if ("yb_detected" %in% names(ok)) as.numeric(agg(mean, "yb_detected")) else NA_real_,
+    yb_bias        = if ("yb_bias"     %in% names(ok)) as.numeric(agg(mean, "yb_bias"))     else NA_real_,
+    yb_ci_width    = if ("yb_ci_width" %in% names(ok)) as.numeric(agg(mean, "yb_ci_width")) else NA_real_,
+    yb_coverage    = if ("yb_covered"  %in% names(ok)) as.numeric(agg(mean, "yb_covered"))  else NA_real_,
+    yb_ess_median  = if ("yb_ess" %in% names(ok)) as.numeric(agg(function(v) stats::median(v, na.rm = TRUE), "yb_ess")) else NA_real_,
+    yb_rhat_median = if ("yb_rhat_split" %in% names(ok)) as.numeric(agg(function(v) stats::median(v, na.rm = TRUE), "yb_rhat_split")) else NA_real_,
     # camera corroboration
     tri_rate    = as.numeric(agg(mean, "tri_fires")),
     # discrimination family
