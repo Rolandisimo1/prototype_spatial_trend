@@ -1,0 +1,13 @@
+"run","species","window","campaign_cells_listed","campaign_cells_in_bundle_grid","inat_records_before","inat_records_after","inat_records_removed","pct_removed","cell_years_before","cell_years_after"
+"bobcat_v2u_national_scalar","Bobcat","full_record",47,47,18726,15686,3040,16.23,33128,32489
+"bobcat_v2u_national_scalar_win10","Bobcat","win10",47,47,17782,14824,2958,16.63,25553,25137
+"bobcat_v2u_national_scalar_win5","Bobcat","win5",47,47,12244,10335,1909,15.59,14233,14021
+"coyote_v2u_national_scalar","Coyote","full_record",5,5,59768,58830,938,1.57,34623,34541
+"coyote_v2u_national_scalar_win10","Coyote","win10",5,5,57994,57067,927,1.6,26621,26571
+"coyote_v2u_national_scalar_win5","Coyote","win5",5,5,42514,41941,573,1.35,14805,14780
+"california_ground_squirrel_v2u_national_scalar","California ground squirrel","full_record",3,3,35871,31663,4208,11.73,3289,3237
+"california_ground_squirrel_v2u_national_scalar_win10","California ground squirrel","win10",3,3,35072,30950,4122,11.75,2209,2179
+"california_ground_squirrel_v2u_national_scalar_win5","California ground squirrel","win5",3,3,26921,23786,3135,11.65,1153,1138
+"northern_raccoon_v2u_national_scalar","Northern raccoon","full_record",3,3,77130,76544,586,0.76,33630,33578
+"northern_raccoon_v2u_national_scalar_win10","Northern raccoon","win10",3,3,74860,74299,561,0.75,25778,25748
+"northern_raccoon_v2u_national_scalar_win5","Northern raccoon","win5",3,3,53917,53637,280,0.52,14297,14282
