@@ -1,17 +1,17 @@
 # Open decisions on the integrated camera-trap and iNaturalist trend model
 
 A register of every decision currently open, what each is waiting on, and what
-turns on it. Current as of this entry. Twenty-five entries: two need a decision
+turns on it. Current as of this entry. Twenty-five entries: one needs a decision
 now, three are blocked on running jobs, three were specified and never came back,
-three are settled and recorded here so they are not reopened, and the rest are open
+four are settled and recorded here so they are not reopened, and the rest are open
 without a blocker.
 
 ## Take-home points
 
-1. **Two decisions are worth making now.** How to handle reporting campaigns
-   (M2), and whether to drop the camera-only control arm for the fifteen species
-   whose full-record fit resolved no direction (W2). The second is only useful
-   before those jobs run.
+1. **One decision is worth making now.** Whether to drop the camera-only control
+   arm for the fifteen species whose full-record fit resolved no direction (W2),
+   which is only useful before those jobs run. Reporting campaigns (M2) are now
+   decided: exclude the affected cells.
 2. **The headline window decision gates most of the rest.** Which of the
    five-year, ten-year or full-record trend becomes the reported result (W1)
    determines the agency comparison, the congruence gate and every trend figure.
@@ -29,14 +29,7 @@ without a blocker.
 
 ### Ready to decide
 
-Neither is blocked. W2 expires once the jobs run.
-
-**M2. How to handle organised reporting campaigns: model term, exclude the cells, or limitation only**
-
-- Status: open - needs your call. Decided by: Roland, with Ben.
-- Waiting on: No campaign footprint has any pre-campaign camera deployment, so reporting cannot be separated from local ecology there
-- Why it matters: Four reported species affected in 58 cells, including coyote, one of the corroborated increases
-- Evidence: REPORT_campaign_effects.docx; table_campaign_strong_effects.csv
+W2 is not blocked; it expires once the jobs run. (M2, organised reporting campaigns, is now decided - exclude the cells; see the settled section.)
 
 **W2. Drop the camera-only control arm for the 15 species whose full-record fit resolved no direction**
 
@@ -211,6 +204,12 @@ Neither is blocked. W2 expires once the jobs run.
 - Status: decided - adopt, rolling out. Decided by: Roland.
 - Why it matters: theta0 and theta1 traded off along an identifiability ridge, so the stream-coupling exponent theta1 failed to converge in 67 of 68 windowed joint fits and in the older 3-chain full-record fits, blocking every reportable joint trend and the congruence gate. Centring the abundance predictor log(sum lambda) by a fixed per-run constant C (the ridge slope, read from each run's existing per-chain summaries) decouples the two parameters. Verified a pure reparameterisation: likelihood and priors identical to 2e-13, pooled medians unchanged. Three-species win10 test: bobcat theta1 R-hat 1.24 to 1.004 (bulk ESS 37 to 1,889) and its apparent second mode dissolved, so that was the ridge and not real bimodality; white-tailed deer theta1 R-hat 1.045 to 1.020 (tail ESS 450 to 3,544), trend already converged; kit fox not fixed, with two genuine data-driven solutions, confirming the sparse hard-10 are data-limited rather than parameterisation-limited. Rolling out to the joint fleet at higher iterations to clear theta1, with a confirmatory simulation study of parameter recovery and coverage.
 - Evidence: hazel_reparam_test_prompt.md; ctr_test_pull/ convergence summaries; camera-inat-stream-agreement skill
+
+**M2. How to handle organised reporting campaigns: model term, exclude the cells, or limitation only**
+
+- Status: decided - exclude the cells. Decided by: Roland, with Ben.
+- Why it matters: Four strong-effect species had campaign-inflated iNaturalist reporting in specific cells (bobcat 47, coyote 5, California ground squirrel 3, northern raccoon 3; 58 cells total). A campaign model term is not identifiable, because no campaign footprint has a pre-campaign camera deployment to separate reporting from local ecology. The iNaturalist records in the campaign footprints are dropped for these species, camera data kept, and the exclusion is reported as a limitation. Applied in the bundle rebuild and folded into the centring rollout so each species is fit once.
+- Evidence: table_campaign_strong_effects.csv; REPORT_campaign_effects.docx
 
 
 ## How to read the status values
