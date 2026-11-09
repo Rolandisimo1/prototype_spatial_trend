@@ -12,7 +12,9 @@
 #
 # Source bundles are read only. Output: <OUT_DIR>/<run>/input_data_<run>.RDS, refused if it already exists.
 # Env: CAMPAIGN_CSV, OUT_DIR (required); HPC_DIR, UNION_DIR (default: project locations on Hazel).
-# Red fox is deliberately absent: the Twin Cities screen shows it decreasing there; Roland has not confirmed it.
+# Env ONLY_SPECIES (optional): build one species label and merge its rows into the existing output tables.
+# Red fox (Roland, 2026-11-09): excluded for the five cells of the Twin Cities Coyote and Fox Project, where its
+# selectivity is 0.54 (0.44-0.66). The cells are read from that project's row, listed under Coyote in the table.
 
 env <- function(k, d = NA) { v <- Sys.getenv(k, ""); if (nzchar(v)) v else if (is.na(d)) stop("set ", k) else d }
 PROJ <- "/rsstu/users/j/jkpacifi/NSFiSDMs/Arielle_iSDM_temporal/integrated_code/Temporal_trend_final"
@@ -25,15 +27,22 @@ SPP <- list(
   "Bobcat"                     = list(tok = "bobcat",                     n = 47L, lon = c(-124, -112),   lat = c(30, 38)),
   "Coyote"                     = list(tok = "coyote",                     n = 5L,  lon = c(-95.5, -91.5), lat = c(43.5, 46.5)),
   "California ground squirrel" = list(tok = "california_ground_squirrel", n = 3L,  lon = c(-123.5, -120.5), lat = c(36.5, 39)),
-  "Northern raccoon"           = list(tok = "northern_raccoon",           n = 3L,  lon = c(-124, -120.5), lat = c(45.5, 48.5)))
+  "Northern raccoon"           = list(tok = "northern_raccoon",           n = 3L,  lon = c(-124, -120.5), lat = c(45.5, 48.5)),
+  "Red fox"                    = list(tok = "red_fox",                    n = 5L,  lon = c(-95.5, -91.5), lat = c(43.5, 46.5),
+                                      from_species = "Coyote", from_campaign = "Twin Cities Coyote and Fox Project"))
 WINDOWS <- c("", "_win10", "_win5")
 
 tab <- read.csv(CSV, stringsAsFactors = FALSE, check.names = FALSE)
-stopifnot(setequal(unique(tab$species), names(SPP)))
+stopifnot(setequal(unique(tab$species), setdiff(names(SPP), "Red fox")))
 pairs_out <- list(); counts_out <- list()
+ONLY <- Sys.getenv("ONLY_SPECIES", "")
+if (nzchar(ONLY)) stopifnot(ONLY %in% names(SPP))
 
-for (label in names(SPP)) {
-  s <- SPP[[label]]; rows <- tab[tab$species == label, ]
+for (label in if (nzchar(ONLY)) ONLY else names(SPP)) {
+  s <- SPP[[label]]
+  rows <- if (is.null(s$from_species)) tab[tab$species == label, ] else
+    tab[tab$species == s$from_species & tab$campaign == s$from_campaign, ]
+  stopifnot(nrow(rows) >= 1)
   cells <- sort(unique(as.integer(unlist(strsplit(rows$cell50_list, ";", fixed = TRUE)))))
   if (length(cells) != s$n || anyNA(cells)) stop(label, ": expected ", s$n, " cells, table gives ", length(cells))
 
@@ -114,6 +123,14 @@ for (label in names(SPP)) {
                 100 * (before - after) / before, length(drop), length(cells)))
   }
 }
-write.csv(do.call(rbind, pairs_out), file.path(OUT, "table_campaign_cells_removed.csv"), row.names = FALSE)
-write.csv(do.call(rbind, counts_out), file.path(OUT, "table_campaign_exclusion_counts.csv"), row.names = FALSE)
+save_table <- function(new, name) {
+  f <- file.path(OUT, name)
+  if (nzchar(ONLY) && file.exists(f)) {
+    old <- read.csv(f, stringsAsFactors = FALSE, check.names = FALSE)
+    new <- rbind(old[!old$run %in% new$run, ], new)
+  }
+  write.csv(new, f, row.names = FALSE)
+}
+save_table(do.call(rbind, pairs_out), "table_campaign_cells_removed.csv")
+save_table(do.call(rbind, counts_out), "table_campaign_exclusion_counts.csv")
 cat("DONE\n")

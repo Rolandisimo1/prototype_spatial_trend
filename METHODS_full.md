@@ -81,7 +81,7 @@ Scale 1 cell $s$ and year $t$ we recorded the number of records of the target
 species as the count $N_{st}$, and the total number of mammal records of any
 species as the cell-year effort $E_{st}$. The model treats $E_{st}$ as a known
 offset, so the estimated intensity is a rate per unit observer effort.
-We excluded the footprints of organised iNaturalist reporting campaigns from the iNaturalist data for bobcat (47 Scale 1 cells), coyote (5), California ground squirrel (3) and northern raccoon (3), while retaining camera data in those cells.
+We excluded the footprints of organised iNaturalist reporting campaigns from the iNaturalist data for bobcat (47 Scale 1 cells), coyote (5), red fox (5), California ground squirrel (3) and northern raccoon (3) in all years, including years before each campaign began, as a deliberate conservative choice, and retained camera data in those cells.
 
 ## Covariates
 
