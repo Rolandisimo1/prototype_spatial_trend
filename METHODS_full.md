@@ -175,6 +175,18 @@ $\theta_0 \sim \mathcal{N}(0,10)$ is an intercept for the species' reporting
 rate, constant in space, and $\theta_1 \sim \mathcal{N}(1,1)$ governs the
 strength of that correspondence, with $\theta_1 = 1$ denoting proportionality.
 
+For fitting we centred the abundance term, writing
+$\log \mu_{st} = \theta_0^{c} + \theta_1 \big(\log \sum_{\ell \in s} \lambda_{\ell t} - C\big)$
+with $\theta_0 = \theta_0^{c} - \theta_1 C$ and $\theta_0^{c} \sim \mathcal{N}(\theta_1 C, 10)$,
+where $C$ is a constant fixed for each fit. This is an exact reparameterisation:
+the likelihood and the joint prior on $(\theta_0, \theta_1)$ are unchanged, so the
+posterior is the same. Its purpose is sampling efficiency. Uncentred, $\theta_0$ and
+$\theta_1$ trade off along a narrow ridge and $\theta_1$ mixes slowly. We set $C$ to
+the slope of that ridge, estimated from the chain means of $\theta_0$ and $\theta_1$
+in an earlier uncentred fit of the same species and window, or from that species'
+full-record posterior draws where the chain means were too weakly correlated
+(absolute correlation below 0.95) to define a ridge.
+
 This formulation treats the camera data as the gold-standard dataset directly
 informing the latent intensity, and allows the iNaturalist data to influence it
 more weakly where the two diverge, reflecting that the camera data are collected
@@ -239,6 +251,19 @@ sampler behaviour. Where the posterior of $\theta_1$ was multimodal we refitted
 from dispersed initial values and selected between modes by comparing the
 pointwise log predictive density of chains sampled in each mode, judging the
 difference against the spread among chains within a mode.
+
+One species is reported from an uncentred fit. In the centred 5-year fit for
+collared peccary, one of 12 chains settled in a second mode, leaving the trend
+coefficient unconverged ($\hat{R} = 1.06$). The other 11 chains gave a trend of
+$-0.10$ (95% credible interval $-0.31$ to $0.07$), and the converged uncentred fit
+gave $-0.11$ ($-0.32$ to $0.05$). Because centring targets the same posterior, we
+report the uncentred fit and record this as a documented exception. Both intervals
+span zero, so peccary has no detectable trend under either fit. Neither fit gave a
+converged $\theta_1$ ($\hat{R} = 1.07$ uncentred, $1.28$ centred), so we report no
+estimate of stream agreement for peccary. Peccary and elk were also fitted with
+camera detections rebuilt after a taxonomy correction recovered deployments filed
+under superseded species names (peccary 255 detecting deployments, up from 140);
+the range mask is the same union mask used for every species.
 
 ## Camera-only comparison fits
 
