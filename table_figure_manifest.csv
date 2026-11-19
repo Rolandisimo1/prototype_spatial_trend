@@ -1,0 +1,12 @@
+figure,module_function,what_it_shows,required_extraction,status,blocked
+Abundance surface per year,figures_maps.fig_abundance,"Relative abundance mapped at snapshot years, one row per species","mu_snapshots (cell50, year, mu_mean, mu_q025, mu_q975, lon, lat)",3 species on the full record; none on the 5-year window,True
+Abundance change surface,figures_maps.fig_abundance (change panel),Absolute change in abundance between first and last snapshot year,mu_snapshots,3 species on the full record; none on the 5-year window,True
+"Abundance change, union mask",figures_abundance.fig_abundance_union,Change surface on the union fitting mask,mu_snapshots,3 species on the full record; none on the 5-year window,True
+Per-deployment change map,figures_deployment.fig_deployment_change,Change in fitted occupancy at each camera deployment,"psi_snapshots (site_id, year, lon, lat, psi_mean)",no psi extraction exists for any v2u fit,True
+Covariate effects per species,figures_real.fig_covariates,Posterior mean and interval for each of the nine shared covariate effects,occ_beta posterior draws,"only the superseded v2b fits, 3 species; none for v2u or the 5-year window",True
+Spatial baseline field,figures_spatial.fig_spatial_baseline,"The CAR intercept surface, where a species is common before covariates",spatial_car_fields (link_occ_intercept per cell100),none for v2u or the 5-year window,True
+Climate response fields,figures_spatial.fig_climate_response,Per-cell response to summer warmth and winter cold,"spatial_car_fields (MWMT_effect, MCMT_effect)",none for v2u or the 5-year window,True
+Stream agreement,figures_real.fig_congruence,"theta1 with its interval per species, against the 0 and 1 thresholds",theta1 posterior (already in the standard extraction),available now for all 4 finished species,False
+Camera against joint trend,figures_fleet / new panel,"Joint trend beside the camera-only control fit, per species",camera-only control fits,available for earlier windows; none on the 5-year window,False
+Trend per year,figures_peryear.fig_trend_per_year,Fitted trajectory year by year rather than a single slope,mu_snapshots at every year,"snapshots exist at 3 years only, not all years",True
+Convergence,figures_real.fig_convergence,R-hat and effective sample size by parameter family,convergence tables (already in the standard extraction),available now for all 4 finished species,False

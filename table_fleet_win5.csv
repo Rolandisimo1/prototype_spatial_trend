@@ -1,0 +1,5 @@
+species,run,trend_pct_yr,lo,hi,trend_rhat,trend_ess,theta1,theta1_lo,theta1_hi,theta1_rhat,theta1_ess,chains,converged,direction,theta1_usable,gate,range_cells,data_limited
+Brown bear,brown_bear_v2u_national_scalar_win5_ctr,-59.1295,-79.1424,-37.4083,1.0054,3569.2402,0.3166,0.0801,0.8443,1.1133,81.8963,12,True,decline,False,theta1 below reporting threshold,30,True
+California ground squirrel,california_ground_squirrel_v2u_national_scalar_win5_ctr_excl,-37.7343,-46.5655,-27.5665,1.0044,2860.434,1.5354,1.2844,1.8273,1.0061,2202.4997,12,True,decline,True,needs camera-only control,74,True
+Fisher,fisher_v2u_national_scalar_win5_ctr,-7.6997,-19.4182,3.2042,1.0013,15349.8129,0.9569,0.5697,1.3093,1.0171,850.6122,12,True,no change detected,False,theta1 below reporting threshold,176,False
+Collared peccary,collared_peccary_v2un_national_scalar_win5_ctr,-7.4774,-20.8377,5.4166,1.0595,118.6178,0.4232,-0.6849,0.7384,1.2764,33.784,12,False,not reportable,False,theta1 below reporting threshold,168,False
