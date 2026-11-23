@@ -7,7 +7,7 @@
 # Data are generated FROM the new model, so a regional trend reaches both the
 # camera and the iNaturalist stream.
 #
-# DESIGN (4 scenarios x 3 camera x 3 iNat x N_REP = 1,080 fits at N_REP = 30)
+# DESIGN (4 scenarios x 3 camera x 3 iNat x N_REP = 720 fits at N_REP = 20; Roland 2026-11-23)
 #   scenario       year_region        year_region_var     tests
 #   NULL           0                  0                   false-positive rate of the regional term
 #   REAL           N(0, 0.2) draws    0                   power, bias, coverage of camera-anchored regional trends
@@ -15,8 +15,17 @@
 #   REAL_SPURIOUS  N(0, 0.2)          N(0, 0.2), indep.   the same, with a real signal present
 #   camera sites   1,000 / 3,000 / 9,000 DISTINCT real sites (no resampling with replacement)
 #   iNat records   5,000 / 20,000 / 100,000 expected records
-#   one abundance level (bobcat-like, the real posterior means), one range
-#   (RANGE_CELLS = 300 cell100s, the Tier 1 VOL range), window_frac 0.4.
+#   one abundance level (bobcat-like, the real posterior means), one range:
+#   RANGE_CELLS = 900, the full grid, so all seven real EPA Level I ecoregions
+#   carry data (the 300-cell Tier 1 range put 242 of its 300 cells in Eastern
+#   Temperate Forests; Roland 2026-11-23: 900 cells at 20 replicates).
+#   SAME-SPAN WINDOW (Roland 2026-11-23): camera AND iNat both cover the last
+#   WINDOW_YEARS = 5 calendar years (2021-2025), as in the reported win5 fits.
+#   The iNat side of the Tier 1 design is cut to those years and year_vals is
+#   re-z-scored on them, exactly as the windowed prep does. Camera and iNat year
+#   steps are then ~0.71 and ~0.63 per year (ratio ~0.89; fitted deer win5 0.91),
+#   so REAL with year_region_var = 0 leaves only a ~10% difference between the
+#   streams' implied %/yr. Both per-stream %/yr values are recorded per region.
 # The national trend is null (year_beta = year_var = 0) so the regional terms
 # are the only trend signal. Regional truths are drawn per replicate AFTER the
 # reseed, only for ecoregions that hold data in the range; others are 0.
@@ -44,7 +53,7 @@ args <- commandArgs(trailingOnly = TRUE)
 BASE <- Sys.getenv("SIM_BASE", ".")
 DESIGN_SEED <- 20261017L          # same as Tier 1: identical site / cell50 draws per design cell
 RUN_SEED    <- 20261123L
-N_REP       <- as.integer(Sys.getenv("N_REP", "30"))
+N_REP       <- as.integer(Sys.getenv("N_REP", "20"))
 N_BURNIN    <- as.integer(Sys.getenv("N_BURNIN", "2000"))
 N_ITER      <- as.integer(Sys.getenv("N_ITER", "8000"))
 SMOKE       <- Sys.getenv("CAMANCH_SMOKE", "0") == "1"
@@ -52,8 +61,10 @@ SMOKE       <- Sys.getenv("CAMANCH_SMOKE", "0") == "1"
 SCENARIOS   <- c("NULL", "REAL", "SPURIOUS", "REAL_SPURIOUS")
 CAM_LEVELS  <- c(1000L, 3000L, 9000L)
 INAT_LEVELS <- c(5000, 20000, 100000)
-RANGE_CELLS <- as.integer(Sys.getenv("RANGE_CELLS", "300"))
-WINDOW_FRAC <- 0.4
+RANGE_CELLS  <- as.integer(Sys.getenv("RANGE_CELLS", "900"))
+WINDOW_YEARS <- as.integer(Sys.getenv("WINDOW_YEARS", "5"))
+INAT_YEARS   <- 2008:2025
+WINDOW_FRAC  <- WINDOW_YEARS / length(INAT_YEARS)   # camera_window_years() then returns exactly the last WINDOW_YEARS
 REGION_SD   <- 0.2
 
 #' @name build_camanch_design
@@ -105,6 +116,30 @@ cat(sprintf("[row %d] scenario=%s n_site=%d inat_records=%g rep=%d arm=%s range=
             N_BURNIN, N_ITER, OUTDIR))
 if (file.exists(outfile)) { cat("already done, exiting\n"); quit(save = "no", status = 0) }
 
+#' @name cut_inat_window
+#' @description Cut the iNat side of a Tier 1 design to the camera window so both
+#'   streams span the same calendar years, re-z-scoring year_vals on the kept
+#'   years as the windowed prep (run_fleet_prep.R, year_vals = scale(years_in)) does.
+#' @param des Output of build_tier1_constants().
+#' @param keep_years Calendar years to keep (the camera window).
+#' @return des with constants, inat_effort_base and s_vals updated.
+cut_inat_window <- function(des, keep_years) {
+  tk <- match(keep_years, INAT_YEARS); stopifnot(!anyNA(tk))
+  k <- des$constants; n50 <- k$ncell50; stopifnot(k$nyear == length(INAT_YEARS))
+  k$nyear <- length(tk)
+  k$year_vals <- as.numeric(scale(keep_years))
+  k$xdat_inat <- k$xdat_inat[, , tk, drop = FALSE]
+  k$MWMT_inat <- k$MWMT_inat[, tk, drop = FALSE]
+  k$MCMT_inat <- k$MCMT_inat[, tk, drop = FALSE]
+  k$n_cells_year <- rep(n50, length(tk))
+  k$inat_cells_by_year <- matrix(rep(seq_len(n50), length(tk)), nrow = n50, ncol = length(tk))
+  des$constants <- k
+  des$inat_effort_base <- des$inat_effort_base[, tk, drop = FALSE]
+  des$s_vals <- 1 / stats::sd(keep_years)
+  des$diag$d_s_vals <- des$s_vals; des$diag$d_inat_year_min <- min(keep_years); des$diag$d_inat_year_max <- max(keep_years)
+  des
+}
+
 #' @name ess1
 #' @description Effective sample size of one chain (coda), NA if constant.
 ess1 <- function(x) { x <- x[is.finite(x)]; if (length(x) < 10 || stats::var(x) == 0) NA_real_ else unname(coda::effectiveSize(x)) }
@@ -130,13 +165,20 @@ run_camanch_replicate <- function(cfg) {
   # Spec: distinct real camera sites, never resampled with replacement.
   if (des$diag$d_nsite_unique != cfg$n_site)
     stop(sprintf("site pool %d < %d: would resample with replacement", des$diag$d_site_pool, cfg$n_site))
+  cam_years <- sort(unique(des$site_cal_year))
+  stopifnot(identical(cam_years, tail(INAT_YEARS, WINDOW_YEARS)))
+  des <- cut_inat_window(des, cam_years)                    # both streams: the same WINDOW_YEARS
   constants <- des$constants
   constants$ecoregion_of_cell100 <- er
   constants$nregion <- nregion
   constants$region_of_site <- er[constants$cell]
   constants$inat_on <- 1L
 
+  # Scored regions: real ecoregions with data in the range. "WATER" is a mapping
+  # artefact of the Level I layer (26 cells), not a region: truth 0, never scored.
   regions_in <- sort(unique(c(er[des$range_keep])))
+  regions_in <- regions_in[toupper(as.character(inputs$ecoregion_levels[regions_in])) != "WATER"]
+  if (RANGE_CELLS == 900L) stopifnot(length(regions_in) == 7L)
   truth0 <- true_param_list(inputs$real_post_means, rep(0, cl$ncell100))
   truth0$year_effect <- NULL; truth0$tau_year <- NULL
   truth0 <- tier1_trend_truth(truth0, 0, des$s_occ, des$s_vals)    # national null
@@ -198,9 +240,15 @@ run_camanch_replicate <- function(cfg) {
           range_cells = sum(er[des$range_keep] == r),
           rep_pct_true = 100 * (exp((truth$year_beta + yr[r]) * des$s_occ) - 1),
           rep_pct_mean = mean(100 * (exp(rep_draw * des$s_occ) - 1)),
+          # implied %/yr per stream (Roland 2026-11-23: make the residual stream gap visible)
+          cam_pct_true  = 100 * (exp((truth$year_beta + yr[r]) * des$s_occ) - 1),
+          inat_pct_true = 100 * (exp((truth$year_beta + truth$year_var + yr[r] + yrv[r]) * des$s_vals) - 1),
+          cam_pct_mean  = mean(100 * (exp(rep_draw * des$s_occ) - 1)),
+          inat_pct_mean = if (cfg$arm == "joint") mean(100 * (exp((rep_draw + samples[, "year_var"] +
+                            samples[, sprintf("year_region_var[%d]", r)]) * des$s_vals) - 1)) else NA_real_,
           a, b, realized_region[r, -1], stringsAsFactors = FALSE)
   }))
-  rep_row <- cbind(cfg, des$diag, n_regions_in = length(regions_in),
+  rep_row <- cbind(cfg, des$diag, range_cells = RANGE_CELLS, window_years = WINDOW_YEARS, n_regions_in = length(regions_in),
                    r_cam_det_sites = sum(det_site), r_inat_records = sum(sim$y_inat, na.rm = TRUE),
                    yb_mean = mean(yb), yb_rhat = .split_rhat(yb), yb_ess = ess1(yb),
                    sigma_region_mean = mean(samples[, "sigma_region"]),
