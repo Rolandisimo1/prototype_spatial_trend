@@ -154,7 +154,8 @@ def build(table=None, fig_marker=FIG):
         f"{len(gate_needs)} {_vb(len(gate_needs), 'needs', 'need')} a camera-only control "
         f"fit because the exponent linking "
         f"iNaturalist records to abundance has an interval reaching 1 or including 0, and "
-        f"{len(gate_none)} returned that exponent too imprecisely to judge.")
+        f"{len(gate_none)} have not yet settled: their 12 chains still disagree on the exponent, "
+        f"so its interval cannot be trusted whether it is narrow or wide.")
 
     lines = ["# Population trends from integrated camera-trap and iNaturalist data: "
              "the five-year window", ""]
@@ -261,7 +262,7 @@ def build(table=None, fig_marker=FIG):
         "**The trends are proportional change.** Reading them as population sizes or "
         "animal counts would need a calibration step we have not done.", "",
         "**Stream agreement is unconfirmed for most of these fits.** Where θ₁ came back "
-        "imprecise, the iNaturalist half of the fit may be tracking where people looked "
+        "unsettled, the iNaturalist half of the fit may be tracking where people looked "
         "instead of where the animals are. A camera-only control fit settles it.", "",
         "**The agency comparison is still to come.** It needs the state and provincial "
         "records matched to the same five-year window.", ""]

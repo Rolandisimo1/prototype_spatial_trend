@@ -2,15 +2,15 @@
 
 ## Take-home points
 
-1. **4 of the 34 species in the fleet have been fitted so far, and 3 of those converged.** The remaining 30 are still running. Every count below is out of the 3 converged fits, not out of 34, so none of them is a statement about the fleet.
+1. **18 of the 34 species in the fleet have been fitted so far, and 17 of those converged.** The remaining 16 are still running. Every count below is out of the 17 converged fits, not out of 34, so none of them is a statement about the fleet.
 
-2. **2 species resolve a direction**, meaning the 95% credible interval for the trend excludes zero. They are brown bear and California ground squirrel. The remaining 1 fit has an interval spanning zero, so the data leave its direction open.
+2. **8 species resolve a direction**, meaning the 95% credible interval for the trend excludes zero. They are brown bear, California ground squirrel, grey wolf, black-tailed jackrabbit, grey fox, Northern raccoon, Eastern gray squirrel and coyote. The remaining 9 fits have intervals spanning zero, so the data leave their directions open.
 
 3. **2 of the resolved species sit below the range size where these estimates hold up.** Brown bear and California ground squirrel occupy 30 and 74 grid cells, against a fleet median of 425. At -59% per year, brown bear would fall to 1% of its starting abundance over the five years. For brown bear, over five years, 8 of 14 records give a direction (6 stable and 2 increasing); over ten years, 14 of 14 records give a direction (12 increasing and 2 stable). None of the 4 agency records for California ground squirrel states a direction, so no external assessment is available to compare against.
 
-4. **No species with a range above 100 cells has yet resolved a direction.** The species that have finished are among the smallest-range and least-sampled in the fleet, so this says nothing about the fleet's eventual result.
+4. **Setting those aside, 6 species with ranges above 100 cells resolve a direction**: grey wolf at -25.4% per year [-45.7, -0.6]; black-tailed jackrabbit at -19.2% per year [-25.9, -11.9]; grey fox at -5.5% per year [-10.8, -0.0]; Northern raccoon at +4.8% per year [+2.0, +7.7]; Eastern gray squirrel at +5.7% per year [+2.7, +8.8]; coyote at +9.1% per year [+5.6, +12.4].
 
-5. **Stream agreement stays unconfirmed for 3 of the 3 converged fits, on the joint fit alone.** 1 needs a camera-only control fit because the exponent linking iNaturalist records to abundance has an interval reaching 1 or including 0, and 2 returned that exponent too imprecisely to judge.
+5. **Stream agreement stays unconfirmed for 9 of the 17 converged fits, on the joint fit alone.** 1 needs a camera-only control fit because the exponent linking iNaturalist records to abundance has an interval reaching 1 or including 0, and 8 have not yet settled: their 12 chains still disagree on the exponent, so its interval cannot be trusted whether it is narrow or wide.
 
 ## What is being measured
 
@@ -38,14 +38,28 @@
 
 ![Five-year trend for every fitted species]({{artifact:art_FIGID}})
 
-*The 3 converged fits on the five-year window. Each bar is the 95% credible interval and each dot the posterior mean. Species in amber occupy fewer than 100 grid cells, with their cell count beside the name. Open markers on dotted intervals did not converge and are excluded from the counts in the title.*
+*The 17 converged fits on the five-year window. Each bar is the 95% credible interval and each dot the posterior mean. Species in amber occupy fewer than 100 grid cells, with their cell count beside the name. Open markers on dotted intervals did not converge and are excluded from the counts in the title.*
 
 | Species                    |   Range (cells) |   Trend (%/yr) |   Lower |   Upper | Direction          |   θ₁ |   θ₁ lower |   θ₁ upper | Stream agreement                 |
 |:---------------------------|----------------:|---------------:|--------:|--------:|:-------------------|-----:|-----------:|-----------:|:---------------------------------|
 | Brown bear                 |              30 |         -59.13 |  -79.14 |  -37.41 | decline            | 0.32 |       0.08 |       0.84 | theta1 below reporting threshold |
 | California ground squirrel |              74 |         -37.73 |  -46.57 |  -27.57 | decline            | 1.54 |       1.28 |       1.83 | needs camera-only control        |
+| Grey wolf                  |             179 |         -25.35 |  -45.68 |   -0.64 | decline            | 0.44 |       0.23 |       0.7  | theta1 below reporting threshold |
+| Black-tailed jackrabbit    |             424 |         -19.2  |  -25.94 |  -11.93 | decline            | 0.72 |       0.62 |       0.84 | clear                            |
+| Moose                      |             258 |         -10.47 |  -20.64 |    0.83 | no change detected | 0.52 |       0.43 |       0.62 | clear                            |
+| Groundhog                  |             406 |          -8.19 |  -17.72 |    1.56 | no change detected | 0.21 |      -0.4  |       0.41 | theta1 below reporting threshold |
 | Fisher                     |             176 |          -7.7  |  -19.42 |    3.2  | no change detected | 0.96 |       0.57 |       1.31 | theta1 below reporting threshold |
 | Collared peccary           |             168 |          -7.48 |  -20.84 |    5.42 | not reportable     | 0.42 |      -0.68 |       0.74 | theta1 below reporting threshold |
+| Kit fox                    |             167 |          -6.32 |  -24.4  |   12.95 | no change detected | 0.68 |       0.41 |       1    | theta1 below reporting threshold |
+| Grey fox                   |             813 |          -5.5  |  -10.85 |   -0.02 | decline            | 0.5  |       0.45 |       0.56 | clear                            |
+| Nine-banded armadillo      |             336 |          -2.88 |   -7.65 |    1.7  | no change detected | 0.42 |       0.35 |       0.49 | clear                            |
+| Mule deer                  |             469 |          -2.37 |   -7.25 |    2.3  | no change detected | 0.48 |       0.43 |       0.54 | clear                            |
+| White-tailed deer          |             787 |          -0.73 |   -3.49 |    1.9  | no change detected | 0.5  |       0.47 |       0.54 | clear                            |
+| Eastern chipmunk           |             434 |          -0.59 |   -5.14 |    3.94 | no change detected | 0.23 |      -0.2  |       0.41 | theta1 below reporting threshold |
+| Elk                        |             359 |           2.71 |   -4.71 |   12.18 | no change detected | 0.36 |       0.29 |       0.45 | theta1 below reporting threshold |
+| Northern raccoon           |            1002 |           4.84 |    2.01 |    7.7  | increase           | 0.31 |       0.28 |       0.34 | clear                            |
+| Eastern gray squirrel      |             489 |           5.66 |    2.71 |    8.77 | increase           | 0.51 |       0.47 |       0.55 | clear                            |
+| Coyote                     |            1032 |           9.1  |    5.62 |   12.44 | increase           | 0.53 |       0.46 |       0.59 | theta1 below reporting threshold |
 
 ### What the steepest declines rest on
 
@@ -53,9 +67,9 @@ Brown bear and California ground squirrel return the two steepest declines in th
 
 ## What happens next
 
-**30 species are still being fitted.** The species finished so far include several of the fleet's smallest ranges, so a fleet-level statement waits for the rest.
+**16 species are still being fitted.** The species finished so far include several of the fleet's smallest ranges, so a fleet-level statement waits for the rest.
 
-**3 of the converged fits need a camera-only control fit** before their joint trend can be reported, because stream agreement could not be established from the joint fit.
+**9 of the converged fits need a camera-only control fit** before their joint trend can be reported, because stream agreement could not be established from the joint fit.
 
 **1 fit did not converge** (Collared peccary) and is excluded from all results.
 
@@ -65,7 +79,7 @@ Brown bear and California ground squirrel return the two steepest declines in th
 
 **The trends are proportional change.** Reading them as population sizes or animal counts would need a calibration step we have not done.
 
-**Stream agreement is unconfirmed for most of these fits.** Where θ₁ came back imprecise, the iNaturalist half of the fit may be tracking where people looked instead of where the animals are. A camera-only control fit settles it.
+**Stream agreement is unconfirmed for most of these fits.** Where θ₁ came back unsettled, the iNaturalist half of the fit may be tracking where people looked instead of where the animals are. A camera-only control fit settles it.
 
 **The agency comparison is still to come.** It needs the state and provincial records matched to the same five-year window.
 

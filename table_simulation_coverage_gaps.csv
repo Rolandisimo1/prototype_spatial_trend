@@ -7,3 +7,4 @@ Smallest range size that supports a trend,NOT answered,range size held fixed; th
 Effect of cameras covering only part of the record,NOT answered,window ratio never varied; real data is cameras 2019-2025 vs iNat 2008-2025,-,Tier 1C of the seed design
 Detection probability separated from abundance,NOT answered,abundance and detection move together by construction,-,Tier 2D of the seed design
 Does a spurious opportunistic signal contaminate the trend?,NOT answered,"both streams generated from one truth, so disagreement can only be noise",-,Tier 2E of the seed design
+"Power vs camera and iNaturalist data volume, regional model",partly answered,"the earlier effort sweep varies both streams on the ecoregion model, 4x4 grid x 30 reps, scored as fraction of regions with the correct sign; its 1x is 698 camera sites against 15,435 real deployments",sim_results/effort_sweep_summary.csv,"Tier 1A at real fleet volumes, on the national-scalar model"

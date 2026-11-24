@@ -1,0 +1,4 @@
+assessment,requires,status,artifact,note
+theta1 spatial congruence,joint fit alone,AVAILABLE,"table_stream_agreement_win5.csv, fig_stream_agreement_win5.png",3 of 11 meet the theta1 mixing threshold; the rest are provisional
+Camera-only control fit,a refit with the iNaturalist likelihood removed,NOT RUN,table_camonly_ablation_summary.csv exists for the full record only,deferred by decision W2; needed before any joint trend whose theta1 interval reaches 1
+Urban-rural stream screen,"raw deployment and record data, pooled gradient",NOT RUN,table_stream_screen_national.csv exists for the full record only,mandatory per the workflow; on the full record 12 of 15 came back underpowered

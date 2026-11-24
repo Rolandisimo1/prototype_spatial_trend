@@ -1,0 +1,3 @@
+species,window,trend_pct_yr,lo,hi,direction,theta1,th_lo,th_hi,theta1_usable,trend_ess,chains
+Bobcat,10-year (2016-2025),2.1104,-0.0994,4.448,not resolved,0.8681,0.8085,0.93,True,34299.6083,12
+White-tailed deer,10-year (2016-2025),0.4582,-0.855,1.8728,not resolved,0.5229,0.4924,0.5544,True,25531.7957,12

@@ -1,0 +1,141 @@
+species,family,n_param,max_rhat,min_ess,passes
+Black-tailed jackrabbit,detection,5,1.0003,22145.3369,True
+Black-tailed jackrabbit,habitat covariates,9,1.0108,1205.5299,False
+Black-tailed jackrabbit,iNat trend terms,3,1.0003,42254.5951,True
+Black-tailed jackrabbit,other,4,1.011,1183.0307,False
+Black-tailed jackrabbit,overdispersion,1,1.0002,65227.3779,True
+Black-tailed jackrabbit,spatial fields,2,1.0034,2961.7492,True
+Black-tailed jackrabbit,stream coupling,2,1.0096,1475.8077,True
+Black-tailed jackrabbit,trend (reported),1,1.0003,39454.1374,True
+Brown bear,detection,1,1.0066,2994.09,True
+Brown bear,iNat trend terms,3,1.0457,188.499,False
+Brown bear,other,4,1.0486,215.3128,False
+Brown bear,overdispersion,1,1.0009,25206.4948,True
+Brown bear,spatial fields,2,1.1194,70.4009,False
+Brown bear,stream coupling,2,1.1133,81.8963,False
+Brown bear,trend (reported),1,1.0054,3569.2402,True
+California ground squirrel,detection,1,1.001,15648.8192,True
+California ground squirrel,iNat trend terms,3,1.0043,2813.5539,True
+California ground squirrel,other,4,1.0065,1897.1056,True
+California ground squirrel,overdispersion,1,1.0015,10352.7001,True
+California ground squirrel,spatial fields,2,1.0267,544.4175,False
+California ground squirrel,stream coupling,2,1.0061,2202.4997,True
+California ground squirrel,trend (reported),1,1.0044,2860.434,True
+Collared peccary,detection,1,1.2131,39.3103,False
+Collared peccary,iNat trend terms,3,1.0215,315.9787,False
+Collared peccary,other,4,1.2181,38.5707,False
+Collared peccary,overdispersion,1,1.192,41.6118,False
+Collared peccary,spatial fields,2,1.0985,92.9216,False
+Collared peccary,stream coupling,2,1.2764,33.784,False
+Collared peccary,trend (reported),1,1.0595,118.6178,False
+Coyote,detection,5,1.0099,1351.9309,True
+Coyote,habitat covariates,9,1.0154,827.1945,False
+Coyote,iNat trend terms,3,1.0026,5399.9318,True
+Coyote,other,4,1.0051,2155.4781,True
+Coyote,overdispersion,1,1.0084,1517.4168,True
+Coyote,spatial fields,2,1.0142,1025.602,False
+Coyote,stream coupling,2,1.0137,961.8333,False
+Coyote,trend (reported),1,1.007,1870.6632,True
+Eastern chipmunk,detection,5,1.0246,285.3936,False
+Eastern chipmunk,habitat covariates,9,1.4922,21.966,False
+Eastern chipmunk,iNat trend terms,3,1.3028,29.3684,False
+Eastern chipmunk,other,4,1.4915,21.9665,False
+Eastern chipmunk,overdispersion,1,1.49,21.921,False
+Eastern chipmunk,spatial fields,2,1.5098,22.0459,False
+Eastern chipmunk,stream coupling,2,1.5006,21.9295,False
+Eastern chipmunk,trend (reported),1,1.0056,2550.7355,True
+Eastern gray squirrel,detection,5,1.0005,53901.2926,True
+Eastern gray squirrel,habitat covariates,9,1.0042,3089.2415,True
+Eastern gray squirrel,iNat trend terms,3,1.0008,27752.6482,True
+Eastern gray squirrel,other,4,1.0053,1794.7711,True
+Eastern gray squirrel,overdispersion,1,1.0002,69293.665,True
+Eastern gray squirrel,spatial fields,2,1.0141,968.7864,False
+Eastern gray squirrel,stream coupling,2,1.0069,1887.2061,True
+Eastern gray squirrel,trend (reported),1,1.0025,7208.3195,True
+Elk,detection,5,1.0005,24457.108,True
+Elk,habitat covariates,9,1.0043,3855.7452,True
+Elk,iNat trend terms,3,1.0004,43935.7121,True
+Elk,other,4,1.0144,770.3938,False
+Elk,overdispersion,1,1.001,15744.0073,True
+Elk,spatial fields,2,1.0149,757.5118,False
+Elk,stream coupling,2,1.0164,677.4562,False
+Elk,trend (reported),1,1.0009,17570.6175,True
+Fisher,detection,1,1.0018,8362.5644,True
+Fisher,iNat trend terms,3,1.0038,4109.8002,True
+Fisher,other,4,1.012,1109.3903,False
+Fisher,overdispersion,1,1.0029,5553.4747,True
+Fisher,spatial fields,2,1.0218,753.4889,False
+Fisher,stream coupling,2,1.0171,850.6122,False
+Fisher,trend (reported),1,1.0013,15349.8129,True
+Grey fox,detection,5,1.0003,38401.6098,True
+Grey fox,habitat covariates,9,1.0019,6314.3439,True
+Grey fox,iNat trend terms,3,1.0003,84247.6345,True
+Grey fox,other,4,1.0013,5930.0066,True
+Grey fox,overdispersion,1,1.0002,98217.8903,True
+Grey fox,spatial fields,2,1.0147,805.907,False
+Grey fox,stream coupling,2,1.0011,5241.9033,True
+Grey fox,trend (reported),1,1.0004,55003.9191,True
+Grey wolf,detection,5,1.0035,3887.9608,True
+Grey wolf,habitat covariates,9,1.0107,1108.7448,False
+Grey wolf,iNat trend terms,3,1.004,3583.9737,True
+Grey wolf,other,4,1.1116,80.9453,False
+Grey wolf,overdispersion,1,1.0009,16272.8106,True
+Grey wolf,spatial fields,2,1.0363,417.9344,False
+Grey wolf,stream coupling,2,1.0345,284.9853,False
+Grey wolf,trend (reported),1,1.0061,2285.3672,True
+Groundhog,detection,5,1.3195,28.3654,False
+Groundhog,habitat covariates,9,1.3636,26.2992,False
+Groundhog,iNat trend terms,3,1.3619,26.1847,False
+Groundhog,other,4,1.3625,26.6018,False
+Groundhog,overdispersion,1,1.3583,26.3489,False
+Groundhog,spatial fields,2,1.1977,41.7189,False
+Groundhog,stream coupling,2,1.3701,26.2944,False
+Groundhog,trend (reported),1,1.0021,37101.3754,True
+Kit fox,detection,5,1.0594,142.0279,False
+Kit fox,habitat covariates,9,1.0267,371.2713,False
+Kit fox,iNat trend terms,3,1.0094,988.9893,True
+Kit fox,other,4,1.0648,139.4557,False
+Kit fox,overdispersion,1,1.0002,74542.8703,True
+Kit fox,spatial fields,2,1.0678,171.9007,False
+Kit fox,stream coupling,2,1.0784,113.869,False
+Kit fox,trend (reported),1,1.0004,59268.7997,True
+Moose,detection,5,1.0002,67603.9316,True
+Moose,habitat covariates,9,1.0031,4345.3867,True
+Moose,iNat trend terms,3,1.0009,10985.7727,True
+Moose,other,4,1.0058,2095.7906,True
+Moose,overdispersion,1,1.0003,30726.4448,True
+Moose,spatial fields,2,1.007,2139.0562,True
+Moose,stream coupling,2,1.006,1824.1139,True
+Moose,trend (reported),1,1.0005,28478.4219,True
+Mule deer,detection,5,1.0004,22945.612,True
+Mule deer,habitat covariates,9,1.0018,6759.9685,True
+Mule deer,iNat trend terms,3,1.0003,49731.6094,True
+Mule deer,other,4,1.0019,5281.6963,True
+Mule deer,overdispersion,1,1.0002,41280.5699,True
+Mule deer,spatial fields,2,1.0077,1687.6111,True
+Mule deer,stream coupling,2,1.0024,4894.1344,True
+Mule deer,trend (reported),1,1.0004,28967.438,True
+Nine-banded armadillo,detection,5,1.0001,127761.7002,True
+Nine-banded armadillo,habitat covariates,9,1.0019,9406.2652,True
+Nine-banded armadillo,iNat trend terms,3,1.0003,48134.0956,True
+Nine-banded armadillo,other,4,1.0063,2038.1349,True
+Nine-banded armadillo,overdispersion,1,1.0003,82791.8165,True
+Nine-banded armadillo,spatial fields,2,1.0116,1148.3069,False
+Nine-banded armadillo,stream coupling,2,1.0098,1383.2778,True
+Nine-banded armadillo,trend (reported),1,1.0003,61334.1562,True
+Northern raccoon,detection,5,1.0002,86790.1335,True
+Northern raccoon,habitat covariates,9,1.0017,8458.1895,True
+Northern raccoon,iNat trend terms,3,1.0003,85869.8163,True
+Northern raccoon,other,4,1.0066,3210.9497,True
+Northern raccoon,overdispersion,1,1.0004,30718.2839,True
+Northern raccoon,spatial fields,2,1.0264,346.2544,False
+Northern raccoon,stream coupling,2,1.0045,4085.2782,True
+Northern raccoon,trend (reported),1,1.0003,79788.9383,True
+White-tailed deer,detection,5,1.0001,138898.0324,True
+White-tailed deer,habitat covariates,9,1.0012,9730.3309,True
+White-tailed deer,iNat trend terms,3,1.0001,64783.6182,True
+White-tailed deer,other,4,1.0071,2483.7303,True
+White-tailed deer,overdispersion,1,1.0007,39274.7942,True
+White-tailed deer,spatial fields,2,1.0162,632.023,False
+White-tailed deer,stream coupling,2,1.0072,2675.4735,True
+White-tailed deer,trend (reported),1,1.0002,58091.5632,True

@@ -1,0 +1,7 @@
+abundance,scen,array_occ,array_rn,camera_occ,camera_rn
+bobcat_like,null,0.0,0.0,0.0,0.0
+bobcat_like,varying,0.0,0.1667,0.1667,0.2333
+deer_like,null,0.0333,0.0667,0.0333,0.1333
+deer_like,varying,0.4667,0.6333,0.6667,0.5333
+intermediate,null,0.0,0.0333,0.0667,0.1
+intermediate,varying,0.1667,0.2667,0.4,0.3667

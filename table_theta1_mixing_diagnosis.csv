@@ -1,0 +1,12 @@
+species,theta1,theta1_lo,theta1_hi,ci_includes_0,theta1_rhat,theta1_ess,theta1_usable,chains,chains_negative,between_over_within,prod_neg_grp,prod_pos_grp,product_agreement_pct_gap,mirror_modes,iterations_multiple_needed,diagnosis
+Nine-banded armadillo,0.4165,0.3454,0.4938,False,1.0098,1383.2778,True,12,0,0.0942,,-0.0368,,False,1.0,converged
+Moose,0.524,0.4316,0.6217,False,1.006,1824.1139,True,12,0,0.092,,-0.1169,,False,1.0,converged
+California ground squirrel,1.5354,1.2844,1.8273,False,1.0061,2202.4997,True,12,0,0.0882,,0.0104,,False,1.0,converged
+Brown bear,0.3166,0.0801,0.8443,False,1.1133,81.8963,False,12,0,0.2674,,-0.3219,,False,5.0,slow mixing — more iterations will fix
+Elk,0.3648,0.2854,0.4524,False,1.0164,677.4562,False,12,0,0.1297,,-0.0045,,False,1.0,slow mixing — more iterations will fix
+Grey wolf,0.4366,0.2252,0.6985,False,1.0339,336.6639,False,12,0,0.221,,-0.2426,,False,2.0,slow mixing — more iterations will fix
+Kit fox,0.6838,0.4143,1.0032,False,1.0784,113.869,False,12,0,0.2407,,-0.1739,,False,4.0,slow mixing — more iterations will fix
+Fisher,0.9569,0.5697,1.3093,False,1.0171,850.6122,False,12,0,0.125,,-0.1378,,False,1.0,slow mixing — more iterations will fix
+Groundhog,0.2128,-0.3994,0.4067,True,1.3701,26.3398,False,12,2,6.8403,0.0418,0.0412,1.3304,True,16.0,"structural — jointly unidentified, more time cannot fix"
+Eastern chipmunk,0.2302,-0.204,0.4145,True,1.5006,21.9295,False,12,3,9.409,0.0141,0.0181,22.2922,True,19.0,"structural — jointly unidentified, more time cannot fix"
+Collared peccary,0.4232,-0.6849,0.7384,True,1.2764,33.784,False,12,1,3.4554,-0.015,-0.0138,9.0478,True,12.0,"structural — jointly unidentified, more time cannot fix"

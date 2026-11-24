@@ -1,0 +1,12 @@
+species,years,spearman_first_last,pearson_log_first_last
+Brown bear,5,0.99916,0.99987
+California ground squirrel,5,0.99978,0.99995
+Collared peccary,5,0.99978,0.99992
+Eastern chipmunk,5,0.99995,0.99999
+Elk,5,0.99988,0.99993
+Fisher,5,0.99744,0.99798
+Grey wolf,5,0.99899,0.9991
+Groundhog,5,0.99938,0.99981
+Kit fox,5,0.99711,0.99768
+Moose,5,0.99979,0.99986
+Nine-banded armadillo,5,1.0,1.0

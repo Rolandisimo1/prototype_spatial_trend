@@ -1,0 +1,9 @@
+species,abstract_pct_yr,win5_pct_yr,win5_lo,win5_hi,win5_direction,abstract_inside_win5_ci,same_direction,status
+Black-tailed jackrabbit,-12.5,,,,not yet fitted,,,running
+Mule deer,-7.2,-2.37,-7.25,2.3,no change detected,True,True,fitted
+Grey fox,-6.3,-5.5,-10.85,-0.02,decline,True,True,fitted
+Eastern gray squirrel,6.7,5.66,2.71,8.77,increase,True,True,fitted
+Virginia opossum,5.7,,,,not yet fitted,,,running
+Northern raccoon,4.2,4.84,2.01,7.7,increase,True,True,fitted
+White-tailed deer,4.0,-0.73,-3.49,1.9,no change detected,False,False,fitted
+Coyote,2.3,9.1,5.62,12.44,increase,False,True,fitted

@@ -1,0 +1,16 @@
+species,trend_pct_yr,lo,hi,direction,theta1,theta1_lo,theta1_hi,c1_theta1,camonly_pct,camonly_lo,camonly_hi,camonly_direction,c2_direction_agrees,c2_pass,c3_joint_inside_camonly_ci,displacement_pp_yr,criteria_passed,converged,pull
+Brown bear,-59.13,-79.142,-37.408,decline,0.317,0.08,0.844,not estimable,-55.706,-76.436,-33.793,decline,confirms,True,True,-3.42,2 of 3,True,hazel_pull_20261102
+California ground squirrel,-37.734,-46.566,-27.566,decline,1.535,1.284,1.827,reaches proportional,8.188,-10.088,34.088,not resolved,cannot confirm,False,False,-45.92,0 of 3,True,hazel_pull_20261102
+Grey wolf,-25.351,-45.681,-0.639,decline,0.437,0.225,0.698,not estimable,-49.216,-82.042,4.869,not resolved,cannot confirm,False,True,23.87,1 of 3,True,posteriors_20261101
+Moose,-10.468,-20.644,0.83,no change detected,0.524,0.432,0.622,"partial, healthy",-8.233,-21.912,4.937,not resolved,agree: no trend,True,True,-2.24,3 of 3,True,hazel_pull_20261102
+Groundhog,-8.193,-17.72,1.556,no change detected,0.213,-0.399,0.407,not estimable,-3.065,-13.252,6.961,not resolved,agree: no trend,True,True,-5.13,2 of 3,True,posteriors_20261101
+Fisher,-7.7,-19.418,3.204,no change detected,0.957,0.57,1.309,not estimable,-15.171,-29.9,0.593,not resolved,agree: no trend,True,True,7.47,2 of 3,True,hazel_pull_20261102
+Collared peccary,-7.477,-20.838,5.417,not reportable,0.423,-0.685,0.738,not estimable,-20.339,-43.094,2.007,not resolved,agree: no trend,True,True,12.86,2 of 3,False,hazel_pull_20261102
+Kit fox,-6.318,-24.4,12.948,no change detected,0.684,0.414,1.003,not estimable,-14.985,-41.147,11.548,not resolved,agree: no trend,True,True,8.67,2 of 3,True,hazel_pull_20261102
+Grey fox,-5.503,-10.849,-0.018,decline,0.505,0.452,0.56,"partial, healthy",-7.194,-13.334,-0.506,decline,confirms,True,True,1.69,3 of 3,True,posteriors_20261101
+Nine-banded armadillo,-2.883,-7.651,1.697,no change detected,0.416,0.345,0.494,"partial, healthy",-3.801,-9.064,1.173,not resolved,agree: no trend,True,True,0.92,3 of 3,True,posteriors_20261101
+White-tailed deer,-0.726,-3.49,1.899,no change detected,0.505,0.467,0.544,"partial, healthy",-1.638,-4.854,1.338,not resolved,agree: no trend,True,True,0.91,3 of 3,True,posteriors_20261101
+Eastern chipmunk,-0.586,-5.136,3.939,no change detected,0.23,-0.204,0.414,not estimable,0.413,-4.131,5.278,not resolved,agree: no trend,True,True,-1.0,2 of 3,True,posteriors_20261101
+Elk,2.714,-4.706,12.183,no change detected,0.365,0.285,0.452,not estimable,5.752,-2.31,15.639,not resolved,agree: no trend,True,True,-3.04,2 of 3,True,posteriors_20261101
+Northern raccoon,4.84,2.014,7.7,increase,0.31,0.284,0.336,"partial, healthy",4.959,2.172,7.82,increase,confirms,True,True,-0.12,3 of 3,True,posteriors_20261101
+Coyote,9.098,5.617,12.439,increase,0.529,0.464,0.588,not estimable,3.075,0.157,6.06,increase,confirms,True,False,6.02,1 of 3,True,posteriors_20261101

@@ -1,5 +1,19 @@
 species,run,trend_pct_yr,lo,hi,trend_rhat,trend_ess,theta1,theta1_lo,theta1_hi,theta1_rhat,theta1_ess,chains,converged,direction,theta1_usable,gate,range_cells,data_limited
 Brown bear,brown_bear_v2u_national_scalar_win5_ctr,-59.1295,-79.1424,-37.4083,1.0054,3569.2402,0.3166,0.0801,0.8443,1.1133,81.8963,12,True,decline,False,theta1 below reporting threshold,30,True
 California ground squirrel,california_ground_squirrel_v2u_national_scalar_win5_ctr_excl,-37.7343,-46.5655,-27.5665,1.0044,2860.434,1.5354,1.2844,1.8273,1.0061,2202.4997,12,True,decline,True,needs camera-only control,74,True
+Grey wolf,grey_wolf_v2u_national_scalar_win5_ctr,-25.351,-45.6812,-0.6391,1.0061,2285.3672,0.4366,0.2252,0.6985,1.0339,336.6639,12,True,decline,False,theta1 below reporting threshold,179,False
+Black-tailed jackrabbit,black-tailed_jackrabbit_v2u_national_scalar_win5_ctr,-19.1966,-25.9416,-11.9338,1.0003,39454.1374,0.7229,0.6186,0.8351,1.0046,2986.6881,12,True,decline,True,clear,424,False
+Moose,moose_v2u_national_scalar_win5_ctr,-10.4684,-20.6441,0.8305,1.0005,28478.4219,0.524,0.4316,0.6217,1.006,1824.1139,12,True,no change detected,True,clear,258,False
+Groundhog,groundhog_v2u_national_scalar_win5_ctr,-8.1929,-17.7199,1.5557,1.0021,37101.3754,0.2128,-0.3994,0.4067,1.3701,26.3398,12,True,no change detected,False,theta1 below reporting threshold,406,False
 Fisher,fisher_v2u_national_scalar_win5_ctr,-7.6997,-19.4182,3.2042,1.0013,15349.8129,0.9569,0.5697,1.3093,1.0171,850.6122,12,True,no change detected,False,theta1 below reporting threshold,176,False
 Collared peccary,collared_peccary_v2un_national_scalar_win5_ctr,-7.4774,-20.8377,5.4166,1.0595,118.6178,0.4232,-0.6849,0.7384,1.2764,33.784,12,False,not reportable,False,theta1 below reporting threshold,168,False
+Kit fox,kit_fox_v2u_national_scalar_win5_ctr,-6.3177,-24.3995,12.9483,1.0004,59268.7997,0.6838,0.4143,1.0032,1.0784,113.869,12,True,no change detected,False,theta1 below reporting threshold,167,False
+Grey fox,grey_fox_v2u_national_scalar_win5_ctr,-5.5034,-10.8489,-0.0181,1.0004,55003.9191,0.5049,0.4517,0.5603,1.0011,5241.9033,12,True,decline,True,clear,813,False
+Nine-banded armadillo,nine-banded_armadillo_v2u_national_scalar_win5_ctr,-2.8826,-7.651,1.697,1.0003,61334.1562,0.4165,0.3454,0.4938,1.0098,1383.2778,12,True,no change detected,True,clear,336,False
+Mule deer,mule_deer_v2u_national_scalar_win5_ctr,-2.3663,-7.2476,2.297,1.0004,28967.438,0.4842,0.4318,0.5389,1.0024,4894.1344,12,True,no change detected,True,clear,469,False
+White-tailed deer,white-tailed_deer_v2u_national_scalar_win5_ctr,-0.7255,-3.4902,1.8991,1.0002,58091.5632,0.5047,0.4669,0.5436,1.0072,2675.4735,12,True,no change detected,True,clear,787,False
+Eastern chipmunk,eastern_chipmunk_v2u_national_scalar_win5_ctr,-0.586,-5.1363,3.9386,1.0056,2550.7355,0.2302,-0.204,0.4145,1.5006,21.9295,12,True,no change detected,False,theta1 below reporting threshold,434,False
+Elk,elk_v2un_national_scalar_win5_ctr,2.714,-4.7056,12.1826,1.0009,17570.6175,0.3648,0.2854,0.4524,1.0164,677.4562,12,True,no change detected,False,theta1 below reporting threshold,359,False
+Northern raccoon,northern_raccoon_v2u_national_scalar_win5_ctr_excl,4.8398,2.0144,7.7002,1.0003,79788.9383,0.3102,0.2842,0.3363,1.0045,4085.2782,12,True,increase,True,clear,1002,False
+Eastern gray squirrel,eastern_gray_squirrel_v2u_national_scalar_win5_ctr,5.6553,2.707,8.7727,1.0025,7208.3195,0.5108,0.4676,0.555,1.0069,1887.2061,12,True,increase,True,clear,489,False
+Coyote,coyote_v2u_national_scalar_win5_ctr_excl,9.0975,5.6169,12.4387,1.007,1870.6632,0.529,0.464,0.5879,1.0137,961.8333,12,True,increase,False,theta1 below reporting threshold,1032,False

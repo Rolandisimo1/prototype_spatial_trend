@@ -139,29 +139,36 @@ def _range_cells():
         "data-limited species. Searched: " + "; ".join(cands))
 
 
-def fig_fleet_win5(out="fig_fleet_win5.png", folder=None):
+def fig_fleet_win5(out="fig_fleet_win5.png", folder=None, slide=False):
     """Forest plot of the five-year trend for every fitted species.
 
     Non-converged fits are drawn as open markers and excluded from every count in
     the title, rather than omitted silently or mixed in with the rest.
+
+    `slide=True` renders the projection variant: the same figure with roughly
+    double the type size and heavier marks. Print and slide sizes are opposite
+    conventions -- 7 pt is correct in a report and unreadable from the back of a
+    room -- so both exist rather than one compromise serving neither.
     """
+    k = 2.1 if slide else 1.0
     # Styling is applied by the caller via the figure-style skill's
     # apply_figure_style(), matching the other modules in this package.
     t = fleet_table(folder)
     n_fit, n_rep = len(t), int(t.converged.sum())
     res = t[t.converged & t.direction.isin(["increase", "decline"])]
-    fig, ax = plt.subplots(figsize=(7.4, 0.42 * max(len(t), 4) + 1.5))
+    fig, ax = plt.subplots(figsize=(7.4 * (1.55 if slide else 1.0),
+                                (0.42 * max(len(t), 4) + 1.5) * (1.25 if slide else 1.0)))
     ax.axvline(0, color="#b7bfc6", lw=0.9, zorder=1)
     COL = {"decline": "#b3261e", "increase": "#1b7a3d",
            "no change detected": "#5f6a73", "not reportable": "#a7b0b7"}
     for i, r in t.iterrows():
         c = COL[r.direction]
         solid = r.converged
-        ax.plot([r.lo, r.hi], [i, i], color=c, lw=2.0 if solid else 1.2,
+        ax.plot([r.lo, r.hi], [i, i], color=c, lw=(2.0 if solid else 1.2) * k,
                 solid_capstyle="round", alpha=1.0 if solid else 0.55,
                 ls="-" if solid else ":", zorder=3)
         ax.plot(r.trend_pct_yr, i, "o", color=c if solid else "white",
-                markeredgecolor=c, ms=5.4, zorder=4)
+                markeredgecolor=c, ms=5.4 * k, zorder=4)
     ax.set_yticks(range(len(t)))
     # The data-limited marker is on the tick label, not in the caption: a figure
     # travels alone, and an unqualified -59% per year would be read as a result.
@@ -172,20 +179,26 @@ def fig_fleet_win5(out="fig_fleet_win5.png", folder=None):
     for i, r in t.iterrows():
         if r.data_limited:
             ax.get_yticklabels()[i].set_color("#8a5a00")
-    ax.set_xlabel("Change in abundance (% per year), five-year window")
+    ax.set_xlabel("Change in abundance (% per year), five-year window",
+                  fontsize=None if not slide else 19)
+    if slide:
+        ax.tick_params(labelsize=17)
     n_lim = int(t.data_limited.sum())
     ax.set_title(f"{n_rep} of {FLEET_N} species fitted and converged; "
                  f"{len(res)} resolve a direction"
                  + (f"\n{n_lim} occupy fewer than {RANGE_MIN_CELLS} grid cells, "
                     f"where estimates are unreliable" if n_lim else ""),
-                 loc="left")
+                 loc="left", fontsize=None if not slide else 21)
     for lab in ["decline", "increase", "no change detected"]:
         if (t.direction == lab).any():
             ax.plot([], [], "o-", color=COL[lab], lw=2.0, ms=5.4, label=lab)
     if (~t.converged).any():
         ax.plot([], [], "o:", color=COL["not reportable"], lw=1.2, ms=5.4,
                 markerfacecolor="white", label="did not converge — not reportable")
-    ax.legend(frameon=False, fontsize=7, loc="lower right")
+    # Lower right is clear in print but the larger slide legend reaches the
+    # longest decline bars, so the projection variant sits top-left instead.
+    ax.legend(frameon=False, fontsize=7 * (2.0 if slide else 1.0),
+              loc="upper left" if slide else "lower right")
     ax.margins(0.06)
     fig.savefig(out, bbox_inches="tight", dpi=300)
     plt.close(fig)

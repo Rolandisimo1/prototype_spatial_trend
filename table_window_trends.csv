@@ -1,0 +1,13 @@
+species,window,trend,lo,hi,available,resolved
+Bobcat,"full record
+2008-2025",1.02,-0.52,2.7,True,False
+Bobcat,"10-year
+2016-2025",2.1104,-0.0994,4.448,True,False
+Bobcat,"5-year
+2021-2025",,,,False,False
+White-tailed deer,"full record
+2008-2025",4.0,3.04,4.97,True,True
+White-tailed deer,"10-year
+2016-2025",0.4582,-0.855,1.8728,True,False
+White-tailed deer,"5-year
+2021-2025",,,,False,False

@@ -1,0 +1,35 @@
+species,win5_joint,win5_camonly,win10_joint,win10_camonly,full_joint,win5_trend_pct_yr,win5_direction,win5_converged,has_map_products
+American badger,older spec,older spec,older spec,older spec,older spec,,,,False
+American black bear,older spec,older spec,older spec,older spec,older spec,,,,False
+Black-tailed jackrabbit,current,older spec,older spec,older spec,older spec,-19.2,decline,True,True
+Bobcat,older spec,older spec,current,older spec,older spec,,,,False
+Brown bear,current,older spec,older spec,older spec,older spec,-59.13,decline,True,True
+California ground squirrel,current,older spec,older spec,older spec,current,-37.73,decline,True,True
+Collared peccary,current,older spec,older spec,older spec,older spec,-7.48,no change detected,False,True
+Coyote,current,older spec,older spec,older spec,older spec,9.1,increase,True,True
+Eastern chipmunk,current,older spec,older spec,older spec,older spec,-0.59,no change detected,True,True
+Eastern fox squirrel,older spec,older spec,older spec,older spec,older spec,,,,False
+Eastern gray squirrel,current,older spec,older spec,older spec,older spec,5.66,increase,True,True
+Elk,current,older spec,older spec,older spec,older spec,2.71,no change detected,True,True
+Fisher,current,older spec,older spec,older spec,older spec,-7.7,no change detected,True,True
+Golden mantled ground squirrel,older spec,older spec,older spec,older spec,older spec,,,,False
+Grey fox,current,older spec,older spec,older spec,older spec,-5.5,decline,True,True
+Grey wolf,current,older spec,older spec,older spec,older spec,-25.35,decline,True,True
+Groundhog,current,older spec,older spec,older spec,older spec,-8.19,no change detected,True,True
+Kit fox,current,older spec,current,older spec,older spec,-6.32,no change detected,True,True
+Moose,current,older spec,older spec,older spec,older spec,-10.47,no change detected,True,True
+Mule deer,current,older spec,older spec,older spec,older spec,-2.37,no change detected,True,True
+Nine-banded armadillo,current,older spec,older spec,older spec,older spec,-2.88,no change detected,True,True
+North american porcupine,older spec,older spec,older spec,older spec,older spec,,,,False
+Northern raccoon,current,older spec,older spec,older spec,older spec,4.84,increase,True,True
+Pronghorn,older spec,older spec,older spec,older spec,older spec,,,,False
+Puma,older spec,older spec,older spec,older spec,current,,,,False
+Red fox,older spec,older spec,older spec,older spec,older spec,,,,False
+Red squirrel,older spec,older spec,older spec,older spec,older spec,,,,False
+Rock squirrel,older spec,older spec,older spec,older spec,older spec,,,,False
+Snowshoe hare,older spec,older spec,older spec,older spec,older spec,,,,False
+Striped skunk,older spec,older spec,older spec,older spec,older spec,,,,False
+Virginia opossum,older spec,older spec,older spec,older spec,older spec,,,,False
+Western gray squirrel,older spec,older spec,older spec,older spec,current,,,,False
+White-tailed antelope squirrel,older spec,older spec,older spec,older spec,older spec,,,,False
+White-tailed deer,current,older spec,current,older spec,older spec,-0.73,no change detected,True,True
